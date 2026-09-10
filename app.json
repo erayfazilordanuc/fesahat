@@ -18,7 +18,8 @@
     "android": {
       "package": "com.terakki.app",
       "adaptiveIcon": {
-        "backgroundColor": "#059669",
+        "backgroundColor": "#0A8D65",
+        "backgroundImage": "./assets/android-icon-background.png",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
