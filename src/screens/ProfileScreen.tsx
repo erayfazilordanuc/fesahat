@@ -1,11 +1,22 @@
 import React from 'react';
-import { View, Text, Pressable, Modal, FlatList, InteractionManager } from 'react-native';
+import { View, Text, Pressable, Modal, FlatList, InteractionManager, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import {
   Settings as SettingsIcon,
   Pencil,
   Activity,
+  User,
   ChevronRight,
   X,
+  Award,
+  Flame,
+  Wind,
+  BookOpen,
+  Cpu,
+  Bell,
+  Sparkles,
+  ShieldCheck,
+  Camera,
 } from 'lucide-react-native';
 
 import {
@@ -15,9 +26,14 @@ import {
   ActionButton,
   TextField,
   RoundButton,
+  SectionLabel,
+  ActionRow,
+  Badge,
   toneColor,
   toneSoft,
   toneText,
+  toneFill,
+  type Tone,
 } from '../components/AppUI';
 import { useThemeTokens } from '../components/practice/PracticeUI';
 import {
@@ -28,32 +44,73 @@ import {
   type Profile,
   type ProfileIconId,
 } from '../utils/profile';
-import { useDailyProgress } from '../utils/dailyPracticeProgress';
+import { masteredArtCount, useDailyProgress } from '../utils/dailyPracticeProgress';
+import { useDailyPracticeSettings } from '../utils/dailyPracticeSettings';
+import { aiAvailable } from '../utils/aiAvailability';
 
-// Profil sekmesi — yalnızca kimlik ve ayarlar.
-//
-// Ölçüm tarafı (istatistik kutuları, gelişim eğrisi, geçmiş girişleri) İlerleme
-// sekmesine taşındı; burası aşırı yüklüydü ve ölçüm dili yalnızca mülakat +
-// egzersizden ibaretti (YAPILACAKLAR Bölüm 0).
+// Profil sekmesi — kimlik, hedefler, kazanım rozetleri ve ayarlar.
+
+const TONES: { id: Tone; label: string }[] = [
+  { id: 'blue', label: 'Mavi' },
+  { id: 'emerald', label: 'Zümrüt' },
+  { id: 'violet', label: 'Mor' },
+  { id: 'amber', label: 'Kehribar' },
+  { id: 'rose', label: 'Gül' },
+  { id: 'slate', label: 'Gri' },
+];
 
 export default function ProfileScreen({ navigation }: any) {
   const t = useThemeTokens();
   const profile = useProfile();
   const { progress } = useDailyProgress();
+  const { settings } = useDailyPracticeSettings();
 
   const [editing, setEditing] = React.useState(false);
 
   // Günlük pratik modüllerindeki en uzun güncel seri — kimlik kartındaki rozet.
   const bestStreak = Math.max(0, ...Object.values(progress.modules).map((m) => m.streak));
+  const totalMasteredArts = masteredArtCount(progress);
+  const isAiReady = aiAvailable();
+
+  const badges = [
+    {
+      id: 'streak-7',
+      label: '7 Günlük Seri',
+      icon: <Flame size={16} color={bestStreak >= 7 ? toneColor('emerald', t.isLight) : '#94a3b8'} />,
+      unlocked: bestStreak >= 7,
+      hint: `${bestStreak}/7 gün`,
+    },
+    {
+      id: 'belagat-master',
+      label: 'Belagat Üstadı',
+      icon: <BookOpen size={16} color={totalMasteredArts >= 3 ? toneColor('emerald', t.isLight) : '#94a3b8'} />,
+      unlocked: totalMasteredArts >= 3,
+      hint: `${totalMasteredArts}/3 sanat`,
+    },
+    {
+      id: 'breath-master',
+      label: 'Nefes Kontrolü',
+      icon: <Wind size={16} color={progress.longestExhaleSeconds >= 15 ? toneColor('blue', t.isLight) : '#94a3b8'} />,
+      unlocked: progress.longestExhaleSeconds >= 15,
+      hint: `${progress.longestExhaleSeconds.toFixed(0)}/15 sn`,
+    },
+    {
+      id: 'practice-hero',
+      label: 'Gelişim Çırağı',
+      icon: <Award size={16} color={bestStreak >= 1 ? toneColor('amber', t.isLight) : '#94a3b8'} />,
+      unlocked: bestStreak >= 1,
+      hint: bestStreak >= 1 ? 'Kazanıldı' : '1 pratik yap',
+    },
+  ];
 
   return (
     <AppScreen
       tabBar
       header={
         <TabHeader
-          icon={<Activity size={24} color={t.isLight ? '#059669' : '#34d399'} />}
+          icon={<User size={24} color={toneColor('slate', t.isLight)} />}
           title="Profil"
-          subtitle="Kimlik bilgilerin ve uygulama ayarları."
+          subtitle="Kimlik bilgilerin, kazanımların ve uygulama tercihlerin."
           right={
             <RoundButton
               icon={<SettingsIcon size={20} color={t.iconColor} />}
@@ -77,8 +134,70 @@ export default function ProfileScreen({ navigation }: any) {
         <ProfileCard profile={profile} bestStreak={bestStreak} onEdit={() => setEditing(true)} />
       )}
 
-      <Text className={`text-[11px] leading-5 mt-4 text-center ${t.muted}`}>
-        Serilerini ve ölçümlerini{' '}
+      {/* Hedef ve Tercihler */}
+      <View className="mt-2">
+        <SectionLabel>HEDEF VE TERCİHLER</SectionLabel>
+      </View>
+      <Surface>
+        <View className="flex-row items-center justify-between py-1">
+          <View className="flex-row items-center">
+            <Sparkles size={16} color={toneColor('emerald', t.isLight)} />
+            <Text className={`text-[13px] font-bold ml-2 ${t.title}`}>Günlük Taahhüt</Text>
+          </View>
+          <Badge label="5 Dakika / Gün" tone="emerald" />
+        </View>
+
+        <View className={`flex-row items-center justify-between pt-3 mt-3 border-t ${t.dividerColor}`}>
+          <View className="flex-row items-center">
+            <Bell size={16} color={toneColor('blue', t.isLight)} />
+            <Text className={`text-[13px] font-bold ml-2 ${t.title}`}>Hatırlatıcılar</Text>
+          </View>
+          <Badge
+            label={settings.notificationsEnabled ? 'Aktif' : 'Kapalı'}
+            tone={settings.notificationsEnabled ? 'blue' : 'slate'}
+          />
+        </View>
+
+        <View className={`flex-row items-center justify-between pt-3 mt-3 border-t ${t.dividerColor}`}>
+          <View className="flex-row items-center">
+            <ShieldCheck size={16} color={toneColor('amber', t.isLight)} />
+            <Text className={`text-[13px] font-bold ml-2 ${t.title}`}>Dinî İçerik Modu</Text>
+          </View>
+          <Badge
+            label={settings.religiousMode ? 'Açık' : 'Kapalı'}
+            tone={settings.religiousMode ? 'amber' : 'slate'}
+          />
+        </View>
+      </Surface>
+
+      {/* Kazanımlar ve Rozetler */}
+      <View className="mt-4">
+        <SectionLabel>KAZANIMLAR VE ROZETLER</SectionLabel>
+      </View>
+      <View className="flex-row flex-wrap gap-2">
+        {badges.map((b) => (
+          <Surface key={b.id} className="flex-1 min-w-[45%]">
+            <View className="flex-row items-center mb-1.5">
+              <View
+                className={`w-7 h-7 rounded-lg items-center justify-center mr-2 ${
+                  b.unlocked ? toneSoft('emerald', t.isLight) : t.isLight ? 'bg-slate-100' : 'bg-slate-800'
+                }`}
+              >
+                {b.icon}
+              </View>
+              <Text className={`text-[11px] font-bold ${b.unlocked ? t.title : t.muted}`} numberOfLines={1}>
+                {b.label}
+              </Text>
+            </View>
+            <Text className={`text-[10px] font-semibold ${b.unlocked ? toneText('emerald', t.isLight) : t.muted}`}>
+              {b.unlocked ? 'Kazanıldı' : b.hint}
+            </Text>
+          </Surface>
+        ))}
+      </View>
+
+      <Text className={`text-[11px] leading-5 mt-5 text-center ${t.muted}`}>
+        Terakki v1.0.0 · Serilerini ve ölçümlerini{' '}
         <Text className={toneText('blue', t.isLight)}>İlerleme</Text> sekmesinde görebilirsin.
       </Text>
     </AppScreen>
@@ -97,15 +216,23 @@ function ProfileCard({
 }) {
   const t = useThemeTokens();
   const Icon = profileIconComponent(profile.icon);
+  const tone = profile.avatarTone ?? 'blue';
 
   return (
     <Surface className="mt-1">
       <View className="flex-row items-center">
-        <View
-          className={`w-16 h-16 rounded-full items-center justify-center ${toneSoft('blue', t.isLight)}`}
-        >
-          <Icon size={28} color={toneColor('blue', t.isLight)} />
-        </View>
+        {profile.avatarUri ? (
+          <Image
+            source={{ uri: profile.avatarUri }}
+            className="w-16 h-16 rounded-full border border-slate-200/80"
+          />
+        ) : (
+          <View
+            className={`w-16 h-16 rounded-full items-center justify-center ${toneSoft(tone, t.isLight)}`}
+          >
+            <Icon size={28} color={toneColor(tone, t.isLight)} />
+          </View>
+        )}
 
         <View className="flex-1 ml-3">
           <Text className={`text-[17px] font-bold ${t.title}`} numberOfLines={1}>
@@ -158,6 +285,7 @@ function ProfileEditor({
   const [draft, setDraft] = React.useState<Profile>(profile);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const DraftIcon = profileIconComponent(draft.icon);
+  const draftTone = draft.avatarTone ?? 'blue';
 
   const set = <K extends keyof Profile>(key: K, value: Profile[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -169,6 +297,19 @@ function ProfileEditor({
     setDraft((prev) => ({ ...prev, icon: id }));
     setPickerOpen(false);
   }, []);
+
+  const handlePickPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      setDraft((prev) => ({ ...prev, avatarUri: result.assets[0].uri }));
+    }
+  };
+
   const closePicker = React.useCallback(() => setPickerOpen(false), []);
 
   return (
@@ -214,6 +355,59 @@ function ProfileEditor({
         </View>
       </View>
 
+      {/* Profil Fotoğrafı veya İkon Rengi */}
+      <Text className={`text-[10px] font-bold uppercase tracking-widest mt-2 mb-2 ${t.muted}`}>
+        Fotoğraf & Renk
+      </Text>
+      <View className="flex-row items-center gap-3 mb-3">
+        {draft.avatarUri ? (
+          <View className="flex-row items-center gap-3">
+            <Image source={{ uri: draft.avatarUri }} className="w-12 h-12 rounded-full" />
+            <Pressable
+              onPress={() => setDraft((prev) => ({ ...prev, avatarUri: '' }))}
+              className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30"
+            >
+              <Text className="text-[12px] font-bold text-red-600 dark:text-red-400">
+                Fotoğrafı Kaldır
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            onPress={handlePickPhoto}
+            className={`px-3.5 py-2 rounded-xl border flex-row items-center ${
+              t.isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-800 border-slate-700'
+            }`}
+          >
+            <Camera size={16} color={t.iconColor} />
+            <Text className={`text-[12px] font-bold ml-2 ${t.title}`}>Fotoğraf Yükle</Text>
+          </Pressable>
+        )}
+      </View>
+
+      {!draft.avatarUri ? (
+        <View className="flex-row flex-wrap gap-2 mb-3">
+          {TONES.map((toneItem) => (
+            <Pressable
+              key={toneItem.id}
+              onPress={() => setDraft((prev) => ({ ...prev, avatarTone: toneItem.id }))}
+              className={`px-3 py-1.5 rounded-xl border flex-row items-center ${
+                draftTone === toneItem.id
+                  ? toneSoft(toneItem.id, t.isLight)
+                  : t.isLight
+                    ? 'bg-slate-100 border-transparent'
+                    : 'bg-slate-800 border-transparent'
+              }`}
+            >
+              <View className={`w-3 h-3 rounded-full mr-1.5 ${toneFill(toneItem.id, t.isLight)}`} />
+              <Text className={`text-[11px] font-bold ${toneText(toneItem.id, t.isLight)}`}>
+                {toneItem.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
       <Text className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${t.muted}`}>
         İkon
       </Text>
@@ -226,9 +420,9 @@ function ProfileEditor({
         }`}
       >
         <View
-          className={`w-11 h-11 rounded-full items-center justify-center ${toneSoft('blue', t.isLight)}`}
+          className={`w-11 h-11 rounded-full items-center justify-center ${toneSoft(draftTone, t.isLight)}`}
         >
-          <DraftIcon size={22} color={toneColor('blue', t.isLight)} />
+          <DraftIcon size={22} color={toneColor(draftTone, t.isLight)} />
         </View>
         <View className="flex-1 ml-3">
           <Text className={`text-[13px] font-semibold ${t.title}`}>İkon Seç</Text>

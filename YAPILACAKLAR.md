@@ -41,9 +41,11 @@ Her yeni modül bunlara uyacak — istisna yok:
 00. ✅ **Genele açılma & AI Esnekliği** (Bölüm 00) — Yapay zekâsız %100 çalışma, kırılganlık korumaları.
 0. ✅ **Gezinme mimarisi** (Bölüm 0) — Dört sekme (Bugün, Gelişim, İlerleme, Profil).
 0.1 **Uygulamaya Isındırma & Oryantasyon Modülü** (Bölüm 0.1) — Duolingo tarzı ilk açılış ve mikro-pratik akışı.
-0.2 **İlerleme & Profil Sekmeleri UI/UX İyileştirmeleri** (Bölüm 0.2) — Üst boşluk büzülmesi, boş durum kartları, Profil doluluğu & rozet vitrini.
-0.3 **Modül Ayarlarının Modül İçlerine Taşınması** (Bölüm 0.3) — Ayarlar ekranını sadeleştirip modül tercihlerini kendi ekranlarına alma.
+0.2 ✅ **İlerleme & Profil Sekmeleri UI/UX İyileştirmeleri** (Bölüm 0.2) — Seriler 2 satırlı (2x2) ızgaraya, geçmişler tek satırda yan yana butonlara dönüştürüldü; ekran büzülerek alttaki geçmişlerin kaydırmaya gerek kalmadan tek bakışta görünmesi sağlandı. Profil hedefleri ve rozet vitrini tamamlandı.
+0.3 ✅ **Modül Ayarlarının Modül İçlerine Taşınması** (Bölüm 0.3) — Ayarlar ekranı genel tercihlere indirgendi; modül içi ayar kontrolleri ilgili ekranlara taşındı.
 0.4 **SQLite Veritabanı Geçişi & Katalog Mimarisi** (Bölüm 0.4) — `expo-sqlite` ile offline soru, tekerleme, metin kataloğu ve geçmiş veri yönetimi.
+0.5 **Oyunlaştırma & Liderlik Tablosu (Gamification & Leaderboard)** (İleride Değerlendirilecek) —
+   * ⚠️ **Mimarî ve Felsefî Uyarı:** Uygulama öz-farkındalık ve çevrimdışı (offline-first) ilkelerine dayanır. Global rekabet tabloları; (1) Sunucu ve kimlik doğrulama bağımlılığı getirir, (2) Nefes ve okuma hızı gibi öz-ölçümlerde hileye ve sahte skor yarışına yol açıp pratiğin amacını bozabilir. Küresel sıralama yerine **Kişisel Rekorlar (Öz-Rekabet)** veya yerel kıyaslamalar tercih edilmelidir.
 1. ✅ **Kimlik: logo ve ikonlar** (Bölüm 8) — "Kademe" logo kararı ve `tools/icon-forge/build_app_assets.py` ile tüm ikon türetmeleri tamamlandı.
 2. **Ölçüm & Karne** (Bölüm 5) — İlerleme sekmesi derinleştirmesi.
 3. **Alışkanlık & Rutin** (Bölüm 4) — Bildirim ve hatılatıcı altyapısı genişlemesi.
@@ -709,8 +711,9 @@ o yüzden acil değil — ama ayar yanıltıcı: kaldırılmalı ya da paket ekl
 | `src/screens/GrowthScreen.tsx` | Gelişim hub'ı — yedi sütun kartı ve dinamik başlıklar | ✅ Yapıldı |
 | `src/screens/ProgressScreen.tsx` | İlerleme sekmesi — seriler, karne ve test eğilimleri | ✅ Yapıldı |
 | `src/screens/InterviewScreen.tsx` | Kariyer & Mülakat modülü — simülasyon ve geçmiş | ✅ Yapıldı |
-| `src/screens/ProfileScreen.tsx` | Profil ve ayarlar sekmesi sadeleştirildi | ✅ Yapıldı |
-| `src/screens/SettingsScreen.tsx` | Modül ayarlarından arındırıldı, genel uygulama ayarlarına odaklandı | ✅ Yapıldı |
+| `src/screens/ProgressScreen.tsx` | Üst marj büzüldü; 4 modül serisi ve rehber test kartları dinamikleştirildi | ✅ Yapıldı (Bölüm 0.2) |
+| `src/screens/ProfileScreen.tsx` | Günlük taahhüt, rozet vitrini ve yapay zekâ/sistem durum kartları eklendi | ✅ Yapıldı (Bölüm 0.2) |
+| `src/screens/SettingsScreen.tsx` | Modül ayarlarından arındırıldı, genel uygulama ayarlarına odaklandı | ✅ Yapıldı (Bölüm 0.3) |
 | `src/screens/SimulationScreen.tsx` | Eski iki işlevli ekran kaldırıldı | ✅ Temizlendi |
 | `App.tsx` | Sekmeler 4'e çıkarıldı; stack yönlendirmeleri tamamlandı | ✅ Yapıldı |
 | `src/components/ScreenBackground.tsx` | Sekme isimlerine uygun degrade bağlamı eklendi | ✅ Yapıldı |
@@ -720,8 +723,6 @@ o yüzden acil değil — ama ayar yanıltıcı: kaldırılmalı ya da paket ekl
 | Yeni / Değişecek Dosya | İş | Bölüm |
 | --- | --- | --- |
 | `src/screens/OnboardingScreen.tsx` | Duolingo tarzı oryantasyon ve ilk ısındırma akışı ekranı | Bölüm 0.1 |
-| `src/screens/ProgressScreen.tsx` | Üst marj büzülmesi, pasif/örnek modül serileri & taslak grafik | Bölüm 0.2 |
-| `src/screens/ProfileScreen.tsx` | Hedefler/tercihler kartı, kazanım/rozet vitrini & hızlı ayarlar | Bölüm 0.2 |
 | `src/utils/sqliteDatabase.ts` | `expo-sqlite` ilişkisel veritabanı sürücüsü & göç (migration) altyapısı | Bölüm 0.4 |
 | `src/data/breathControlDrills.ts` | Nefes kontrolü egzersizleri + 4 haftalık plan | Bölüm 1 |
 | `src/screens/BreathControlScreen.tsx` | Antrenman akışı + ölçüm | Bölüm 1 |

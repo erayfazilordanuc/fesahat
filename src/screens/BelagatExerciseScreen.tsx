@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
 import { Feather, Check, X as XIcon, Award, Lightbulb, GraduationCap } from 'lucide-react-native';
 
+import { Segmented } from '../components/AppUI';
 import {
   ScreenShell,
   Card,
@@ -49,7 +50,7 @@ const BRANCH_FILTERS: { value: BelagatBranchFilter; label: string }[] = [
 
 export default function BelagatExerciseScreen({ navigation }: any) {
   const t = useThemeTokens();
-  const { settings, updateModule } = useDailyPracticeSettings();
+  const { settings } = useDailyPracticeSettings();
   const { progress, complete, answerBelagat, produceBelagat } = useDailyProgress();
 
   const [tab, setTab] = React.useState<Tab>('ogren');
@@ -67,29 +68,18 @@ export default function BelagatExerciseScreen({ navigation }: any) {
       subtitle={`${mastered}/${BELAGAT_ARTS.length} sanat öğrenildi · ${moduleProgress.streak} günlük seri`}
       onClose={() => navigation?.goBack?.()}
     >
-      {/* Sekmeler */}
-      <View className="flex-row flex-wrap mt-1">
-        {(Object.keys(TAB_LABELS) as Tab[]).map((key) => (
-          <Chip
-            key={key}
-            label={TAB_LABELS[key]}
-            tone="emerald"
-            selected={tab === key}
-            onPress={() => setTab(key)}
-          />
-        ))}
-      </View>
-
-      {/* Kol filtresi — ayarlara yazılır */}
-      <View className={`flex-row flex-wrap mt-2 pt-3 border-t ${t.dividerColor}`}>
-        {BRANCH_FILTERS.map((option) => (
-          <Chip
-            key={option.value}
-            label={option.label}
-            selected={filter === option.value}
-            onPress={() => updateModule('belagat', { branch: option.value })}
-          />
-        ))}
+      {/* Tek sıra temiz sekme kontrolü */}
+      <View className="mt-1 mb-2">
+        <Segmented<Tab>
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'ogren', label: 'Günün Sanatı' },
+            { value: 'tanima', label: 'Tanıma' },
+            { value: 'uretim', label: 'Üretim' },
+            { value: 'mufredat', label: 'Müfredat' },
+          ]}
+        />
       </View>
 
       {tab === 'ogren' ? (
@@ -438,6 +428,7 @@ function CurriculumTab({
   progress: ReturnType<typeof useDailyProgress>['progress'];
 }) {
   const t = useThemeTokens();
+  const { updateModule } = useDailyPracticeSettings();
   const [openId, setOpenId] = React.useState<string | null>(null);
   const arts = artsForBranch(filter);
 
@@ -446,6 +437,17 @@ function CurriculumTab({
 
   return (
     <View className="mt-2">
+      {/* Kol filtresi */}
+      <View className="flex-row flex-wrap mb-2">
+        {BRANCH_FILTERS.map((option) => (
+          <Chip
+            key={option.value}
+            label={option.label}
+            selected={filter === option.value}
+            onPress={() => updateModule('belagat', { branch: option.value })}
+          />
+        ))}
+      </View>
       {branches.map((branch) => {
         const branchArts = arts.filter((a) => a.branch === branch);
         if (branchArts.length === 0) return null;

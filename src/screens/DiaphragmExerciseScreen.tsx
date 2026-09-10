@@ -54,6 +54,8 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
   const { settings, updateModule } = useDailyPracticeSettings();
   const { progress, complete, recordExhale, logTest } = useDailyProgress();
 
+  const [activeTab, setActiveTab] = React.useState<'pratik' | 'olcum' | 'rehber'>('pratik');
+
   const mode = settings.diaphragm.mode;
   const level = settings.diaphragm.level;
   const program = React.useMemo(() => getBreathingProgram(mode, level), [mode, level]);
@@ -185,174 +187,204 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
       subtitle={`${program.title} · ${program.durationLabel}`}
       onClose={() => navigation?.goBack?.()}
       footer={
-        <View className="gap-2">
-          {running ? (
-            <PrimaryButton label="Duraklat" onPress={pause} tone="slate" />
-          ) : (
-            <PrimaryButton label={finished ? 'Tekrar Başla' : 'Başla'} onPress={start} />
-          )}
-          {stepIndex > 0 || finished ? <GhostButton label="Sıfırla" onPress={reset} /> : null}
-        </View>
+        activeTab === 'pratik' ? (
+          <View className="gap-2">
+            {running ? (
+              <PrimaryButton label="Duraklat" onPress={pause} tone="slate" />
+            ) : (
+              <PrimaryButton label={finished ? 'Tekrar Başla' : 'Başla'} onPress={start} />
+            )}
+            {stepIndex > 0 || finished ? <GhostButton label="Sıfırla" onPress={reset} /> : null}
+          </View>
+        ) : null
       }
     >
-      {/* Göz Dinlendirme Kısayolu */}
-      <Card className="mt-1 mb-3 flex-row items-center justify-between">
-        <View className="flex-1 pr-2">
-          <Text className={`text-[13px] font-bold ${t.title}`}>👁️ Göz Sağlığı & 20-20-20 Kuralı</Text>
-          <Text className={`text-[11px] mt-0.5 ${t.muted}`}>Ekran yorgunluğu ve göz kası esnetme pratikleri</Text>
-        </View>
-        <Pressable
-          onPress={() => navigation?.navigate?.('BrainExercises', { track: 'physiological' })}
-          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30"
-          accessibilityRole="button"
-          accessibilityLabel="Göz egzersizlerini incele"
-        >
-          <Text className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400">İncele</Text>
-        </Pressable>
-      </Card>
-
-      {/* Mod ve seviye seçimi — ayarlara yazılır, bir sonraki açılışta da geçerli olur.
-          Seviye yalnızca gelişim modunda anlamlı, günlükte gizleniyor. */}
-      <View className="mt-1">
-        <Segmented<BreathingMode>
-          value={mode}
-          onChange={(next) => updateModule('diaphragm', { mode: next })}
-          options={BREATHING_MODES.map((m) => ({ value: m.value, label: m.label }))}
+      {/* 3 Sekmeli Odak Mimarisi */}
+      <View className="mt-1 mb-3">
+        <Segmented<'pratik' | 'olcum' | 'rehber'>
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: 'pratik', label: '🏋️ Pratik' },
+            { value: 'olcum', label: '📊 Ölçüm' },
+            { value: 'rehber', label: '📘 Rehber' },
+          ]}
         />
-        <Text className={`text-[11px] leading-4 mt-2 ${t.muted}`}>
-          {BREATHING_MODES.find((m) => m.value === mode)?.description}
-        </Text>
       </View>
 
-      {mode === 'progressive' ? (
-        <View className="flex-row flex-wrap mt-3">
-          {BREATHING_LEVELS.map((lvl) => (
-            <Chip
-              key={lvl}
-              label={`Seviye ${lvl}`}
-              selected={lvl === level}
-              onPress={() => updateModule('diaphragm', { level: lvl })}
+      {/* 🏋️ PRATİK SEKMESİ (Varsayılan) */}
+      {activeTab === 'pratik' ? (
+        <>
+          {/* Mod ve seviye seçimi */}
+          <View className="mt-1">
+            <Segmented<BreathingMode>
+              value={mode}
+              onChange={(next) => updateModule('diaphragm', { mode: next })}
+              options={BREATHING_MODES.map((m) => ({ value: m.value, label: m.label }))}
             />
-          ))}
-        </View>
+            <Text className={`text-[11px] leading-4 mt-2 ${t.muted}`}>
+              {BREATHING_MODES.find((m) => m.value === mode)?.description}
+            </Text>
+          </View>
+
+          {mode === 'progressive' ? (
+            <View className="flex-row flex-wrap mt-3">
+              {BREATHING_LEVELS.map((lvl) => (
+                <Chip
+                  key={lvl}
+                  label={`Seviye ${lvl}`}
+                  selected={lvl === level}
+                  onPress={() => updateModule('diaphragm', { level: lvl })}
+                />
+              ))}
+            </View>
+          ) : null}
+
+          {/* Nefes dairesi */}
+          <View className="items-center justify-center my-4" style={{ height: CIRCLE_SIZE + 24 }}>
+            <View
+              className={`absolute rounded-full border-2 ${t.isLight ? 'border-blue-200' : 'border-blue-900'}`}
+              style={{ width: CIRCLE_SIZE, height: CIRCLE_SIZE, borderRadius: CIRCLE_SIZE / 2 }}
+            />
+            <Animated.View
+              style={[
+                {
+                  width: CIRCLE_SIZE,
+                  height: CIRCLE_SIZE,
+                  borderRadius: CIRCLE_SIZE / 2,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: t.isLight ? 'rgba(37,99,235,0.10)' : 'rgba(59,130,246,0.18)',
+                  borderWidth: 2,
+                  borderColor: t.isLight ? 'rgba(37,99,235,0.35)' : 'rgba(96,165,250,0.45)',
+                },
+                circleStyle,
+              ]}
+            >
+              <Text className={`text-5xl font-bold ${t.accent}`}>{Math.ceil(remaining)}</Text>
+              <Text className={`text-[14px] font-bold mt-1 ${t.title}`}>
+                {finished ? 'Bitti' : PHASE_LABELS[step.kind]}
+              </Text>
+            </Animated.View>
+          </View>
+
+          {/* O anki komut */}
+          <Card className="mb-2">
+            <View className="flex-row items-center mb-2">
+              <Wind size={16} color={t.isLight ? '#2563eb' : '#60a5fa'} />
+              <Text className={`text-[11px] font-bold uppercase tracking-widest ml-2 ${t.muted}`}>
+                {step.segmentTitle} · {step.cycleIndex}/{step.cycleCount}
+              </Text>
+            </View>
+            <Text className={`text-[15px] font-bold leading-6 ${t.title}`}>
+              {finished ? 'Program tamamlandı. Nefesini normale bırak.' : step.cue}
+            </Text>
+            <View className="mt-4">
+              <ProgressBar value={totalSeconds === 0 ? 0 : elapsedSeconds / totalSeconds} />
+              <Text className={`text-[11px] mt-2 ${t.muted}`}>
+                {formatDuration(Math.max(elapsedSeconds, 0))} / {formatDuration(totalSeconds)}
+              </Text>
+            </View>
+          </Card>
+        </>
       ) : null}
 
-      {/* Nefes dairesi */}
-      <View className="items-center justify-center my-4" style={{ height: CIRCLE_SIZE + 24 }}>
-        <View
-          className={`absolute rounded-full border-2 ${t.isLight ? 'border-blue-200' : 'border-blue-900'}`}
-          style={{ width: CIRCLE_SIZE, height: CIRCLE_SIZE, borderRadius: CIRCLE_SIZE / 2 }}
-        />
-        <Animated.View
-          style={[
-            {
-              width: CIRCLE_SIZE,
-              height: CIRCLE_SIZE,
-              borderRadius: CIRCLE_SIZE / 2,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: t.isLight ? 'rgba(37,99,235,0.10)' : 'rgba(59,130,246,0.18)',
-              borderWidth: 2,
-              borderColor: t.isLight ? 'rgba(37,99,235,0.35)' : 'rgba(96,165,250,0.45)',
-            },
-            circleStyle,
-          ]}
-        >
-          <Text className={`text-5xl font-bold ${t.accent}`}>{Math.ceil(remaining)}</Text>
-          <Text className={`text-[14px] font-bold mt-1 ${t.title}`}>
-            {finished ? 'Bitti' : PHASE_LABELS[step.kind]}
-          </Text>
-        </Animated.View>
-      </View>
+      {/* 📊 ÖLÇÜM SEKMESİ */}
+      {activeTab === 'olcum' ? (
+        <>
+          <SectionTitle hint="Düğmeye basılı tutarken tek nefeste sabit bir 'sss' sesi çıkarın; nefesiniz bitince bırakın.">
+            Kontrollü Veriş Süresi
+          </SectionTitle>
+          <ExhaleCapacityTest
+            best={progress.longestExhaleSeconds}
+            history={testHistory(progress, TEST_EXHALE_CONTROL)}
+            onResult={(seconds) => recordExhale(seconds)}
+          />
 
-      {/* O anki komut */}
-      <Card>
-        <View className="flex-row items-center mb-2">
-          <Wind size={16} color={t.isLight ? '#2563eb' : '#60a5fa'} />
-          <Text className={`text-[11px] font-bold uppercase tracking-widest ml-2 ${t.muted}`}>
-            {step.segmentTitle} · {step.cycleIndex}/{step.cycleCount}
-          </Text>
-        </View>
-        <Text className={`text-[15px] font-bold leading-6 ${t.title}`}>
-          {finished ? 'Program tamamlandı. Nefesini normale bırak.' : step.cue}
-        </Text>
-        <View className="mt-4">
-          <ProgressBar value={totalSeconds === 0 ? 0 : elapsedSeconds / totalSeconds} />
-          <Text className={`text-[11px] mt-2 ${t.muted}`}>
-            {formatDuration(Math.max(elapsedSeconds, 0))} / {formatDuration(totalSeconds)}
-          </Text>
-        </View>
-      </Card>
+          <SectionTitle hint="Bir dakika boyunca normal nefes alın ve her nefes ALIŞINDA düğmeye dokunun. Nefesinizi bilerek yavaşlatmayın — ölçüm ancak doğal olduğunda anlamlı.">
+            Dinlenik Solunum Hızı
+          </SectionTitle>
+          <BreathingRateTest
+            history={testHistory(progress, TEST_BREATHING_RATE)}
+            onResult={(breaths) => logTest(TEST_BREATHING_RATE, breaths)}
+          />
+        </>
+      ) : null}
 
-      {/* Bas-tut-bırak ile ölçülen en uzun kesintisiz "sss".
-          Ölçtüğü şey akciğer kapasitesi DEĞİL: süre hem hacme hem ses tellerinin
-          kapanma verimine bağlı. Başlık bu yüzden "kapasite" demiyor. */}
-      <SectionTitle hint="Düğmeye basılı tutarken tek nefeste sabit bir 'sss' sesi çıkarın; nefesiniz bitince bırakın.">
-        Kontrollü Veriş Süresi
-      </SectionTitle>
-      <ExhaleCapacityTest
-        best={progress.longestExhaleSeconds}
-        history={testHistory(progress, TEST_EXHALE_CONTROL)}
-        onResult={(seconds) => recordExhale(seconds)}
-      />
+      {/* 📘 REHBER SEKMESİ */}
+      {activeTab === 'rehber' ? (
+        <>
+          {/* Göz Dinlendirme Kısayolu */}
+          <Card className="mt-1 mb-3 flex-row items-center justify-between">
+            <View className="flex-1 pr-2">
+              <Text className={`text-[13px] font-bold ${t.title}`}>👁️ Göz Sağlığı & 20-20-20 Kuralı</Text>
+              <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
+                Ekran yorgunluğu ve göz kası esnetme pratikleri
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => navigation?.navigate?.('BrainExercises', { track: 'physiological' })}
+              className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30"
+              accessibilityRole="button"
+              accessibilityLabel="Göz egzersizlerini incele"
+            >
+              <Text className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400">
+                İncele
+              </Text>
+            </Pressable>
+          </Card>
 
-      <SectionTitle hint="Bir dakika boyunca normal nefes alın ve her nefes ALIŞINDA düğmeye dokunun. Nefesinizi bilerek yavaşlatmayın — ölçüm ancak doğal olduğunda anlamlı.">
-        Dinlenik Solunum Hızı
-      </SectionTitle>
-      <BreathingRateTest
-        history={testHistory(progress, TEST_BREATHING_RATE)}
-        onResult={(breaths) => logTest(TEST_BREATHING_RATE, breaths)}
-      />
+          {/* Program içeriği */}
+          <SectionTitle>Program</SectionTitle>
+          {program.segments.map((segment) => (
+            <Card key={segment.id} className="mb-3">
+              <Text className={`text-[13px] font-bold ${t.title}`}>{segment.title}</Text>
+              <Text className={`text-[11px] mt-1 leading-5 ${t.body}`}>{segment.description}</Text>
+              <Text className={`text-[11px] mt-2 ${t.muted}`}>
+                {segment.cycles} tur ·{' '}
+                {segment.phases.map((p) => `${PHASE_LABELS[p.kind]} ${p.seconds}s`).join(' → ')}
+              </Text>
+              {segment.tip ? (
+                <Text className={`text-[11px] mt-2 italic ${t.accent}`}>{segment.tip}</Text>
+              ) : null}
+            </Card>
+          ))}
 
-      {/* Program içeriği */}
-      <SectionTitle>Program</SectionTitle>
-      {program.segments.map((segment) => (
-        <Card key={segment.id} className="mb-3">
-          <Text className={`text-[13px] font-bold ${t.title}`}>{segment.title}</Text>
-          <Text className={`text-[11px] mt-1 leading-5 ${t.body}`}>{segment.description}</Text>
-          <Text className={`text-[11px] mt-2 ${t.muted}`}>
-            {segment.cycles} tur ·{' '}
-            {segment.phases.map((p) => `${PHASE_LABELS[p.kind]} ${p.seconds}s`).join(' → ')}
-          </Text>
-          {segment.tip ? (
-            <Text className={`text-[11px] mt-2 italic ${t.accent}`}>{segment.tip}</Text>
-          ) : null}
-        </Card>
-      ))}
+          {/* Neden yapıyoruz */}
+          <SectionTitle>Ne Kazandırır</SectionTitle>
+          <Card>
+            {program.benefits.map((benefit) => (
+              <View key={benefit} className="flex-row mb-2">
+                <Text className={`text-[12px] mr-2 ${t.accent}`}>•</Text>
+                <Text className={`text-[12px] flex-1 leading-5 ${t.body}`}>{benefit}</Text>
+              </View>
+            ))}
+          </Card>
 
-      {/* Neden yapıyoruz */}
-      <SectionTitle>Ne Kazandırır</SectionTitle>
-      <Card>
-        {program.benefits.map((benefit) => (
-          <View key={benefit} className="flex-row mb-2">
-            <Text className={`text-[12px] mr-2 ${t.accent}`}>•</Text>
-            <Text className={`text-[12px] flex-1 leading-5 ${t.body}`}>{benefit}</Text>
-          </View>
-        ))}
-      </Card>
+          {/* Güvenlik uyarısı */}
+          <Card className="mt-3">
+            <View className="flex-row">
+              <AlertTriangle size={16} color={t.isLight ? '#d97706' : '#fbbf24'} />
+              <Text className={`text-[11px] ml-2 flex-1 leading-5 ${t.body}`}>
+                {program.safetyNote}
+              </Text>
+            </View>
+          </Card>
 
-      {/* Güvenlik uyarısı */}
-      <Card className="mt-3">
-        <View className="flex-row">
-          <AlertTriangle size={16} color={t.isLight ? '#d97706' : '#fbbf24'} />
-          <Text className={`text-[11px] ml-2 flex-1 leading-5 ${t.body}`}>
-            {program.safetyNote}
-          </Text>
-        </View>
-      </Card>
-
-      {/* Seri */}
-      <Card className="mt-3 mb-2">
-        <View className="flex-row items-center">
-          <Award size={16} color={t.isLight ? '#059669' : '#34d399'} />
-          <Text className={`text-[12px] font-bold ml-2 ${t.title}`}>
-            {moduleProgress.streak} günlük seri
-          </Text>
-          <Text className={`text-[11px] ml-auto ${t.muted}`}>
-            En iyi: {moduleProgress.bestStreak} · Toplam: {moduleProgress.totalSessions}
-          </Text>
-        </View>
-      </Card>
+          {/* Seri */}
+          <Card className="mt-3 mb-2">
+            <View className="flex-row items-center">
+              <Award size={16} color={t.isLight ? '#059669' : '#34d399'} />
+              <Text className={`text-[12px] font-bold ml-2 ${t.title}`}>
+                {moduleProgress.streak} günlük seri
+              </Text>
+              <Text className={`text-[11px] ml-auto ${t.muted}`}>
+                En iyi: {moduleProgress.bestStreak} · Toplam: {moduleProgress.totalSessions}
+              </Text>
+            </View>
+          </Card>
+        </>
+      ) : null}
     </ScreenShell>
   );
 }

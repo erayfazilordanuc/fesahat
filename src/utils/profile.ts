@@ -1,28 +1,19 @@
 import { createPersistentStore } from './store';
 import { isProfileIconId, type ProfileIconId } from '../data/profileIcons';
+import type { Tone } from '../components/AppUI';
 
 export type { ProfileIconId };
 export { PROFILE_ICON_GROUPS, PROFILE_ICON_IDS, profileIconComponent } from '../data/profileIcons';
 
 // Profil ekranındaki kullanıcı kartı. Sunucuya gitmez, yalnızca cihazda saklanır.
-//
-// Profil bilerek alan bağımsız: uygulama savunma sanayii mülakatı için doğdu ama
-// artık kariyerden diksiyona, nefesten zihne uzanan bir kişisel gelişim
-// uygulaması. Bu yüzden varsayılanlarda sektör adı geçmiyor; kariyer hedefini
-// kullanıcı kendi yazıyor.
-
 export type Profile = {
   name: string;
-  /**
-   * Kariyer hedefi — "Makine Mühendisi", "Ürün Yöneticisi", "Öğretmen"…
-   * Mülakat sorularının ve analizlerin bağlamında da kullanılıyor; boş
-   * bırakılabilir, o zaman bağlam cümlesi hiç eklenmiyor.
-   */
   role: string;
   linkedin: string;
-  /** Kişisel site, portfolyo ya da herhangi bir profil bağlantısı. */
   website: string;
   icon: ProfileIconId;
+  avatarTone: Tone;
+  avatarUri: string;
 };
 
 const DEFAULTS: Profile = {
@@ -31,6 +22,8 @@ const DEFAULTS: Profile = {
   linkedin: '',
   website: '',
   icon: 'userCheck',
+  avatarTone: 'blue',
+  avatarUri: '',
 };
 
 export const profileStore = createPersistentStore<Profile>('user-profile', DEFAULTS, (stored) => {

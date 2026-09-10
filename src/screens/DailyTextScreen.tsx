@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { BookOpen, Minus, Plus, Timer, Award, Feather } from 'lucide-react-native';
 
+import { Segmented } from '../components/AppUI';
 import {
   ScreenShell,
   Card,
@@ -40,6 +41,8 @@ export default function DailyTextScreen({ navigation }: any) {
   const t = useThemeTokens();
   const { settings, updateModule } = useDailyPracticeSettings();
   const { progress, complete, logTest } = useDailyProgress();
+
+  const [activeTab, setActiveTab] = React.useState<'okuma' | 'tahlil'>('okuma');
 
   const dailyText = React.useMemo(() => pickDailyText(settings), [settings]);
   const pool = React.useMemo(() => availableTexts(settings), [settings]);
@@ -83,262 +86,284 @@ export default function DailyTextScreen({ navigation }: any) {
       subtitle={`${CATEGORY_LABELS[text.category]} · yaklaşık ${text.approxSeconds} saniye`}
       onClose={() => navigation?.goBack?.()}
       footer={
-        <View className="gap-2">
-          <PrimaryButton
-            label="Okudum, tamamla"
-            onPress={() => {
-              complete('dailyText');
-              navigation?.goBack?.();
-            }}
-            tone="emerald"
-          />
-          {reading ? (
-            <GhostButton label={`Sayacı durdur · ${formatDuration(elapsed)}`} onPress={() => setReading(false)} />
-          ) : (
-            <GhostButton
-              label={elapsed > 0 ? `Sayaç: ${formatDuration(elapsed)} · sıfırla` : 'Okuma sayacını başlat'}
-              onPress={() => (elapsed > 0 ? resetTimer() : setReading(true))}
+        activeTab === 'okuma' || reading ? (
+          <View className="gap-2">
+            <PrimaryButton
+              label="Okudum, tamamla"
+              onPress={() => {
+                complete('dailyText');
+                navigation?.goBack?.();
+              }}
+              tone="emerald"
             />
-          )}
-        </View>
+            {reading ? (
+              <GhostButton label={`Sayacı durdur · ${formatDuration(elapsed)}`} onPress={() => setReading(false)} />
+            ) : (
+              <GhostButton
+                label={elapsed > 0 ? `Sayaç: ${formatDuration(elapsed)} · sıfırla` : 'Okuma sayacını başlat'}
+                onPress={() => (elapsed > 0 ? resetTimer() : setReading(true))}
+              />
+            )}
+          </View>
+        ) : null
       }
     >
-      {/* Günün duası — yalnızca dini içerik açıkken */}
-      {settings.religiousMode ? (
-        <Card className="mt-1">
-          <View className="flex-row items-center mb-2">
-            <BookOpen size={14} color={t.isLight ? '#059669' : '#34d399'} />
-            <Text className={`text-[10px] font-bold uppercase tracking-widest ml-2 ${t.muted}`}>
-              Günün Duası
-            </Text>
-          </View>
-          <Text className={`text-[13px] font-bold leading-6 ${t.title}`}>“{prayer.text}”</Text>
-          <Text className={`text-[11px] mt-1.5 leading-5 ${t.muted}`}>{prayer.meaning}</Text>
-        </Card>
-      ) : null}
-
-      {/* Yazı boyutu */}
-      <View className="flex-row items-center justify-between mt-4">
-        <Text className={`text-[11px] font-bold uppercase tracking-widest ${t.muted}`}>
-          Yazı Boyutu
-        </Text>
-        <View className="flex-row items-center">
-          <Pressable
-            onPress={() => setFontIndex((i) => Math.max(0, i - 1))}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Yazıyı küçült"
-            className={`w-8 h-8 rounded-lg items-center justify-center border ${t.cardBorder}`}
-          >
-            <Minus size={14} color={t.iconColor} />
-          </Pressable>
-          <Text className={`text-[11px] font-bold mx-3 ${t.title}`}>{fontSize}</Text>
-          <Pressable
-            onPress={() => setFontIndex((i) => Math.min(FONT_SIZES.length - 1, i + 1))}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Yazıyı büyüt"
-            className={`w-8 h-8 rounded-lg items-center justify-center border ${t.cardBorder}`}
-          >
-            <Plus size={14} color={t.iconColor} />
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Metin */}
-      <Card className="mt-3">
-        <Text className={`text-[11px] font-bold uppercase tracking-widest ${t.muted}`}>
-          {CATEGORY_LABELS[text.category]}
-        </Text>
-        <Text className={`text-[18px] font-black mt-1 ${t.title}`}>{text.title}</Text>
-        <Text className={`text-[11px] mt-0.5 ${t.muted}`}>{text.source}</Text>
-
-        <View className={`mt-4 pt-4 border-t ${t.dividerColor}`}>
-          {segments.map((segment, index) => (
-            <View key={`${segment}-${index}`} className="flex-row mb-3">
-              <Text
-                className={`font-bold mr-3 ${t.muted}`}
-                style={{ fontSize: fontSize * 0.7, lineHeight: fontSize * 1.6 }}
-              >
-                {index + 1}
-              </Text>
-              <Text
-                className={`flex-1 font-semibold ${t.title}`}
-                style={{ fontSize, lineHeight: fontSize * 1.6 }}
-              >
-                {segment}
-              </Text>
-            </View>
-          ))}
-        </View>
-        <Text className={`text-[11px] mt-1 ${t.muted}`}>
-          Her satır bir nefes. Satır sonlarında bir saniye durun. · {wordCount} kelime
-        </Text>
-      </Card>
-
-      {/* Okuma hızı — alttaki sayaç durdurulduğunda hesaplanır. */}
-      <SectionTitle hint="Metni sesli okurken alttaki sayacı çalıştırın; durdurduğunuzda hızınız hesaplanır.">
-        Okuma Hızı
-      </SectionTitle>
-      <Card>
-        {wpm === null ? (
-          <Text className={`text-[12px] leading-5 ${t.muted}`}>
-            {reading
-              ? `Sayaç işliyor · ${formatDuration(elapsed)}. Metni sonuna kadar okuyup durdurun.`
-              : 'Sayacı başlatıp metni sesli okuyun. En az 10 saniye okumadan hız hesaplanmaz.'}
-          </Text>
-        ) : (
-          <>
-            <View className="flex-row items-end">
-              <Text className={`text-[30px] font-black ${t.title}`}>{wpm}</Text>
-              <Text className={`text-[12px] mb-1.5 ml-1.5 ${t.muted}`}>kelime/dakika</Text>
-            </View>
-            <Text className={`text-[11px] mt-1 ${t.muted}`}>
-              {wordCount} kelime · {formatDuration(elapsed)}
-            </Text>
-
-            <View className="mt-3">
-              {savedWpm === wpm ? (
-                <Text className={`text-[12px] font-bold ${t.accent}`}>Kaydedildi.</Text>
-              ) : (
-                <PrimaryButton
-                  label="Bu ölçümü kaydet"
-                  onPress={() => {
-                    logTest(TEST_READING_WPM, wpm);
-                    setSavedWpm(wpm);
-                  }}
-                />
-              )}
-            </View>
-          </>
-        )}
-
-        <TestTrend
-          history={testHistory(progress, TEST_READING_WPM)}
-          unit="kelime/dk"
-          decimals={0}
-          improvement="none"
+      {/* 2 Sekmeli Okuma Mimarisi */}
+      <View className="mt-1 mb-3">
+        <Segmented<'okuma' | 'tahlil'>
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: 'okuma', label: '📖 Okuma' },
+            { value: 'tahlil', label: '📊 Hız & Tahlil' },
+          ]}
         />
-
-        <Text className={`text-[11px] mt-3 leading-4 ${t.muted}`}>
-          Sunum ve mülakat için tipik aralık 120-150 kelime/dakika. Hızlı konuşmak akıcılık
-          değil; çoğu zaman gerginlik göstergesi. Amaç yükseltmek değil, kendi aralığını bilmek.
-        </Text>
-      </Card>
-
-      {/* Anlam */}
-      {text.meaning ? (
-        <>
-          <SectionTitle>Metnin Anlamı</SectionTitle>
-          <Card>
-            <Text className={`text-[12px] leading-6 ${t.body}`}>{text.meaning}</Text>
-          </Card>
-        </>
-      ) : null}
-
-      {/* Okuma odağı */}
-      <SectionTitle>Okurken Dikkat Et</SectionTitle>
-      <Card>
-        <View className="flex-row">
-          <Timer size={16} color={t.isLight ? '#2563eb' : '#60a5fa'} />
-          <Text className={`text-[12px] ml-2 flex-1 leading-5 ${t.body}`}>{text.readingFocus}</Text>
-        </View>
-      </Card>
-
-      {/* Metindeki belagat sanatları */}
-      {text.belagatArtIds.length > 0 ? (
-        <>
-          <SectionTitle hint="Bu metinde geçen sanatlar. Dokununca tanımı açılır.">
-            Metindeki Belagat Sanatları
-          </SectionTitle>
-          <View className="flex-row flex-wrap">
-            {text.belagatArtIds.map((artId) => {
-              const art = findArt(artId);
-              const label = art ? art.name : artId;
-              return (
-                <Chip
-                  key={artId}
-                  label={label}
-                  tone="emerald"
-                  selected={openArtId === artId}
-                  onPress={() => setOpenArtId(openArtId === artId ? null : artId)}
-                />
-              );
-            })}
-          </View>
-          {openArtId ? <ArtDetail artId={openArtId} /> : null}
-        </>
-      ) : null}
-
-      {/* Diğer metinler ve Kaynak Filtresi */}
-      <SectionTitle hint="Metin kaynağını değiştirebilir veya aşağıdaki listeden başka bir metin seçebilirsiniz.">
-        Metin Kaynağı & Havuz ({pool.length} metin)
-      </SectionTitle>
-      <View className="flex-row flex-wrap mb-3">
-        {(
-          [
-            { value: 'karisik', label: 'Karışık' },
-            { value: 'dini', label: 'Dinî' },
-            { value: 'edebi', label: 'Edebî' },
-            { value: 'hitabet', label: 'Hitabet' },
-          ] as const
-        ).map((option) => (
-          <Chip
-            key={option.value}
-            label={option.label}
-            tone="emerald"
-            selected={settings.dailyText.source === option.value}
-            onPress={() => updateModule('dailyText', { source: option.value })}
-          />
-        ))}
       </View>
-      {pool.map((option) => (
-        <Pressable
-          key={option.id}
-          onPress={() => {
-            setSelected(option);
-            setOpenArtId(null);
-            resetTimer();
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={option.title}
-          accessibilityState={{ selected: option.id === selected?.id }}
-          className="mb-2"
-        >
-          <Card>
-            <View className="flex-row items-center">
-              <View className="flex-1 pr-2">
-                <Text className={`text-[13px] font-bold ${t.title}`}>{option.title}</Text>
-                <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
-                  {CATEGORY_LABELS[option.category]} · {option.source}
+
+      {/* 📖 OKUMA SEKMESİ (Varsayılan) */}
+      {activeTab === 'okuma' ? (
+        <>
+          {/* Günün duası — yalnızca dini içerik açıkken */}
+          {settings.religiousMode ? (
+            <Card className="mt-1">
+              <View className="flex-row items-center mb-2">
+                <BookOpen size={14} color={t.isLight ? '#059669' : '#34d399'} />
+                <Text className={`text-[10px] font-bold uppercase tracking-widest ml-2 ${t.muted}`}>
+                  Günün Duası
                 </Text>
               </View>
-              {option.id === text.id ? (
-                <View className={`px-2 py-1 rounded-full ${t.isLight ? 'bg-emerald-100' : 'bg-emerald-900'}`}>
+              <Text className={`text-[13px] font-bold leading-6 ${t.title}`}>“{prayer.text}”</Text>
+              <Text className={`text-[11px] mt-1.5 leading-5 ${t.muted}`}>{prayer.meaning}</Text>
+            </Card>
+          ) : null}
+
+          {/* Yazı boyutu */}
+          <View className="flex-row items-center justify-between mt-4">
+            <Text className={`text-[11px] font-bold uppercase tracking-widest ${t.muted}`}>
+              Yazı Boyutu
+            </Text>
+            <View className="flex-row items-center">
+              <Pressable
+                onPress={() => setFontIndex((i) => Math.max(0, i - 1))}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Yazıyı küçült"
+                className={`w-8 h-8 rounded-lg items-center justify-center border ${t.cardBorder}`}
+              >
+                <Minus size={14} color={t.iconColor} />
+              </Pressable>
+              <Text className={`text-[11px] font-bold mx-3 ${t.title}`}>{fontSize}</Text>
+              <Pressable
+                onPress={() => setFontIndex((i) => Math.min(FONT_SIZES.length - 1, i + 1))}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Yazıyı büyüt"
+                className={`w-8 h-8 rounded-lg items-center justify-center border ${t.cardBorder}`}
+              >
+                <Plus size={14} color={t.iconColor} />
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Metin */}
+          <Card className="mt-3">
+            <Text className={`text-[11px] font-bold uppercase tracking-widest ${t.muted}`}>
+              {CATEGORY_LABELS[text.category]}
+            </Text>
+            <Text className={`text-[18px] font-black mt-1 ${t.title}`}>{text.title}</Text>
+            <Text className={`text-[11px] mt-0.5 ${t.muted}`}>{text.source}</Text>
+
+            <View className={`mt-4 pt-4 border-t ${t.dividerColor}`}>
+              {segments.map((segment, index) => (
+                <View key={`${segment}-${index}`} className="flex-row mb-3">
                   <Text
-                    className={`text-[10px] font-bold ${t.isLight ? 'text-emerald-700' : 'text-emerald-300'}`}
+                    className={`font-bold mr-3 ${t.muted}`}
+                    style={{ fontSize: fontSize * 0.7, lineHeight: fontSize * 1.6 }}
                   >
-                    açık
+                    {index + 1}
+                  </Text>
+                  <Text
+                    className={`flex-1 font-semibold ${t.title}`}
+                    style={{ fontSize, lineHeight: fontSize * 1.6 }}
+                  >
+                    {segment}
                   </Text>
                 </View>
-              ) : null}
+              ))}
+            </View>
+            <Text className={`text-[11px] mt-1 ${t.muted}`}>
+              Her satır bir nefes. Satır sonlarında bir saniye durun. · {wordCount} kelime
+            </Text>
+          </Card>
+        </>
+      ) : (
+        <>
+          {/* Okuma hızı — alttaki sayaç durdurulduğunda hesaplanır. */}
+          <SectionTitle hint="Metni sesli okurken alttaki sayacı çalıştırın; durdurduğunuzda hızınız hesaplanır.">
+            Okuma Hızı
+          </SectionTitle>
+          <Card>
+            {wpm === null ? (
+              <Text className={`text-[12px] leading-5 ${t.muted}`}>
+                {reading
+                  ? `Sayaç işliyor · ${formatDuration(elapsed)}. Metni sonuna kadar okuyup durdurun.`
+                  : 'Sayacı başlatıp metni sesli okuyun. En az 10 saniye okumadan hız hesaplanmaz.'}
+              </Text>
+            ) : (
+              <>
+                <View className="flex-row items-end">
+                  <Text className={`text-[30px] font-black ${t.title}`}>{wpm}</Text>
+                  <Text className={`text-[12px] mb-1.5 ml-1.5 ${t.muted}`}>kelime/dakika</Text>
+                </View>
+                <Text className={`text-[11px] mt-1 ${t.muted}`}>
+                  {wordCount} kelime · {formatDuration(elapsed)}
+                </Text>
+
+                <View className="mt-3">
+                  {savedWpm === wpm ? (
+                    <Text className={`text-[12px] font-bold ${t.accent}`}>Kaydedildi.</Text>
+                  ) : (
+                    <PrimaryButton
+                      label="Bu ölçümü kaydet"
+                      onPress={() => {
+                        logTest(TEST_READING_WPM, wpm);
+                        setSavedWpm(wpm);
+                      }}
+                    />
+                  )}
+                </View>
+              </>
+            )}
+
+            <TestTrend
+              history={testHistory(progress, TEST_READING_WPM)}
+              unit="kelime/dk"
+              decimals={0}
+              improvement="none"
+            />
+
+            <Text className={`text-[11px] mt-3 leading-4 ${t.muted}`}>
+              Sunum ve mülakat için tipik aralık 120-150 kelime/dakika. Hızlı konuşmak akıcılık
+              değil; çoğu zaman gerginlik göstergesi. Amaç yükseltmek değil, kendi aralığını bilmek.
+            </Text>
+          </Card>
+
+          {/* Anlam */}
+          {text.meaning ? (
+            <>
+              <SectionTitle>Metnin Anlamı</SectionTitle>
+              <Card>
+                <Text className={`text-[12px] leading-6 ${t.body}`}>{text.meaning}</Text>
+              </Card>
+            </>
+          ) : null}
+
+          {/* Okuma odağı */}
+          <SectionTitle>Okurken Dikkat Et</SectionTitle>
+          <Card>
+            <View className="flex-row">
+              <Timer size={16} color={t.isLight ? '#2563eb' : '#60a5fa'} />
+              <Text className={`text-[12px] ml-2 flex-1 leading-5 ${t.body}`}>{text.readingFocus}</Text>
             </View>
           </Card>
-        </Pressable>
-      ))}
 
-      {/* Seri */}
-      <Card className="mt-3 mb-2">
-        <View className="flex-row items-center">
-          <Award size={16} color={t.isLight ? '#059669' : '#34d399'} />
-          <Text className={`text-[12px] font-bold ml-2 ${t.title}`}>
-            {moduleProgress.streak} günlük okuma serisi
-          </Text>
-          <Text className={`text-[11px] ml-auto ${t.muted}`}>
-            Toplam: {moduleProgress.totalSessions}
-          </Text>
-        </View>
-      </Card>
+          {/* Metindeki belagat sanatları */}
+          {text.belagatArtIds.length > 0 ? (
+            <>
+              <SectionTitle hint="Bu metinde geçen sanatlar. Dokununca tanımı açılır.">
+                Metindeki Belagat Sanatları
+              </SectionTitle>
+              <View className="flex-row flex-wrap">
+                {text.belagatArtIds.map((artId) => {
+                  const art = findArt(artId);
+                  const label = art ? art.name : artId;
+                  return (
+                    <Chip
+                      key={artId}
+                      label={label}
+                      tone="emerald"
+                      selected={openArtId === artId}
+                      onPress={() => setOpenArtId(openArtId === artId ? null : artId)}
+                    />
+                  );
+                })}
+              </View>
+              {openArtId ? <ArtDetail artId={openArtId} /> : null}
+            </>
+          ) : null}
+
+          {/* Diğer metinler ve Kaynak Filtresi */}
+          <SectionTitle hint="Metin kaynağını değiştirebilir veya aşağıdaki listeden başka bir metin seçebilirsiniz.">
+            Metin Kaynağı & Havuz ({pool.length} metin)
+          </SectionTitle>
+          <View className="flex-row flex-wrap mb-3">
+            {(
+              [
+                { value: 'karisik', label: 'Karışık' },
+                { value: 'dini', label: 'Dinî' },
+                { value: 'edebi', label: 'Edebî' },
+                { value: 'hitabet', label: 'Hitabet' },
+              ] as const
+            ).map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                tone="emerald"
+                selected={settings.dailyText.source === option.value}
+                onPress={() => updateModule('dailyText', { source: option.value })}
+              />
+            ))}
+          </View>
+          {pool.map((option) => (
+            <Pressable
+              key={option.id}
+              onPress={() => {
+                setSelected(option);
+                setOpenArtId(null);
+                resetTimer();
+                setActiveTab('okuma');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={option.title}
+              accessibilityState={{ selected: option.id === selected?.id }}
+              className="mb-2"
+            >
+              <Card>
+                <View className="flex-row items-center">
+                  <View className="flex-1 pr-2">
+                    <Text className={`text-[13px] font-bold ${t.title}`}>{option.title}</Text>
+                    <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
+                      {CATEGORY_LABELS[option.category]} · {option.source}
+                    </Text>
+                  </View>
+                  {option.id === text.id ? (
+                    <View className={`px-2 py-1 rounded-full ${t.isLight ? 'bg-emerald-100' : 'bg-emerald-900'}`}>
+                      <Text
+                        className={`text-[10px] font-bold ${t.isLight ? 'text-emerald-700' : 'text-emerald-300'}`}
+                      >
+                        açık
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </Card>
+            </Pressable>
+          ))}
+
+          {/* Seri */}
+          <Card className="mt-3 mb-2">
+            <View className="flex-row items-center">
+              <Award size={16} color={t.isLight ? '#059669' : '#34d399'} />
+              <Text className={`text-[12px] font-bold ml-2 ${t.title}`}>
+                {moduleProgress.streak} günlük okuma serisi
+              </Text>
+              <Text className={`text-[11px] ml-auto ${t.muted}`}>
+                Toplam: {moduleProgress.totalSessions}
+              </Text>
+            </View>
+          </Card>
+        </>
+      )}
     </ScreenShell>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { TrendingUp, Award, Cpu, Flame, ChevronRight } from 'lucide-react-native';
 
 import {
@@ -88,67 +88,55 @@ export default function ProgressScreen({ navigation }: any) {
         />
       }
     >
-      {/* Seriler — dört günlük pratik modülü */}
-      <View className="mt-1">
+      <View className="-mt-5">
         <SectionLabel>SERİLER</SectionLabel>
       </View>
-      {activeModules.length > 0 ? (
-        <Surface>
-          {activeModules.map(([id, m], index) => (
+      <View className="flex-row flex-wrap gap-2">
+        {modules.map(([id, m]) => {
+          const active = m.totalSessions > 0;
+          return (
             <View
               key={id}
-              className={`flex-row items-center py-2.5 ${index > 0 ? `border-t ${t.dividerColor}` : ''}`}
+              className={`w-[48.5%] p-3 rounded-xl border flex-row items-center ${
+                t.isLight ? 'bg-white border-slate-200/80' : 'bg-[#1e1e22] border-[#2e2e34]'
+              }`}
             >
               <View
-                className={`w-8 h-8 rounded-lg items-center justify-center mr-3 ${toneSoft('emerald', t.isLight)}`}
+                className={`w-7 h-7 rounded-lg items-center justify-center mr-2.5 ${
+                  active ? toneSoft('emerald', t.isLight) : t.isLight ? 'bg-slate-100' : 'bg-slate-800'
+                }`}
               >
-                <Flame size={15} color={toneColor('emerald', t.isLight)} />
+                <Flame
+                  size={14}
+                  color={active ? toneColor('emerald', t.isLight) : t.isLight ? '#94a3b8' : '#64748b'}
+                />
               </View>
-              <Text className={`flex-1 text-[13px] font-semibold ${t.title}`}>
-                {MODULE_LABELS[id]}
-              </Text>
-              <View className="items-end">
-                <Text className={`text-[13px] font-bold ${toneText('emerald', t.isLight)}`}>
-                  {m.streak} gün
+              <View className="flex-1">
+                <Text className={`text-[12px] font-semibold ${t.title}`} numberOfLines={1}>
+                  {MODULE_LABELS[id]}
                 </Text>
-                <Text className={`text-[10px] ${t.muted}`}>
-                  en iyi {m.bestStreak} · {m.totalSessions} oturum
-                </Text>
+                <View className="flex-row items-baseline justify-between mt-0.5">
+                  <Text
+                    className={`text-[11px] font-bold ${
+                      active ? toneText('emerald', t.isLight) : t.muted
+                    }`}
+                  >
+                    {m.streak} gün
+                  </Text>
+                  {active && m.bestStreak > 0 ? (
+                    <Text className={`text-[9px] ${t.muted}`}>en iyi {m.bestStreak}</Text>
+                  ) : null}
+                </View>
               </View>
             </View>
-          ))}
-        </Surface>
-      ) : (
-        <EmptyState message="Henüz tamamlanmış bir günlük pratik yok. Bugün sekmesinden başlayabilirsin." />
-      )}
+          );
+        })}
+      </View>
 
-      {/* Ölçümler — testler kayıt üretmeye başlayınca görünür */}
-      {tests.length > 0 ? (
-        <>
-          <View className="mt-6">
-            <SectionLabel>ÖLÇÜMLER</SectionLabel>
-          </View>
-          <View className="gap-2">
-            {tests.map((test) => (
-              <Surface key={test.id}>
-                <Text className={`text-[12px] font-bold mb-2 ${t.title}`}>{test.label}</Text>
-                <TestTrend
-                  history={test.history}
-                  unit={test.unit}
-                  decimals={test.decimals}
-                  improvement={test.improvement}
-                />
-              </Surface>
-            ))}
-          </View>
-        </>
-      ) : null}
-
-      {/* Kariyer ve zihin — sayı kutuları */}
-      <View className="mt-6">
+      <View className="mt-4">
         <SectionLabel>KARİYER VE ZİHİN</SectionLabel>
       </View>
-      <View className="flex-row gap-3">
+      <View className="flex-row gap-2.5">
         <StatTile
           label="Mülakat"
           icon={<Award size={14} color={toneColor('blue', t.isLight)} />}
@@ -167,9 +155,74 @@ export default function ProgressScreen({ navigation }: any) {
         />
       </View>
 
-      {/* Gelişim eğrisi */}
-      <View className="flex-row items-center justify-between mt-6 mb-3">
-        <Text className={`text-[16px] font-bold ${t.title}`}>Gelişim Eğrisi</Text>
+      <View className="mt-4">
+        <SectionLabel>GEÇMİŞ</SectionLabel>
+      </View>
+      <View className="flex-row gap-2.5">
+        <Pressable
+          onPress={() => navigation.navigate('InterviewHistory')}
+          className={`flex-1 p-3 rounded-xl border flex-row items-center ${
+            t.isLight ? 'bg-white border-slate-200/80' : 'bg-[#1e1e22] border-[#2e2e34]'
+          }`}
+        >
+          <View className={`w-8 h-8 rounded-lg items-center justify-center mr-2.5 ${toneSoft('blue', t.isLight)}`}>
+            <Award size={16} color={toneColor('blue', t.isLight)} />
+          </View>
+          <View className="flex-1">
+            <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
+              Mülakat
+            </Text>
+            <Text className={`text-[10px] ${t.muted}`} numberOfLines={1}>
+              Kayıtlar & puanlar
+            </Text>
+          </View>
+          <ChevronRight size={14} color={t.isLight ? '#94a3b8' : '#64748b'} />
+        </Pressable>
+
+        <Pressable
+          onPress={() => navigation.navigate('ExerciseHistory')}
+          className={`flex-1 p-3 rounded-xl border flex-row items-center ${
+            t.isLight ? 'bg-white border-slate-200/80' : 'bg-[#1e1e22] border-[#2e2e34]'
+          }`}
+        >
+          <View className={`w-8 h-8 rounded-lg items-center justify-center mr-2.5 ${toneSoft('violet', t.isLight)}`}>
+            <Cpu size={16} color={toneColor('violet', t.isLight)} />
+          </View>
+          <View className="flex-1">
+            <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
+              Egzersiz
+            </Text>
+            <Text className={`text-[10px] ${t.muted}`} numberOfLines={1}>
+              Zihin kayıtları
+            </Text>
+          </View>
+          <ChevronRight size={14} color={t.isLight ? '#94a3b8' : '#64748b'} />
+        </Pressable>
+      </View>
+
+      {tests.length > 0 ? (
+        <>
+          <View className="mt-4">
+            <SectionLabel>ÖLÇÜMLER</SectionLabel>
+          </View>
+          <View className="gap-2">
+            {tests.map((test) => (
+              <Surface key={test.id}>
+                <Text className={`text-[12px] font-bold mb-2 ${t.title}`}>{test.label}</Text>
+                <TestTrend
+                  history={test.history}
+                  unit={test.unit}
+                  decimals={test.decimals}
+                  improvement={test.improvement}
+                />
+              </Surface>
+            ))}
+          </View>
+        </>
+      ) : null}
+
+      <View className="flex-row items-center justify-between mt-4 mb-2">
+        <Text className={`text-[14px] font-bold ${t.title}`}>Gelişim Eğrisi</Text>
         <View className="flex-row items-center">
           <LegendDot color={toneColor('blue', t.isLight)} label="Mülakat" />
           <View className="w-3" />
@@ -178,7 +231,7 @@ export default function ProgressScreen({ navigation }: any) {
       </View>
       {hasChartData ? (
         <TrendChart
-          height={140}
+          height={115}
           maxValue={100}
           series={[
             ...(interviewSeries.length > 1
@@ -196,27 +249,6 @@ export default function ProgressScreen({ navigation }: any) {
           </Text>
         </Surface>
       )}
-
-      {/* Geçmiş */}
-      <View className="mt-6">
-        <SectionLabel>GEÇMİŞ</SectionLabel>
-      </View>
-      <View className="gap-2">
-        <ActionRow
-          icon={<Award size={18} color={toneColor('blue', t.isLight)} />}
-          tone="blue"
-          title="Mülakat Geçmişi"
-          subtitle="Kayıtlar, puanlar ve değerlendirmeler"
-          onPress={() => navigation.navigate('InterviewHistory')}
-        />
-        <ActionRow
-          icon={<Cpu size={18} color={toneColor('violet', t.isLight)} />}
-          tone="violet"
-          title="Egzersiz Geçmişi"
-          subtitle="Bilişsel antrenman kayıtları"
-          onPress={() => navigation.navigate('ExerciseHistory')}
-        />
-      </View>
     </AppScreen>
   );
 }

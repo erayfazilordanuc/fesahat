@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Mic, ChevronRight, Award, BookOpen, Plus, RotateCcw } from 'lucide-react-native';
 
-import { Toggle } from '../components/AppUI';
+import { Segmented, Toggle } from '../components/AppUI';
 import {
   ScreenShell,
   Card,
@@ -34,6 +34,8 @@ export default function SpeechExerciseScreen({ navigation }: any) {
   const t = useThemeTokens();
   const { settings, updateModule } = useDailyPracticeSettings();
   const { progress, complete } = useDailyProgress();
+
+  const [activeTab, setActiveTab] = React.useState<'alistirma' | 'fesahat'>('alistirma');
 
   const session = React.useMemo(() => buildDailySession(settings.speech), [settings.speech]);
   const pool = React.useMemo(() => availableDrills(settings.speech), [settings.speech]);
@@ -133,6 +135,7 @@ export default function SpeechExerciseScreen({ navigation }: any) {
     setItemIndex(0);
     setFillerCount(0);
     setSessionDone(false);
+    setActiveTab('alistirma');
   };
 
   const totalItems = extraDrill
@@ -163,7 +166,7 @@ export default function SpeechExerciseScreen({ navigation }: any) {
             <PrimaryButton label="Baştan Yap" onPress={restart} tone="violet" />
             <GhostButton label="Kapat" onPress={() => navigation?.goBack?.()} />
           </View>
-        ) : (
+        ) : activeTab === 'alistirma' ? (
           <View className="gap-2">
             {running ? (
               <PrimaryButton
@@ -202,9 +205,21 @@ export default function SpeechExerciseScreen({ navigation }: any) {
               </View>
             </View>
           </View>
-        )
+        ) : null
       }
     >
+      {/* 2 Sekmeli Akış Mimarisi */}
+      <View className="mt-1 mb-3">
+        <Segmented<'alistirma' | 'fesahat'>
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: 'alistirma', label: '🎙️ Alıştırma' },
+            { value: 'fesahat', label: '📚 Fesahat & Kitaplık' },
+          ]}
+        />
+      </View>
+
       {sessionDone ? (
         <SessionSummary
           streak={moduleProgress.streak}
@@ -215,7 +230,7 @@ export default function SpeechExerciseScreen({ navigation }: any) {
             settings.dailyText.enabled ? () => navigation?.navigate?.('DailyText') : undefined
           }
         />
-      ) : (
+      ) : activeTab === 'alistirma' ? (
         <>
           {/* İlerleme */}
           <View className="mt-1 mb-4">
@@ -261,7 +276,9 @@ export default function SpeechExerciseScreen({ navigation }: any) {
             </Text>
             <Text className={`text-[12px] leading-5 ${t.body}`}>{drill.selfCheck}</Text>
           </Card>
-
+        </>
+      ) : (
+        <>
           {/* Günün fesahat kusuru — belagat tarafıyla köprü */}
           <SectionTitle hint="Belâgatin önkoşulu fesahattir: sözün açık, anlaşılır ve söylenmesi kolay olması.">
             Günün Fesahat Kusuru
@@ -318,7 +335,7 @@ export default function SpeechExerciseScreen({ navigation }: any) {
 
           {/* Diğer egzersizler */}
           <SectionTitle hint="Günün seansı dışında serbest çalışmak için seçin.">
-            Tüm Egzersizler
+            Tüm Egzersizler Kataloğu
           </SectionTitle>
           <View className="flex-row flex-wrap">
             {pool.map((d) => (

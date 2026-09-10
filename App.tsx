@@ -16,7 +16,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Sunrise, BrainCircuit, TrendingUp, Activity } from 'lucide-react-native';
+import { Sunrise, BrainCircuit, TrendingUp, User } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing, configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
 configureReanimatedLogger({
@@ -414,7 +414,7 @@ function MainTabs() {
             component={ProfileScreen}
             options={tabOptions({
               name: 'Profil',
-              icon: Activity,
+              icon: User,
               active: isLight ? '#475569' : '#94a3b8',
               activeText: isLight ? 'text-slate-600' : 'text-slate-300',
               isLight,
