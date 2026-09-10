@@ -739,6 +739,7 @@ o yüzden acil değil — ama ayar yanıltıcı: kaldırılmalı ya da paket ekl
 | `src/utils/dailyNotifications.ts` | Dinamik kimlik şeması, slot açma, iOS bildirim bütçesi | Bölüm 4 |
 | `src/data/dictionDrills.ts` | Zayıf ses eşleşmesi için ses etiketleri | Bölüm 6 |
 | `src/screens/SpeechExerciseScreen.tsx` | Dolgu sayacı test formatına bağlanacak | Bölüm 6 |
+| `app.json` & `assets/` | Uygulama İkonu Arka Plan Degradesini Korumak & Amblem Ölçüsünü Ayarlamak: İkonun mevcut degrade arka plan tasarımı korunacak. Doğrudan ikon konulduğunda amblem/yazı fazla büyük kalıyor, amblem küçültüldüğünde ise etrafındaki koyu zemin kartı tuvalde küçük kaldığı için çerçevede kesintiler oluyor. Zemin rengini değiştirmeden tuval ve amblem oranı (canvas margin & safe zone) hassas şekilde ölçeklendirilmeli. | Bölüm 8 |
 | `README.md` | Yeni modüllerin özellik listesine eklenmesi | Genel |
 
 ---
