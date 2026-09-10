@@ -1,0 +1,10 @@
+{
+  "name": "Terakki",
+  "description": "Savunma sanayisi mühendis adayları için 120 saniyelik zorunlu süre baskılı video mülakat simülasyonu ve eğitim ortamı.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
