@@ -7,15 +7,14 @@ import {
   HeartPulse,
   BrainCircuit,
   CalendarCheck,
-  ChartColumn,
   ChevronRight,
   Lock,
-  Sparkles,
 } from 'lucide-react-native';
 
-import { AppScreen, TabHeader, SectionLabel, toneColor, toneSoft, type Tone } from '../components/AppUI';
+import { AppScreen, TabHeader, SectionLabel, Badge, toneColor, toneSoft, type Tone } from '../components/AppUI';
 import { useThemeTokens } from '../components/practice/PracticeUI';
 import { useDailyPracticeSettings } from '../utils/dailyPracticeSettings';
+import { useOnboarding, GOAL_META, type OnboardingGoal } from '../utils/onboarding';
 
 // Gelişim sekmesi — yedi sütunun hub'ı.
 //
@@ -40,9 +39,18 @@ type Pillar = {
   soon?: boolean;
 };
 
+// Oryantasyonda seçilen hedeflerin alanı (GOAL_META[goal].pillarId) → hedef.
+// Hedefler kapatmaz, yalnızca sıralar (YAPILACAKLAR Bölüm 0.1).
+const PILLAR_ID_TO_GOAL: Partial<Record<string, OnboardingGoal>> = Object.fromEntries(
+  (Object.entries(GOAL_META) as [OnboardingGoal, (typeof GOAL_META)[OnboardingGoal]][]).map(
+    ([goal, meta]) => [meta.pillarId, goal],
+  ),
+);
+
 export default function GrowthScreen({ navigation }: any) {
   const t = useThemeTokens();
   const { settings } = useDailyPracticeSettings();
+  const { goals } = useOnboarding();
 
   const pillars: Pillar[] = [
     {
@@ -66,11 +74,14 @@ export default function GrowthScreen({ navigation }: any) {
     {
       id: 'ifade',
       title: 'Dil & İfade',
-      subtitle: 'Belagat müfredatı ve günün metni',
+      subtitle: 'Kelime hazinesi, doğru Türkçe, deyimler; ileri düzeyde söz sanatları',
       icon: <Feather size={20} color={toneColor('violet', t.isLight)} />,
       tone: 'violet',
-      screen: 'BelagatExercise',
-      enabled: settings.belagat.enabled,
+      // Odak lugat ve Türkçe (KARARLAR 2026-09-11). Belagat bu ekrandan açılıyor.
+      screen: 'Language',
+      // Lugat artık kendi aç/kapa ayarına sahip (Bugün kartı da bu ayara bağlı);
+      // belagat modülünün ayrı şalteri bu alanı gizlemez, o hâlâ ekran içinden açılıyor.
+      enabled: settings.lugat.enabled,
     },
     {
       id: 'nefes',
@@ -105,24 +116,33 @@ export default function GrowthScreen({ navigation }: any) {
     {
       id: 'rutin',
       title: 'Alışkanlık & Rutin',
-      subtitle: 'Aralıklı hatırlatıcılar ve günlük sayaçlar',
+      subtitle: 'Günlük pratik hatırlatmaları; aralıklı hatırlatıcılar ve alarmlar yakında',
       icon: <CalendarCheck size={20} color={toneColor('amber', t.isLight)} />,
       tone: 'amber',
+      screen: 'Reminders',
       enabled: true,
-      soon: true,
     },
-    {
-      id: 'olcum',
-      title: 'Ölçüm & Karne',
-      subtitle: 'Testler ve gelişim eğrisi — İlerleme sekmesinde',
-      icon: <ChartColumn size={20} color={toneColor('slate', t.isLight)} />,
-      tone: 'slate',
-      enabled: true,
-      soon: true,
-    },
+    // "Ölçüm & Karne" alanı 2026-09-18'de listeden kaldırıldı: tek yaptığı şey
+    // alt sekme çubuğundaki İlerleme sekmesini açmaktı, yani zaten bir dokunuş
+    // uzaktaki bir yeri tekrar ediyordu. Yedi sütun anlatısı belgelerde duruyor.
   ];
 
-  const visible = pillars.filter((p) => p.enabled);
+  // Görünen alanlar arasında hedeflerin alanları seçim sırasıyla en üste alınır;
+  // hedef yokken (goals boş) herkesin önceliği eşit (Infinity) kalır, sıra
+  // değişmez — Array.prototype.sort kararlı (ES2019) olduğu için.
+  const visible = pillars
+    .filter((p) => p.enabled)
+    .slice()
+    .sort((a, b) => {
+      const goalA = PILLAR_ID_TO_GOAL[a.id];
+      const goalB = PILLAR_ID_TO_GOAL[b.id];
+      const priorityA = goalA ? goals.indexOf(goalA) : -1;
+      const priorityB = goalB ? goals.indexOf(goalB) : -1;
+      const rankA = priorityA === -1 ? Infinity : priorityA;
+      const rankB = priorityB === -1 ? Infinity : priorityB;
+      return rankA - rankB;
+    });
+  const goalPillarIds = new Set(goals.map((g) => GOAL_META[g].pillarId));
 
   return (
     <AppScreen
@@ -131,41 +151,11 @@ export default function GrowthScreen({ navigation }: any) {
         <TabHeader
           icon={<BrainCircuit size={24} color={toneColor('violet', t.isLight)} />}
           title="Gelişim"
-          subtitle="Çalışabileceğin alanlar. Ayarlardan kapattığın alan burada görünmez."
+          subtitle="Çalışabileceğin alanlar. Modül ayarlarından kapattığın alan burada görünmez."
         />
       }
     >
-      {/* Tüm Egzersizler Hızlı Erişim Kartı (İsteğe bağlı - geçici gizlendi)
-      <Pressable
-        onPress={() =>
-          navigation.navigate('BrainExercises', {
-            title: 'Tüm Egzersiz Kataloğu',
-            subtitle: 'Bilişsel lob haritası, nefes ve göz dinlendirme egzersizlerinin tamamı',
-            hideTrackToggle: false,
-          })
-        }
-        accessibilityRole="button"
-        accessibilityLabel="Tüm egzersizler kataloğunu aç"
-        className={`flex-row items-center justify-between rounded-2xl p-4 mt-1 mb-2 border ${
-          t.isLight ? 'bg-violet-50/80 border-violet-200' : 'bg-[#221c35] border-violet-900/60'
-        }`}
-      >
-        <View className="flex-row items-center flex-1 pr-2">
-          <View className="w-10 h-10 rounded-xl bg-violet-500/15 items-center justify-center mr-3">
-            <Sparkles size={20} color={toneColor('violet', t.isLight)} />
-          </View>
-          <View className="flex-1">
-            <Text className={`text-[14px] font-bold ${t.title}`}>Tüm Egzersiz Kataloğu</Text>
-            <Text className={`text-[11px] mt-0.5 leading-4 ${t.muted}`}>
-              Bilişsel lob haritası, nefes ve göz dinlendirme egzersizlerinin tamamı
-            </Text>
-          </View>
-        </View>
-        <ChevronRight size={18} color={t.iconColor} />
-      </Pressable>
-      */}
-
-      <View className="mt-1">
+      <View>
         <SectionLabel>ALANLAR · {visible.length}</SectionLabel>
       </View>
 
@@ -174,6 +164,7 @@ export default function GrowthScreen({ navigation }: any) {
           <PillarCard
             key={pillar.id}
             pillar={pillar}
+            isGoal={goalPillarIds.has(pillar.id)}
             onPress={
               pillar.soon || !pillar.screen
                 ? undefined
@@ -186,7 +177,16 @@ export default function GrowthScreen({ navigation }: any) {
   );
 }
 
-function PillarCard({ pillar, onPress }: { pillar: Pillar; onPress?: () => void }) {
+function PillarCard({
+  pillar,
+  isGoal,
+  onPress,
+}: {
+  pillar: Pillar;
+  /** Oryantasyonda seçilen hedeflerden birinin alanı mı. */
+  isGoal?: boolean;
+  onPress?: () => void;
+}) {
   const t = useThemeTokens();
   const locked = !onPress;
 
@@ -195,7 +195,7 @@ function PillarCard({ pillar, onPress }: { pillar: Pillar; onPress?: () => void 
       onPress={onPress}
       disabled={locked}
       accessibilityRole="button"
-      accessibilityLabel={`${pillar.title}. ${pillar.subtitle}`}
+      accessibilityLabel={`${pillar.title}. ${pillar.subtitle}${isGoal ? '. Hedefin' : ''}`}
       accessibilityState={{ disabled: locked }}
       className={`flex-row items-center rounded-2xl p-3.5 border ${
         t.isLight ? 'bg-white border-slate-200' : 'bg-[#1c1c1f] border-[#2e2e33]'
@@ -208,7 +208,14 @@ function PillarCard({ pillar, onPress }: { pillar: Pillar; onPress?: () => void 
         {pillar.icon}
       </View>
       <View className="flex-1 pr-2">
-        <Text className={`text-[13px] font-bold ${t.title}`}>{pillar.title}</Text>
+        <View className="flex-row items-center">
+          <Text className={`text-[13px] font-bold ${t.title}`}>{pillar.title}</Text>
+          {isGoal ? (
+            <View className="ml-2">
+              <Badge label="Hedefin" tone={pillar.tone} />
+            </View>
+          ) : null}
+        </View>
         <Text className={`text-[11px] mt-0.5 leading-4 ${t.muted}`}>{pillar.subtitle}</Text>
       </View>
       {locked ? (

@@ -1,760 +1,619 @@
 # Yol Haritası
 
-Son güncelleme: 2026-09-09
+Son güncelleme: 2026-09-20
 
-Bu dosya uygulamanın **nereye gittiğini** anlatır: eklenecek özellikler, hangi sırayla
-geleceği ve her birinin ne vaat edip ne vaat etmediği. Kod değil, karar defteri.
+Bu dosya yalnızca **açık işleri** tutar: yapılacaklar, cihazda doğrulanacaklar ve
+kullanıcı kararı bekleyen sorular. Tamamlanan işlerin ayrıntısı, gerekçesi ve
+sınama notları → [YAPILACAKLAR_ARSIV.md](YAPILACAKLAR_ARSIV.md) (bölüm numaraları
+aynı; koddaki `YAPILACAKLAR Bölüm X` yorumları oraya bakar). Kararlar →
+[KARARLAR.md](KARARLAR.md).
 
 ---
 
 ## Vizyon
 
-Uygulama bir mülakat simülatörü olarak başladı. Hedef, onu **kişisel gelişim
-uygulamasına** dönüştürmek — kariyerden diksiyona, nefesten zihne kadar tek çatı altında.
+Mülakat simülatörü olarak başlayan uygulamayı **kişisel gelişim uygulamasına**
+dönüştürmek. Tek soru: **"bugün kendini nerede geliştirdin?"**
 
-Tek soru etrafında kuruluyor: **"bugün kendini nerede geliştirdin?"**
-
-### Sütunlar
-
-| Sütun | Kapsam | Durum |
+| Sütun | Kapsam | Açık iş |
 | --- | --- | --- |
-| **Kariyer & Mülakat** | Simülasyon, yapay zekâ analizi, geçmiş, sektör haberleri | ✅ Var → Bölüm 3 ile genişleyecek |
-| **Konuşma & Diksiyon** | Artikülasyon, tekerleme, vurgu-tonlama, tempo, dolgu kelime avı | ✅ Var → Bölüm 6 |
-| **Dil & İfade (Belagat)** | Meânî / beyân / bedî' müfredatı, öğren → tanı → üret | ✅ Var → Bölüm 7 |
-| **Dinlenme & Denge** | Diyafram programları, nefes kontrolü, 20-20-20 göz dinlendirme | ✅ Var |
-| **Zihin & Odak** | Bilişsel lob haritası, mantık, hafıza, mekan egzersizleri | ✅ Var |
-| **Alışkanlık & Rutin** | Aralıklı hatırlatıcılar, serbest alarmlar, günlük sayaçlar | ❌ Yok → Bölüm 4 |
-| **Ölçüm & Karne** | Kişisel testler, ilerleme geçmişi, seviye tespiti | ❌ Yok → Bölüm 5 |
+| **Kariyer & Mülakat** | Simülasyon, yapay zekâ analizi, geçmiş, sektör haberleri | Bölüm 00 (katalog), Bölüm 3 |
+| **Konuşma & Diksiyon** | Artikülasyon, tekerleme, vurgu-tonlama, tempo, dolgu kelime avı | Bölüm 6 |
+| **Dil & İfade** | Lugat & Türkçe; ileri düzeyde belagat | Bölüm 7 |
+| **Dinlenme & Denge** | Diyafram, nefes kontrolü, duruş, göz dinlendirme | Bölüm 1 |
+| **Zihin & Odak** | Bilişsel lob haritası, mantık, hafıza, mekan | Bölüm 2 |
+| **Alışkanlık & Rutin** | Günlük pratik hatırlatmaları, aralıklı hatırlatıcılar, alarmlar | Yalnızca cihaz doğrulaması + Bölüm 4 kısıtları |
+| **Ölçüm & Karne** | Kasıtlı ölçümler, Karne ekranı, eğilimler | Bölüm 5 |
 
 ### Ortak ilkeler
 
-Her yeni modül bunlara uyacak — istisna yok:
+Her yeni modül bunlara uyar — istisna yok:
 
-1. **Kapatılabilir.** Ayarlardan kapatılan modül ne kart gösterir ne bildirim kurar.
+1. **Kapatılabilir.** Modül ayarlarından (sağ üstteki çark) kapatılan modül ne kart gösterir ne bildirim kurar.
 2. **Günlük bir işi var.** "Bugün ne yapmalıyım" sorusunun tek satırlık cevabı olmalı.
 3. **Ölçülebilir.** Serisi, skoru ya da süresi tutulur; yoksa modül değil, içeriktir.
-4. **Abartmaz.** Ölçtüğü neyse onu yazar. "Kapasiteni artırır", "zekânı yükseltir" gibi
-   karşılığı olmayan cümleler kurulmaz — bu kural bölüm bölüm aşağıda uygulanmış durumda.
+4. **Abartmaz.** Ölçtüğü neyse onu yazar. "Kapasiteni artırır", "zekânı yükseltir",
+   "tedavi eder" gibi karşılığı olmayan cümleler kurulmaz.
+5. **Yeni durum `createPersistentStore` deseniyle** eklenir; ikinci bir state
+   kütüphanesi (Zustand vb.) eklenmez.
 
 ### Sıra
 
-00. ✅ **Genele açılma & AI Esnekliği** (Bölüm 00) — Yapay zekâsız %100 çalışma, kırılganlık korumaları.
-0. ✅ **Gezinme mimarisi** (Bölüm 0) — Dört sekme (Bugün, Gelişim, İlerleme, Profil).
-0.1 **Uygulamaya Isındırma & Oryantasyon Modülü** (Bölüm 0.1) — Duolingo tarzı ilk açılış ve mikro-pratik akışı.
-0.2 ✅ **İlerleme & Profil Sekmeleri UI/UX İyileştirmeleri** (Bölüm 0.2) — Seriler 2 satırlı (2x2) ızgaraya, geçmişler tek satırda yan yana butonlara dönüştürüldü; ekran büzülerek alttaki geçmişlerin kaydırmaya gerek kalmadan tek bakışta görünmesi sağlandı. Profil hedefleri ve rozet vitrini tamamlandı.
-0.3 ✅ **Modül Ayarlarının Modül İçlerine Taşınması** (Bölüm 0.3) — Ayarlar ekranı genel tercihlere indirgendi; modül içi ayar kontrolleri ilgili ekranlara taşındı.
-0.4 **SQLite Veritabanı Geçişi & Katalog Mimarisi** (Bölüm 0.4) — `expo-sqlite` ile offline soru, tekerleme, metin kataloğu ve geçmiş veri yönetimi.
-0.5 **Oyunlaştırma & Liderlik Tablosu (Gamification & Leaderboard)** (İleride Değerlendirilecek) —
-   * ⚠️ **Mimarî ve Felsefî Uyarı:** Uygulama öz-farkındalık ve çevrimdışı (offline-first) ilkelerine dayanır. Global rekabet tabloları; (1) Sunucu ve kimlik doğrulama bağımlılığı getirir, (2) Nefes ve okuma hızı gibi öz-ölçümlerde hileye ve sahte skor yarışına yol açıp pratiğin amacını bozabilir. Küresel sıralama yerine **Kişisel Rekorlar (Öz-Rekabet)** veya yerel kıyaslamalar tercih edilmelidir.
-1. ✅ **Kimlik: logo ve ikonlar** (Bölüm 8) — "Kademe" logo kararı ve `tools/icon-forge/build_app_assets.py` ile tüm ikon türetmeleri tamamlandı.
-2. **Ölçüm & Karne** (Bölüm 5) — İlerleme sekmesi derinleştirmesi.
-3. **Alışkanlık & Rutin** (Bölüm 4) — Bildirim ve hatılatıcı altyapısı genişlemesi.
-4. **Kariyer, Diksiyon, Belagat genişlemeleri** (Bölüm 3, 6, 7).
+1. ⏳ **2026-09-20 turu** — türün iki kısmı birbirini takip etti (kod tamam, `tsc` temiz;
+   **cihazda doğrulanacak**).
+   - **1. kısım:** ikon degradesi B'ye geçti ve kaynak-çıktı ayrışması kapandı,
+     `expo-system-ui` kuruldu, günlük süre Bugün listesini belirliyor, duruş
+     öz-kontrol ölçümü eklendi.
+   - **2. kısım:** egzersizde yazı girişi + otomatik kontrol (`accept` alanı,
+     öz-değerlendirme ayrılması), belagat "Tamamladım" düğmesine yeşil onay kartı
+     + yanıt defteri yazımı, **Yanıt Defteri** yeni ekranı (Belagat · Egzersiz ·
+     Lugat · Mülakat sekmesi), mülakat ses kayıtları kalıcı cihazda saklanıyor
+     ve Mülakat Geçmişi'nden dinlenebiliyor. Ayrıntı Bölüm 2, Belagat, Egzersiz,
+     Mülakat, 0.4'te.
+2. ⏳ **2026-09-19 turu** — kararı gerektirmeyen küçük açıklar kapatıldı (kod
+   tamam, `tsc` temiz; **cihazda doğrulanacak**): sade 5 dk 4-6 seansı, Rahat
+   Tutma → ölçüm yönlendirmesi, çene gevşetme hatırlatıcısı, torasik ekstansiyon
+   egzersizi, lugat tekrar sayacı, favicon. Ayrıntı ilgili bölümlerde. Yol
+   üstünde ikon kaynağıyla teslim edilen ikonun ayrıştığı bulundu (Bölüm 8).
+3. **Alanı kataloğa taşıma** (Bölüm 00 → aşama 2) — Savunma + Yazılım &
+   teknoloji. Kariyer genişlemelerinden **önce**, yoksa yeni özelliklere de
+   savunma varsayımı girer.
+4. **Kariyer, Diksiyon, Dil & İfade genişlemeleri** (Bölüm 3, 6, 7).
+5. **Tek "Nefes" çatısı** ve nefes kalanları (Bölüm 1) — CO₂ tabloları, nefes kontrolü egzersizleri.
+6. **Vecizelerim + Gmail** (Bölüm 9) ve vecize doğrulaması.
+7. **Su hedefi kişiye göre** (Bölüm 4).
+8. **Zihin & Zekâ** (Bölüm 2) ve ona bağlı bilişsel başlangıç ölçümü (Bölüm 5).
+9. **Gerçek alarm** (Bölüm 4) — native iş.
+10. **Cihazda doğrulama turu** — aşağıdaki liste uzadı; bir sonraki build'de topluca bakılmalı.
+11. *İleride değerlendirilecek:* Oyunlaştırma & liderlik tablosu. ⚠️ Global
+   sıralama sunucu/kimlik bağımlılığı getirir ve öz-ölçümlerde (nefes, okuma
+   hızı) hileye açıktır; tercih **kişisel rekorlar / öz-rekabet**.
 
 ---
 
-## 00. Genele açılma — uygulamanın en temel dönüşümü
+## 00. Genele açılma
 
-**Hedef:** Uygulamayı yalnızca yazarının değil, herkesin kullanabileceği hâle
-getirmek — genele hitap eden bir yüz, isteyene açılan bir derinlik.
+**İlke:** *sistemi uygulama versin, alanı katalog versin.* Alan koddan çıkar ama
+kullanıcıya değil hazır kataloğa gider — kullanıcı yazmaz, seçer (KARARLAR).
 
-**İlke:** *sistemi uygulama versin, alanı katalog versin.* Motor (günlük pratik,
-ölçüm, seri, bildirim, egzersiz altyapısı) zaten alan-bağımsız; sorun içeriğin
-koda gömülü olması. Alan koddan çıkar ama **kullanıcıya değil hazır kataloğa**
-gider — kullanıcı yazmaz, seçer. Gerekçe [KARARLAR.md](KARARLAR.md)'de.
+**Aşama 1b · Yapay zekâyı herkesin açabilmesi** — ⏳ **BYOK uygulandı**
+(2026-09-20, kod tamam, `tsc` temiz; **cihazda doğrulanacak**). Kullanıcı kendi
+Google Gemini anahtarını giriyor, çağrılar doğrudan Google'a gidiyor, sunucu
+gerekmiyor. Anahtar cihazın kasasında (`expo-secure-store`). Yeni
+`src/screens/AiSetupScreen.tsx`; kapalıyken kartlardan ve Ayarlar'dan
+açılabiliyor. Karar ve gerekçe → KARARLAR "Yapay zekâ kullanıcının kendi
+anahtarıyla çalışır (BYOK)".
 
-### Bugün nerede takılıyor
+⚠️ **Yeni native modüller:** `expo-secure-store` ve `expo-clipboard` eklendi.
+Cihazda çalıştırmadan önce **yeniden derleme** gerekiyor — iOS'ta önce
+`npx pod-install`, Android'de autolinking hallediyor.
+`npx expo prebuild` **çalıştırma**: `ios/` altındaki açılış ekranı ve ikon
+özelleştirmeleri elle düzenlenmiş, prebuild onları ezer.
+`npm install` yamayı sildiği için `npx patch-package` elle çalıştırıldı ve
+doğrulandı (DEVAM.md "Ortam tuzakları" 2).
+
+- [ ] **İleriye dönük — ortak sunucu seçeneği (eski "kurulumsuz" plan).**
+      `server/server.ts` proxy'si ve `geminiClient`'ın proxy yolu duruyor,
+      Ayarlar → Yapay Zekâ → Gelişmiş altından kullanılabiliyor. Ortak bir
+      sunucu açılacaksa önce şunlar ölçülmeli: ücretsiz kotanın gerçek sınırı
+      ve **tüm kullanıcılar arasında paylaşıldığı** gerçeği; sunucusuz
+      platformların (Cloudflare Workers, Vercel, Render) ücretsiz katman
+      limitleri; kötüye kullanım (açık proxy'yi herkes çağırabilir — `APP_TOKEN`
+      var ama tek başına yetmez, cihaz başına hız sınırı gerekiyor).
+- [ ] **İleriye dönük — anahtarsız denemelik.** Anahtar girmek istemeyen için
+      sınırlı sayıda (ör. birkaç analiz) denemelik kota. Ortak sunucu
+      olmadan yapılamaz; yukarıdaki maddeye bağlı.
+- [ ] Ses MIME türü değişikliği doğrulanacak: proxy `audio/m4a` gönderiyordu,
+      doğrudan çağrıda `audio/mp4`'e çevrildi (m4a IANA'da kayıtlı değil,
+      Gemini'nin desteklenen türler listesinde yok). Sesli mülakat analizi
+      cihazda sınanmalı.
+
+**Aşama 2 · Alanı kataloğa taşı** — ⏳ yapılmadı.
+
+*Sade anlatımla:* Kariyer & Mülakat bölümü bugün yalnızca savunma sanayiine
+hazırlanan birine göre kurulu. Şirket listesi beş savunma firmasından ibaret
+(ASELSAN, Roketsan, Baykar, TUSAŞ, HAVELSAN) ve kodda sabit; haber akışı
+yalnızca savunma haberlerini gösteriyor; yapay zekâya "sen savunma sanayii
+mülakat kurulu üyesisin" deniyor. Yazılım şirketine hazırlanan biri uygulamayı
+açtığında kendine uygun hiçbir şey bulamaz. Bu iş, sektörü seçilebilir bir
+"katalog" hâline getirir: kullanıcı ilk açılışta (ya da ayarlardan) sektörünü
+seçer, şirketler, sorular, haberler ve yapay zekâ istemi ona göre gelir.
+
+**Karar (2026-09-19):** katalogda **Savunma sanayii + Yazılım & teknoloji**.
+
+Bugünkü hâl:
 
 | Bulgu | Yer |
 | --- | --- |
 | Uygulama hiçbir sunucuyla gelmiyor | `appSettings.ts` → `DEFAULT_API_BASE_URL = ''` |
-| Kurumlar bir **tip** olarak sabit | `companies.ts` → `CompanyId = 'aselsan' \| 'roketsan' \| ...` |
+| Kurumlar bir **tip** olarak sabit | `companies.ts` → `CompanyId = 'aselsan' \| 'roketsan' \| …` |
 | Bölümler üçle sınırlı | `questions.ts` → `DEPARTMENTS` (yazilim, arge, ik) |
 | Haber akışı sektöre kilitli | `defenseNews.ts` |
-| İlk açılış akışı hiç yok | — |
+| Yapay zekâ istemleri sektöre kilitli | `AnalysisScreen.tsx:116`, `InterviewHistoryScreen.tsx:35` ("Sen Türk savunma sanayii…") |
 
-Sonuç: uygulama açılışta kullanıcının savunma sanayii adayı olduğunu
-**varsayıyor**.
-
-### Aşamalar
-
-**1 · Yapay zekâyı kurulumsuz ve kırılgan olmayan hâle getir**
-
-İki çıktısı vardı; **ikincisi yapıldı (2026-09-08)**, birincisi kararı bekliyor.
-
-*a) Yapay zekâsız da tam çalışma* — ✅ **yapıldı**
-
-Yeni `src/utils/aiAvailability.ts` tek kaynak: `aiAvailable()` / `useAiAvailable()`
-ve ortak `AI_UNAVAILABLE_HINT` metni. Yapay zekâ isteyen her yer artık çağrıyı
-yapıp hatayı yakalamak yerine önce buraya soruyor.
-
-- `AnalysisScreen` kapalıyken çağrıyı hiç denemiyor; "Değerlendirme kapalı"
-  diyen nötr bir durum gösteriyor. Eskiden kullanıcı şunu görüyordu:
-  *"Sunucu adresi tanımlı değil. Ayarlar → Backend API Adresi alanını
-  doldurun."* — son kullanıcıya söylenecek bir cümle değil, üstelik uygulamayı
-  yeni kuran **herkes** bunu görüyordu.
-- `AiInsightCard` (iki geçmiş ekranının paylaştığı kart) düğmeyi baştan kapalı
-  gösteriyor, nedenini sade dille yazıyor. Kart gizlenmiyor ki özelliğin
-  varlığı bilinsin.
-- Doğrulandı: mülakat kaydı `addSession` ile **analizden önce** diske yazılıyor,
-  yani yapay zekâ hiç çalışmasa da kayıt kaybolmuyor; `RecordedSession.analysis`
-  zaten isteğe bağlı ve geçmiş ekranı "Analiz yok" rozetiyle çiziyor.
-
-*b) Kurulumsuz çalışma* — ⏳ kararı verildi, yolu doğrulanmadı. Ücretsiz kota ve
-sunucusuz barındırma sınırları ölçülecek (ayrıntı KARARLAR'da).
-
-**2 · Alanı kataloğa taşı**
-
-- `CompanyId` birleşim tipi → serbest kimlik + hazır katalog. Savunma sanayii
-  kataloğun bir girdisi olur, tipin tamamı değil.
-- `DEPARTMENTS` aynı şekilde genişler.
-- Haber akışı sektör parametreli olur.
-- Kullanıcı hiçbir şey **yazmaz**; ilk açılışta seçer.
-- ⚠️ Alan varsayımı yalnızca veri dosyalarında değil, **yapay zekâ istemlerinde**
-  de var: `AnalysisScreen` prompt'u "Sen Türk savunma sanayii firmalarında görev
-  yapmış kıdemli bir mülakat kurulu üyesisin" diye başlıyor. Katalog seçimine
-  göre üretilmeli.
-
-**3 · İlk açılış**
-
-Üç adım, hepsi tek dokunuşluk: neyi geliştirmek istiyorsun (sütunlar) → hangi
-alan (katalog) → hatırlatma saati. Yeni state deseni açılmaz, mevcut store'lara
-yazar. Uygulamayı "yazarının uygulaması" olmaktan çıkaran asıl adım budur.
-
-**4 · Gezinme** — Bölüm 0'daki dört sekme.
-
-**5 · Modül derinliği** — her sütunun sade bir yüzü, bir de "daha ileri" yüzü.
-
-### Sıra neden böyle
-
-Sekmeleri (Bölüm 0) yeniden dizip içine yine savunma sanayii varsayımı koymak
-işi iki kez yapmak olur; o yüzden alan katmanı gezinmeden önce geliyor. Yapay
-zekâ da en başta, çünkü "yapay zekâsız da çalışır" kuralı diğer üç aşamanın
-tasarımını etkiliyor.
-
-### Derinlik kaybolmuyor
-
-Yedi sütun bağımsız açılıp kapanıyor. Sadece nefes + okuma açan tutarlı ve
-küçük bir uygulama görür; hepsini açan bugünkü derinliği görür. "Genele hitap"
-varsayılandan, "içi dolu" talepten geliyor — ikisi çelişmiyor.
+Yapılacak: `CompanyId` → serbest kimlik + hazır katalog (savunma sanayii bir
+girdi olur); `DEPARTMENTS` genişler; haber akışı sektör parametreli; istemler
+katalog seçimine göre üretilir; alan seçimi oryantasyona (Bölüm 0.1) bir adım
+olarak eklenir ve Ayarlar'dan değiştirilebilir. Yazılım & teknoloji için
+şirketler, bölümler (ör. backend, mobil, veri, ürün), soru bankası ve haber
+kaynakları hazırlanacak.
 
 ---
 
-## 0. Gezinme mimarisi
+## 0. Gezinme
 
-**Karar tarihi:** 2026-09-08. Kararlar verildi, uygulanıyor.
+- [ ] Bildirim yönlendirmesi (`data.screen` → `DiaphragmExercise`,
+      `SpeechExercise`, `BelagatExercise`, `DailyText`, `Language`, Dinlenme &
+      Denge) cihazda bir kez sınanmalı — "Cihazda doğrulanacaklar"da.
 
-### Neyi düzeltiyoruz
+---
 
-| Sorun | Bugünkü hâli |
+## 0.1. Oryantasyon — kalanlar
+
+- [ ] **Konumlu ipucu balonları** — sekmelere işaret eden 4 adımlı tur; şimdilik tek "Kısa tur" kartı var.
+- ⏳ **Günlük süre Bugün listesini belirliyor** (2026-09-20, kod; cihazda
+      doğrulanacak) — modüllerin kaba süreleri veriden hesaplanıyor (metin
+      `approxSeconds`, diyafram `totalSeconds`, konuşma `drillSeconds`; lugat
+      ve belagat tahmini sabit), hedef sırasına göre dakika bütçesine sığdıkça
+      listeleniyor. Bütçe dışı kalanlar "Daha fazlası (N)" ile açılıyor,
+      kapanmıyor; 10 dk = hepsi. Süre Ayarlar → "Günlük Hedef Süresi" ve
+      Profil panelinden seçiliyor. Süre **hiç seçilmediyse** (eski kullanıcı,
+      oryantasyonu atlayan) liste kısalmıyor — `onboarding.dailyMinutesChosen`.
+      İncelemede düzeltilenler: (a) oryantasyonda süre adımında hiçbir çipe
+      dokunmadan "Devam" denince özet "5 dk" derken seçim kaydedilmiyordu —
+      artık "Devam" ekrandaki değeri onaylıyor; (b) bütçe sığmayan modülü atlayıp
+      arkasındaki küçük modülü öne alıyordu, artık **ilk sığmayanda kesiliyor**
+      (hedef sırası bozulmasın); (c) Profil ve Bugün'de kalan `uppercase`
+      sınıfları temizlendi — değişken metinler (`{seri} günlük seri`, ikon grup
+      başlıkları) `trUpper`'a alındı, yoksa "GÜNLÜK SERI" gibi noktasız I
+      çıkıyordu.
+- [ ] **Günlük modülü olmayan hedefler** — yalnız Zihin & Odak ya da Kariyer
+      seçenin hatırlatması **kendi ekranını** açsın (karar 2026-09-19): zihin
+      egzersizleri / mülakat ekranı. Şu an "Günün metni"ne kuruluyor.
+- [ ] **Başlangıç testi → seviye önerisi** (Bölüm 5'ten) — öneri üretir,
+      kullanıcının seçimini ezmez.
+
+## 0.4. SQLite ve Kalıcı Depolar
+
+| Aşama | Durum |
 | --- | --- |
-| Giriş ekranı mülakat | `SimulationScreen`'in **en büyük öğesi** "Günlük Mülakata Başla"; asıl günlük pratik listesi en altta |
-| Mülakat sistemin dışında | Dört günlük pratik modülü var (`dailyText`, `diaphragm`, `speech`, `belagat`); mülakat bunlardan biri değil, ayrıcalıklı duruyor |
-| Tek sütun sekme kapmış | "Egzersizler" sekmesi yalnızca Zihin & Zekâ'yı gösteriyor; konuşma, belagat, nefes, alışkanlık, ölçüm alt ekranlarda gizli |
-| Ölçüm dili mülakat merkezli | Profilde iki istatistik kutusu (Mülakat, Egzersiz) ve grafikte iki seri; metin, nefes, konuşma, belagat hiç görünmüyor |
-| Ekran iki iş yapıyor | `SimulationScreen` = günün duası + üç mülakat girişi + günlük pratik listesi |
+| 1 · Anahtar-değer (`kv`) | ⏳ Kod tamam — yeniden derleyip cihazda doğrulanacak |
+| 2 · Geçmiş tabloları (`interview_sessions`, `exercise_logs`) | ⏳ Kod tamam — cihazda doğrulanacak |
+| 2b · Ses dosyaları (`AudioStore`) | ⏳ Yeni `src/utils/audioStore.ts` — mülakat kayıtları kalıcı klasöre taşınıyor. Cihazda doğrulanacak. |
+| 2c · Yanıt Defteri (`ResponseHistory`) | ⏳ Yeni `src/utils/responseHistory.ts` — belagat, egzersiz, lugat, mülakat cevapları. Yeni `ResponseJournalScreen.tsx`. Cihazda doğrulanacak. |
+| 3 · Katalog | [ ] Soru bankası, tekerlemeler, okuma metinleri ve lugat `catalog_*` tablolarına; FTS5 arama. İçerik büyümesine bağlı (Bölüm 00, 7). Tarih aralığı / ortalama sorguları ihtiyaç duyan ekranla birlikte (Bölüm 5) |
+| Temizlik | [ ] Aşama 1 cihazda doğrulandıktan birkaç sürüm sonra `savunma-store/` yedek klasörünü sil |
 
-### Sekmeler
+### Açık kalan işler ve sınırlar (2026-09-20)
 
-```
-┌────────┬─────────┬──────────┬────────┐
-│ Bugün  │ Gelişim │ İlerleme │ Profil │
-└────────┴─────────┴──────────┴────────┘
-```
-
-| Sekme | İşi | Nereden geliyor |
-| --- | --- | --- |
-| **Bugün** | "Bugün ne yapmalıyım" sorusunun tek ekranlık cevabı: günlük pratik listesi, seri, günün duası (açıksa) | `SimulationScreen`'in pratik yarısı |
-| **Gelişim** | Yedi sütunun hub'ı. Her sütun bir kart; mülakat da bunlardan **biri** | Yeni ekran; `BrainExercisesScreen` sekmeden karta iner |
-| **İlerleme** | Yedi sütunun tamamının ölçümü: seriler, test eğilimleri, mülakat ve egzersiz geçmişi | `ProfileScreen`'in ölçüm yarısı |
-| **Profil** | Yalnızca kimlik ve ayarlar | `ProfileScreen`'in kalanı |
-
-⚠️ **"Gelişim" ile "İlerleme" anlamca yakın.** Adlandırma bilerek seçildi; ayrımı
-alt başlık ve ikon taşıyacak. Gelişim = *ne çalışacağım*, İlerleme = *ne kadar
-yol aldım*. Alt başlıklar bunu açıkça söylemeli, kullanıcı tahmin etmemeli.
-
-### Mülakatın yeri: yalnızca hub
-
-**Karar:** mülakat günlük pratik modülü **olmayacak**. Bugün listesinde
-görünmez; Gelişim sekmesindeki "Kariyer & Mülakat" kartından açılır.
-
-Sonucu: mülakat alışkanlığı kurmak isteyen için günlük hatırlatıcı olmuyor.
-Kabul edildi — uygulama artık mülakat uygulaması değil, mülakat bir sütun.
-
-### Gelişim hub'ının içeriği
-
-| Kart | Açtığı yer | Durum |
-| --- | --- | --- |
-| Kariyer & Mülakat | yeni `InterviewScreen` (günlük mülakat, özelleştirilmiş, sektörel gelişmeler, geçmiş) | `SimulationScreen`'den ayrılacak |
-| Konuşma & Diksiyon | `SpeechExerciseScreen` | var |
-| Dil & İfade | `BelagatExerciseScreen` + `DailyTextScreen` | var |
-| Nefes & Beden | `DiaphragmExerciseScreen` | var |
-| Zihin & Zekâ | `BrainExercisesScreen` | var, sekmeden karta iniyor |
-| Alışkanlık & Rutin | `RemindersScreen` | Bölüm 4'te yazılacak |
-| Ölçüm & Karne | İlerleme sekmesine kısayol | Bölüm 5 |
-
-Sektörel gelişmeler (savunma sanayii haberleri) **kalıyor** — Kariyer & Mülakat
-sütununun altında.
-
-Kapalı modüller hub'da da görünmez.
-
-### İlerleme sekmesi: yedi sütunun hepsi
-
-Bugünkü iki kutu + iki seri yetersiz. İlerleme, uygulamanın **ölçtüğü her şeyi**
-gösterir: modül serileri, test eğilimleri (`TestTrend`), mülakat geçmişi,
-egzersiz geçmişi. Mülakat artık ayrıcalıklı bir yer tutmuyor.
-
-### Yapılacaklar
-
-1. ✅ `SimulationScreen` ikiye ayrıldı → `TodayScreen` + `InterviewScreen`, sonra silindi.
-2. ✅ `GrowthScreen` (Gelişim hub'ı) yazıldı — yedi sütun, kapalı modüller
-   görünmüyor, henüz yazılmamış ikisi (Alışkanlık & Rutin, Ölçüm & Karne) kilitli.
-3. ✅ `ProgressScreen` (İlerleme) yazıldı; seriler + test eğilimleri + kariyer/zihin
-   kutuları + gelişim eğrisi + geçmiş girişleri.
-4. ✅ `ProfileScreen` kimlik + ayarlara indi.
-5. ✅ `App.tsx` sekmeler dörde çıktı; `BrainExercisesScreen` ve yeni
-   `InterviewScreen` stack ekranı oldu. Dört sekmenin ortak kalıbı `TabItem`
-   bileşenine çıkarıldı.
-6. ✅ `BackgroundVariant` güncellendi. Uyarı yerindeydi: tip değişince TypeScript
-   iki yeri birden yakaladı (`ScreenBackground` varsayılan bağlamı ve
-   `App.tsx`'teki `useState`). Sessiz düşme olmadı.
-7. ⏳ Ana sekmenin ikonu artık `Sunrise`; nihai hâli logo kararıyla gelecek (Bölüm 8).
-
-### Cihazda doğrulanmayı bekliyor
-
-Telefon takılı olmadığı için görsel doğrulama yapılamadı. Bakılacaklar:
-alt çubuğun dört sekmeyle görünümü, her sekmenin degrade zemini, Gelişim'deki
-kilitli kartlar, İlerleme'nin boş durumları.
-
-### Dokunulmayacak
-
-Bildirim yönlendirmesi (`data.screen` → `DiaphragmExercise`, `SpeechExercise`,
-`BelagatExercise`, `DailyText`) stack ekranlarına gidiyor, sekme yapısına bağlı
-değil. Yeniden düzenlemede bozulmaz ama iş bitince bir kez sınanmalı.
-
----
-
-## 0.1. Uygulamaya Isındırma & Oryantasyon Modülü (Duolingo Tarzı Isındırma Akışı)
-
-**Karar:** Uygulamayı ilk kez açan kullanıcının karmaşık sekme ve egzersiz seçenekleriyle doğrudan baş başa kalmasını engellemek; Duolingo ve benzeri başarılı kişisel gelişim uygulamalarında olduğu gibi, ilk 60 saniyede kullanım amacını netleştirip "ilk zaferini" (First Win & 1 Günlük Seri) elde etmesini sağlamak.
-
-### Neden Gerekli? (Araştırma & Emsaller)
-
-- **Duolingo Akışı**: Kullanıcıyı ilk açılışta uzun kayıtlara ve formlara yönlendirmez. 3 basit mikro-soru sorar (*"Ne öğrenmek istiyorsun?", "Günde kaç dakika?", "Hatırlatıcı saatin?"*), ardından hemen **10-20 saniyelik etkileşimli bir mikro pratik** yaptırır. Kullanıcı ana ekrana geldiğinde ilk gün serisi başlar ve sistemin değerini anlar.
-- **Blinkist / Elevate / Headspace**: Kullanıcıyı katalog sayfalarında yalnız bırakmaz. Seçilen 1-2 alana göre dinamik **"Günün Isındırma Paketi"** hazırlar.
-- **Bilişsel Yükü Azaltma**: Uygulamamız 7 ayrı sütun (Kariyer, Diksiyon, Belagat, Nefes, Zihin vb.) barındırdığı için, ilk açılışta oryantasyon olmadan giren kullanıcı uygulamayı terk edebilir. Isındırma modülü uygulamayı "anlaşılır ve alışkanlık yapıcı" kılar.
-
-### Modül Akışı & Bileşen Tasarımı
-
-1. **Adım 1: Hedef & İlgi Alanı Seçimi (3 Dokunuşluk Oryantasyon)**
-   - **Odak Alanı**: Neyi geliştirmek istiyorsun? (*Kariyer & Mülakat, Diksiyon, Belagat, Nefes & Denge, Odak & Zihin*).
-   - **Günlük Taahhüt**: Günde kaç dakika ayırabilirsin? (*3 dk / 5 dk / 10 dk*).
-   - **Hatırlatıcı Zamanı**: Günün hangi diliminde pratik yapacaksın? (*Sabah / Öğle / Akşam*).
-
-2. **Adım 2: 60 Saniyelik İlk Isındırma Pratiği (Interactive First Win)**
-   - Seçilen alana göre anında interaktif mikro pratik başlatılır:
-     - *Diksiyon:* 1 tekerleme kartı veya hızlı artikülasyon testi.
-     - *Nefes:* 30 saniyelik 4-6 diyafram nefesi çemberi.
-     - *Kariyer:* 1 kriz yönetimi veya STAR tekniği sorusu.
-   - Bitişte: Rozet animasyonu ve **"1 Günlük Seri Başladı! 🎉"** kutlaması.
-
-3. **Adım 3: Kişiselleştirilmiş Ana Sayfa (`TodayScreen`) & Mikro İpucu Turu**
-   - Kullanıcının oryantasyonda seçtiği sütunlar `TodayScreen`'de üst sıraya alınır.
-   - 4 sekme (Bugün, Gelişim, İlerleme, Profil) üzerinde 4 adımlı hafif, rahatsız etmeyen ipucu balonları (contextual tooltips) gösterilir.
-
-### Teknik Yapı & Entegrasyon Planı
-
-- **Store & State**: `dailyPracticeSettings` içinde `onboardingCompleted: boolean`, `userGoals: string[]`, `dailyTargetMinutes: number`.
-- **Ekran / Akış**: `src/screens/OnboardingScreen.tsx` modal veya stack ekranı.
-- **Giriş Kontrolü**: `App.tsx` yüklenirken `onboardingCompleted === false` ise ana sekmeler öncesi `OnboardingScreen` tetiklenir.
-
----
-
-## 0.2. İlerleme & Profil Sekmeleri UI/UX İyileştirmeleri
-
-**Karar:** İlerleme sekmesindeki boşluk/bozuk görünüm hissini ve Profil sekmesindeki aşırı boşluğu gidermek; her iki sekmenin görsel dengesini, içerik kalitesini ve doluluğunu artırmak.
-
-### Neden Gerekli? (Sistem İncelemesi & Bulgular)
-
-1. **İlerleme Sekmesi (`ProgressScreen.tsx`) Üst Boşluk & Boş Durum Sorunları**:
-   - `TabHeader` altındaki ilk `SectionLabel` bileşeni kendi içinde varsayılan `mt-7` (28px) taşıyor. Ekran kodunda üstüne ekstra `<View className="mt-1">` eklenince `TabHeader` açıklaması ile ilk başlık arasında gereksiz büyük bir boşluk oluşuyor.
-   - Henüz hiçbir pratik yapılmadığında `SERİLER` boş duruma geçiyor, `ÖLÇÜMLER` tamamen gizleniyor ve `Gelişim Eğrisi` tek satırlık gri bir kutuya düşüyor. Sayfa bu haliyle terkedilmiş/bozuk görünüyor.
-
-2. **Profil Sekmesi (`ProfileScreen.tsx`) Aşırı Boşluk Sorunu**:
-   - Ölçüm ve geçmiş ögeleri İlerleme sekmesine taşındıktan sonra Profil ekranı yalnızca tek bir kullanıcı avatar/isim kartından ibaret kaldı (%85 boş alan).
-   - Kullanıcının kazanımlarını, günlük hedeflerini veya uygulama tercihlerini görebileceği zengin bir kontrol paneli (Dashboard) eksik.
-
-### Modül Akışı & Bileşen Tasarımı
-
-#### 1. İlerleme Sekmesi (`ProgressScreen.tsx`) İyileştirmeleri
-- **Header Boşluğu**: İlk `SectionLabel` üzerindeki ekstra üst marj sıfırlanacak, `TabHeader` ile ilk içerik arasındaki dikey mesafe sıkılaştırılacak.
-- **Dengeli Boş Durumlar (Graceful Empty States)**:
-  - Hiç seri olmasa bile 4 modül (Günün metni, Diyafram nefesi, Konuşma egzersizi, Belagat) pasif/gri kartlarla listelenecek (ör. *"0 Gün - Henüz Başlanmadı"*), sayfa çökük görünmeyecek.
-  - Ölçüm ve Grafik alanına rehber niteliğinde taslak çizgi (Placeholder Chart & Test Prompts) yerleştirilerek kullanıcının ilk testini yapması teşvik edilecek.
-
-#### 2. Profil Sekmesi (`ProfileScreen.tsx`) İyileştirmeleri
-- **Günlük Hedef & Tercihler Kartı**: Kullanıcının seçtiği günlük hedef süre (ör. *5 dk/gün*), aktif hatırlatıcı durumu ve odaklandığı ana gelişim sütunları.
-- **Kazanımlar & Rozet Vitrini (Milestones / Badges)**:
-  - *"İlk Mülakat"*, *"7 Günlük Seri"*, *"Nefes Ustası"*, *"Diksiyon Çırağı"* gibi rozetler ve kilitli başarı simgeleri.
-- **Hızlı Erişim Kartları**:
-  - Bildirim ve Hatırlatıcı Yönetimi kısayolu.
-  - Yapay Zekâ & Çevrimdışı Çalışma Durumu (Offline AI Status indicator).
-  - Hakkında, Sürüm (v1.0.0) ve Geri Bildirim kartları.
-
----
-
-## 0.3. Modül Ayarlarının Modül Ekranlarına Taşınması
-
-**Karar:** Genel `SettingsScreen` (Ayarlar) ekranını aşırı kalabalıktan kurtarmak; modüle özel tüm detaylı tercihleri ilgili egzersiz/modül ekranlarının içerisine taşımak.
-
-### Neden Gerekli? (UX İncelemesi)
-- Şu an `SettingsScreen` tek bir dev dosya halinde tüm modüllerin tercihlerini (Diyafram seviyesi/modu, Konuşma tekerleme & dolgu şalterleri, Belagat dal seçimi, Günün metni kaynağı) içeriyor.
-- Kullanıcı egzersiz ekranındayken (*ör. Nefes veya Diksiyon*) seviye veya çalışma modunu değiştirmek istediğinde egzersizden çıkıp Profil → Ayarlar'a gitmek zorunda kalıyor.
-
-### Yapılacak Düzenlemeler
-1. **Genel Ayarlar Ekranı (`SettingsScreen.tsx`)**:
-   - Sadece **Uygulama Geneli** ayarları barındıracak: Tema (Açık/Koyu/Sistem), Bildirim İzinleri & Ana Şalter, Backend AI Sunucu Adresi, Dini İçerik Şalteri.
-2. **Modül Ekranlarına Ayar İkonu & Paneli**:
-   - `DiaphragmExerciseScreen`: Sağ üst çark ikonu veya modül içi kart ile Çalışma Biçimi (Günlük/Gelişim) ve Seviye (1/2/3) seçimi.
-   - `SpeechExerciseScreen`: Tekerlemeler ve Dolgu Kelime Avı aktiflik ayarları.
-   - `BelagatExerciseScreen`: Çalışılacak kol seçimi (Meânî, Beyân, Bedî').
-   - `DailyTextScreen`: Metin kaynağı seçimi (Dinî, Edebî, Hitabet, Karışık).
-
----
-
-## 0.4. SQLite Veritabanı Altyapısına Geçiş (`expo-sqlite`)
-
-**Karar:** Mevcut basit JSON dosya kalıcılığından (`expo-file-system` / `storage.ts`), büyük veri ölçeklenmesi, hızlı kategorik arama ve performans için `expo-sqlite` ilişkisel veritabanı yapısına geçmek.
-
-### Neden Gerekli? (Mimari İnceleme)
-
-- **Şu Anki Durum**: Ayarlar, seriler ve mülakat geçmişi `JSON.stringify` ile tekil `.json` dosyalarına yazılıyor (`readJson` / `writeJson`). Küçük veriler için hızlı ve bağımlılıksız olsa da, veri hacmi büyüdükçe sınırları var.
-- **Neden SQLite (`expo-sqlite`)?**:
-  1. **Katalog & İçerik Arama (Bölüm 00.2)**: Savunma/genel mülakat soruları, diksiyon tekerlemeleri, meânî/beyân/bedî' soru bankası ve okuma metinleri büyüdüğünde hepsini belleğe yüklü JSON olarak almak yerine SQLite ilişkisel tablolarında indeksli tutmak %100 çevrimdışı ve çok daha hızlı çalışır.
-  2. **Gelişmiş Geçmiş & İstatistik Sorguları (Bölüm 5)**: Zaman serisi verileri (tüm mülakat analizleri, egzersiz kayıtları, günlük test sonuçları) binlerce kayıta ulaştığında `GROUP BY`, tarih aralığı filtreleme ve ortalama hesapları SQLite ile anında yapılır.
-  3. **Tam Metin Arama (FTS5)**: Soru bankası veya metinler içinde anında kelime araması yapabilme.
-
-### Veritabanı Şeması & Geçiş Planı
-
-- `settings` tablosu (Key-Value)
-- `sessions` tablosu (Mülakat oturumları & AI analiz sonuçları)
-- `exercise_logs` tablosu (Bilişsel & fizyolojik egzersiz geçmişi)
-- `test_results` tablosu (Ölçüm & karne test verileri)
-- `catalog_questions`, `catalog_drills` tabloları (Offline hazır katalog)
-- İlk aşamada mevcut JSON verilerini SQLite'a aktaran otomatik göç (migration) script'i.
+- ⚠️ **Ses kaydı depolama sınırı yok** — kayıtlar birikiyor, cihaz belleği arttıkça yer kullanımı kontrol edilmeli. Otomatik temizlik (en eski N gün) ya da kullanıcı kotası henüz yok.
+- ⚠️ **Yanıt Defteri kayıt sayısı sınırı yok** — quiz cevapları hızlı birikir. Sayfalama var (ilk 50 + "Daha fazla"), ama uzun listeler yavaşlayabilir.
+- ⚠️ **Uygulama çöküşü sırasında kayıt** — yarıda bırakılan mülakatta yalnızca kullanıcının bilerek çıkması ele alındı (X düğmesi, geri tuşu ve geri jesti; hepsi çıkış uyarısına düşüyor). Uygulama çökerse ya da sistem tarafından arka planda sonlandırılırsa kayıt hâlâ kaybolur.
+- ℹ️ **`historyTablesReady()` üç tabloyu birlikte varsayıyor** — `practice_responses`'ın taşınacak eski verisi olmadığı hâlde, mülakat/egzersiz `kv`→tablo göçü başarısız olursa yanıt defteri de gereksiz yere dosya/kv yoluna düşüyor. Veri kaybı yok, iki yol da güvenli; yalnızca SQLite tablosu boşuna kullanılmıyor.
+- ⏳ **Belagat üretim cümlesi deftere yazılıyor** — "Tamamladım" basıldığında; `correct` alanı bilerek boş bırakılıyor (üretimde tek doğru yok).
+- ⏳ **Egzersiz yazı yanıtları deftere yazılıyor** — `accept` varsa doğruluk ölçülerek, yoksa öz-değerlendirmeyle ya da süre dolarken damgasız.
+- ⏳ **Mülakat defterin dışında** — defterin mülakat sekmesi `interviewHistory`'yi doğrudan okuyor, ikinci bir yazım yok (tek kaynak ilkesi).
 
 ---
 
 ## 1. Nefes & Beden
 
-**Amaç:** mevcut diyafram modülü nefesin *nereden* alındığını öğretiyor; bu bölüm nefesin
-**nasıl yönetildiğini** çalıştırıyor — verişi uzatmak, sabit basınçta tutmak, cümleyi
-kalan nefese sığdırmak, baskı altında toparlanmak.
+**Ne yapar, ne yapmaz (metin kuralı):** akciğeri büyütmez — vital kapasite
+büyük ölçüde boy, yaş, yapıyla belirlenir; kas gücü dirençli cihazla çalışılır.
+Yapar: verişin kontrolü, nefesi cümleye bölme, baskı altında toparlanma.
+Uygulamada **"kapasite" geçmez.** Duruş egzersizleri duruşu **düzeltmez**, ağrı
+**tedavi etmez** — fark ettirir ve gevşetir.
 
-### Ne yapar, ne yapmaz
+### ⚠️ Güvenlik (her yeni nefes içeriğinde)
 
-**Yapmaz — akciğerini büyütmez.** Vital kapasite büyük ölçüde boy, yaş, cinsiyet ve
-yapıyla belirleniyor; nefes egzersizleriyle akciğer hacmi anlamlı biçimde artmıyor.
-Solunum kaslarının **gücü** artırılabilir, ama bunun yolu dirençli bir cihazla yapılan
-inspiratuar kas antrenmanı — telefon uygulamasıyla olmaz.
+- Baş dönmesi, karıncalanma, göğüste sıkışma → dur, normal nefese dön.
+- Nefes tutma **asla suda, araç kullanırken veya ayakta**; öncesinde hiperventilasyon yok.
+- Astım, KOAH, kalp rahatsızlığı, gebelik → hekime danış. "Tıbbi tavsiye değildir" ibaresi.
+- Güçlü hiperventilasyon protokolleri (Wim Hof tarzı) **eklenmeyecek**.
 
-**Yapar:** verişin kontrolü, nefesin cümleye bölünmesi, baskı anında toparlanma, solunum
-kaslarında bir miktar dayanıklılık.
+### 2026-09-19 turu (kod tamam; cihazda doğrulanacak)
 
-Bu yüzden modülün adında "kapasite" geçmiyor ve uygulama içinde de geçmeyecek.
+- ⏳ **Sade 5 dakikalık 4-6 seansı** — `breathingPrograms.ts` → `SIMPLE_46`
+  (tek segment, 30 döngü, 4 sn al · 6 sn ver). Diyafram → Pratik'te "Sade 5 dk ·
+  4-6" kartı, tek dokunuşla başlıyor; aktifken mod/seviye seçimi gizleniyor,
+  "Çık" ile ayarlı programa dönülüyor. Her 5 döngüde "Karnın şişsin, göğsün
+  sabit kalsın." (`reminderEvery`), bitişte "30 döngü tamamlandı."
+  (`announceCycleCount`), Rehber'de "Ne Kazandırır" gizli. Sesli sayım yok
+  (açık soru).
+- ⏳ **Rahat Tutma → ölçüm yönlendirmesi** — `ExerciseEngineScreen` bitişinde,
+  yalnız iki Rahat Tutma egzersizinde: "Birkaç dakika normal nefesle
+  dinlendikten sonra…" + Diyafram → Ölçüm'ü açan düğme (Karne'nin
+  `findMeasureTest` rotası). Teşvik/rekor dili yok.
+- ⏳ **Çene gevşetme hatırlatıcısı** (`cene` şablonu, 90 dk, hedef 6,
+  varsayılan kapalı) — "Dişlerin birbirine değmesin, dilin damağında, çenen
+  gevşek olsun." + diş hekimi notu. Ekran yönlendirmesi yok (karşılık gelen
+  egzersiz yok).
+- ⏳ **Torasik ekstansiyon** — `torasik-ekstansiyon`, Duruş & Sırt, 5 adım ≈ 2 dk,
+  oturarak; "düzeltmez, tedavi etmez" ibaresi.
 
-### Eklenecek egzersizler
+### Açık
 
-"Ne yapar" sütunu abartısız yazıldı; uygulamadaki açıklama metinleri de bunu kullanacak.
+- [ ] **Tek "Nefes" çatısı** (karar 2026-09-19) — nefesle ilgili her şey tek
+      yerde: diyafram programları, sade 4-6, Rahat Tutma, aşağıdaki nefes
+      kontrolü egzersizleri ve CO₂ tabloları, nefes ölçümleri. Bugün Rahat
+      Tutma Dinlenme & Denge'nin egzersiz listesinde, diyafram ayrı ekranda —
+      ikisi birleşecek. Ekranın adı "Nefes"; düzen (karar 2026-09-19):
+      **Pratik** (diyafram programları, sade 4-6) · **Antrenman** (kaburga
+      genişletme, büzük dudak, basamaklı alma, Rahat Tutma, CO₂) · **Konuşma
+      Nefesi** ("aaa" uzatma, sayarak verme; Diksiyon'dan kısayol) · **Ölçüm** ·
+      **Rehber**. Diksiyon ayrı modül olarak aynen kalır. Bildirim yönlendirmeleri
+      (`DiaphragmExercise`) ve Karne'nin "Ölç" rotaları yeni yapıya taşınmalı.
+- [ ] **CO₂ tabloları** (sabit tutma, kısalan dinlenme) — asıl ilerletici yöntem.
+      `BreathEngine` her turda aynı fazları çalıştırıyor; motor `cycles` yerine
+      tur listesi alacak şekilde genişletilmeli.
+- [ ] **Nefes kontrolü egzersizleri** (hepsi `progressive` moda):
 
-| Egzersiz | Ne yapar (gerçekte) | Ölçüm |
-| --- | --- | --- |
-| **Büzük dudak nefesi** | Burundan 2 sn al, dudakları büzüp 4 sn ver. Verirken hava yollarında hafif geri basınç oluşturur; küçük hava yollarının erken çökmesini ve hava hapsini azaltır. Kapasite artırmaz — boşaltmayı ve veriş kontrolünü iyileştirir. Kanıt tabanı KOAH / pulmoner rehabilitasyon. | Tur sayısı |
-| **Kaburga genişletme** | Eller yan kaburgalarda, nefesi yanlara doğru genişleterek al. Göğüs kafesi hareketliliği ve nefesin nereye gittiğinin farkındalığı. Akciğeri büyütmez. | Tur sayısı |
-| **Uzatılmış tutma** | Tam al → 3-5 sn tut → yavaş ver. Alma sonunda kalma toleransı, göğüs duvarı esnekliği. Klinikte ameliyat sonrası atelektazi önlemede kullanılıyor; sağlıklı kişide hacim artırmaz. | Tutma süresi (sn) |
-| **Basamaklı alma** | 3-4 kısa nefesle kademeli doldur, tek seferde ver. İnspiratuar rezervi hissettirir. Sağlıklıda farkındalık egzersizi. | Basamak sayısı |
-| **Maksimum fonasyon süresi (MPT)** | Tek nefeste sabit "aaa" / "sss". Akciğer hacmi ölçüsü **değil** — hem hacim hem ses tellerinin kapanma verimi karışıyor. Diksiyon için anlamlı, kapasite için dolaylı. | Süre (sn) |
-| **Kontrol duraklaması** | Nefes ihtiyacına dayanma eşiği. Ölçtüğü şey akciğer değil, refleks toleransı ve alışkanlık. Popüler ölçütlerin (BOLT vb.) sağlık göstergesi olarak kanıtı zayıf — "kapasite skoru" diye sunulmayacak. | sn |
-| **Sayarak verme** | Kontrollü verişin konuşmaya çevrilmiş hâli; diksiyona bağlanır. MPT ile aynı çekince. | En yüksek sayı |
+      | Egzersiz | Ne yapar (gerçekte) | Ölçüm |
+      | --- | --- | --- |
+      | Büzük dudak nefesi | 2 sn al, dudak büzük 4 sn ver; verişte geri basınç. Kapasite artırmaz | Tur |
+      | Kaburga genişletme | Nefesi yanlara genişleterek al; göğüs kafesi farkındalığı | Tur |
+      | Basamaklı alma | 3-4 kısa nefesle doldur, tek seferde ver | Basamak |
+      | Maksimum fonasyon süresi | Tek nefeste sabit "aaa"; hacim ölçüsü **değil** | sn |
+      | Sayarak verme | Kontrollü verişin konuşmaya çevrilmiş hâli | Sayı |
 
-### Sade 5 dakikalık 4-6 seansı
-
-Tek düğmeyle başlayan, baştan sona sabit ritimli, süslemesiz rehberli seans:
-
-```
-Toplam süre : 5 dakika → 30 döngü
-Döngü       : 4 sn burundan al · 6 sn ağızdan ver (tutma yok)
-Sayım       : her saniye sayılır, faz adı net gösterilir
-Hatırlatma  : aralarda "karnın şişsin, göğsün sabit kalsın"
-Bitiş       : tamamlanan döngü sayısı bildirilir
-Ton         : sakin, yavaş, zorlamasız — motivasyon cümlesi yok
-```
-
-**Kısmen var.** [breathingPrograms.ts:56](src/data/breathingPrograms.ts#L56) içindeki
-`l1-awareness` tam bu ritmi kullanıyor ama 6 döngü (1 dk) sürüp başka segmentlere geçiyor.
-
-| İstenen | Şu an | Yapılacak |
-| --- | --- | --- |
-| 30 döngü, tek ritim | 6 döngü, sonra 4-4-6 ve "sss" | Tek segmentli yeni preset |
-| Her saniyeyi say | ✅ Daire içinde geri sayım — görsel, sessiz | Sesli istenirse `expo-av` (var) ile ses dosyası |
-| Aralarda hatırlatma | Kısmen — `tip` yalnızca alttaki statik kartta | Her 5 döngüde bir çalışan ekranda göster |
-| Bitişte döngü sayısı | ❌ "Program tamamlandı." | `cycleCount` bitiş metnine eklenecek |
-| Motivasyon cümlesi yok | ❌ `benefits` listesi gösteriliyor | Bu preset'te gizlenecek |
-
-### Program yapısı
-
-- Ayarlarda artık **iki mod** var: `daily` (kısa bakım programı) ve `progressive`
-  (seviyeli uzun program) — `BreathingMode`. Yeni egzersizler `progressive` tarafına girecek.
-- **4 haftalık kademeli plan**; hafta başındaki ölçüme göre hedefler belirlenir.
-- Mevcut `BreathingProgram` / `BreathingSegment` / `BreathPhase` tipleri yeterli.
-  Yeni faz türü gerekebilir (`stackedInhale`) ya da ayrı bir `BreathDrill` tipi yazılır.
-- Ekran: yeni `BreathControlScreen`, ya da `DiaphragmExerciseScreen` içinde
-  **"Rahatla / Antren"** iki sekmesi.
-
-### ⚠️ Güvenlik
-
-`BreathingProgram.safetyNote` alanı var, görünür kalacak:
-
-- Baş dönmesi, karıncalanma, göğüste sıkışma → **dur**, normal nefese dön
-- Nefes tutma egzersizleri **asla suda, araç kullanırken veya ayakta** yapılmaz
-- Astım, KOAH, kalp rahatsızlığı, gebelik → hekime danışmadan yapılmaz
-- Açık bir "**bu tıbbi tavsiye değildir**" ibaresi
-- Güçlü hiperventilasyon protokolleri (Wim Hof tarzı) **eklenmeyecek** — bilinç kaybı riski var
+- [ ] **4 haftalık kademeli plan** — hafta başı ölçüme göre hedef. Yeni faz türü
+      (`stackedInhale`) ya da ayrı `BreathDrill` tipi gerekebilir. "Nefes"
+      çatısının içinde.
+- ⏳ **Duruş öz-kontrol ölçümü** (2026-09-20, kod; cihazda doğrulanacak) —
+      `postureSelfCheck`, 5 maddelik liste, 0-5 referans skala, `improvement:
+      'higher'`; Dinlenme & Denge → Duruş & Sırt'ta "Öz-kontrol" kartı, Karne'de
+      yeni **Duruş** alanı. Açık: Karne'deki "Ölç" ekranı açıyor ama kategoriye
+      kaydırmıyor (ekranda kaydırma çapası deseni yok) — gerekirse ayrı iş.
+- [ ] **Mola sıklığı önerisi** (karar 2026-09-19: eklensin) — farkındalık
+      önerisi olarak ("belli aralıklarla kalk, esne"), sağlık iddiası yok;
+      "Ayağa kalk & esne" hatırlatıcısına bağlanır.
+- [ ] Duruş adımları için görsel anlatım (adım çizimleri).
+- [ ] Sade 5 dk aktifken sağ üst çark panelinde mod/seviye hâlâ değiştirilebiliyor
+      (seansı bozmuyor, "Çık" sonrası geçerli oluyor; ama Pratik sekmesinde
+      gizlenen seçimle tutarsız). Küçük; panelde de gizlenmeli ya da not düşülmeli.
+- [ ] **Dairesel geri sayım** — yatay `ProgressBar` yerine; `react-native-svg`
+      kurulu. Öncelik düşük.
+- [ ] **Bildirimden tek dokunuşla 60-90 sn'lik mini akış** — "Duruş kontrolü"
+      bildirimi şu an kategoriyi açıyor, doğrudan akışa girmiyor.
 
 ---
 
 ## 2. Zihin & Zekâ
 
-**Mevcut:** `BrainExercisesScreen`, `ExerciseEngineScreen`, interaktif beyin görseli ve
-egzersiz geçmişi ekranları — beyin bölgelerine dokunarak bilişsel alanlara giriliyor.
+**Metin kuralı:** zekâyı yükseltmez; iyileşme ağırlıkla **çalışılan görevde**.
+"IQ artırır", "beynini geliştirir" yazılmaz.
 
-### Ne yapar, ne yapmaz
+### Egzersiz motoru — yazı girişi + otomatik kontrol (2026-09-20)
 
-**Yapmaz — zekânı yükseltmez.** Bilişsel egzersizler ağırlıkla **çalışılan görevde**
-iyileşme sağlıyor; genel zekâya ya da günlük hayata transferin kanıtı zayıf. Uygulamada
-"IQ artırır", "beynini geliştirir" gibi cümleler kurulmayacak.
+⏳ **Uygulandı:** `PromptEngine.prompts` öğesi `accept?: string[]` alanı alıyor. 
+- Beş egzersizin (`oruntu-tanima`, `zihinden-hesap`, `mekansal-kurgu`, `konum-siralama`, `ters-siralama`) 32 sorusu gözden geçirildi.
+- 32 sorunun 30'una `accept` yazıldı (sayı, yön, sıralama gibi çekirdeği tek olan cevaplar).
+- İki soruya kasıtlı **yazılmadı** — cevabı serbest ifade olduğu için tek doğru yazımı yok: Mekansal Kurgu "'L' harfini döndürme" ve Konum Sıralama "B çökerse hangi servisler etkilenir". İkisi öz-değerlendirmeye ("Doğru bildim" / "Bilemedim") düşüyor.
+- `ExerciseEngineScreen` yazı kutusu + "Kontrol Et" düğmesi.
+- Süre dolarken yazılmış ama kontrol edilmemiş yanıt otomatik kontrol edilip kaydediliyor.
+- `ExerciseLog`'a `correctCount?` / `checkedCount?` alanları (doğruluk ölçümü için; efor puanı tanımı değişmedi).
+- Tamamlama kartına "Doğru" kutusu (yalnızca kontrol edilen soru varsa görünür).
+- **Cihazda doğrulanacak:** klavye açıkken "Kontrol Et" düğmesine ilk dokunuş; yanıtların deftere düşmesi; efor puanı ve trend grafiğinin eskisi gibi kalması.
 
-**Yapar:** düzenli pratikle o beceride ölçülebilir iyileşme, dikkat süresini fark etme
-alışkanlığı ve mülakat baskısı altında düşünme provası.
+### Yeni egzersizler
 
-### Eklenecek
+- [ ] Yeni egzersizler (`src/data/cognitiveDrills.ts`):
 
-| Alan | Egzersiz | Ölçüm |
-| --- | --- | --- |
-| **Çalışma belleği** | n-back, rakam dizisi geri okuma | Seviye (n), doğruluk |
-| **Dikkat & odak** | Seçici dikkat, dikkat dağıtıcı altında görev | Doğruluk, tepki süresi |
-| **İşlem hızı** | Sembol eşleme, hızlı aritmetik | Doğru/dk |
-| **Mantık & örüntü** | Sayı-şekil örüntüleri, çıkarım soruları | Doğruluk |
-| **Hafıza teknikleri** | Loci (hafıza sarayı), gruplama (chunking), akrostiş | Hatırlanan öğe sayısı |
-| **Hızlı okuma** | Göz sıçraması, geri dönüşü azaltma | Kelime/dk + anlama testi |
+      | Alan | Egzersiz | Ölçüm |
+      | --- | --- | --- |
+      | Çalışma belleği | n-back, rakam dizisi geri okuma | Seviye (n), doğruluk |
+      | Dikkat & odak | Seçici dikkat, dikkat dağıtıcı altında görev | Doğruluk, tepki süresi |
+      | İşlem hızı | Sembol eşleme, hızlı aritmetik | Doğru/dk |
+      | Mantık & örüntü | Sayı-şekil örüntüleri, çıkarım | Doğruluk |
+      | Hafıza teknikleri | Loci, gruplama, akrostiş | Hatırlanan öğe |
+      | Hızlı okuma | Göz sıçraması, geri dönüşü azaltma | Kelime/dk + anlama |
 
-**Mülakata bağlantı:** hafıza teknikleri şirket araştırma notlarını, hızlı okuma sektör
-haberlerini, dikkat egzersizleri baskı altında soru dinlemeyi doğrudan besliyor. Her
-egzersizin `interviewUse` benzeri bir alanı olacak — belagat modülündeki gibi.
-
-**Zorluk uyarlaması:** skor yükseldikçe seviye artar, düştükçe geri iner. Sabit zorluk
-birkaç günde ya sıkıcı ya imkânsız hâle geliyor.
+- [ ] Her egzersize mülakat bağlantısı alanı (`interviewUse` benzeri).
+- [ ] **Zorluk uyarlaması** — skor yükseldikçe seviye artar, düştükçe iner.
+- [ ] **Bilişsel başlangıç ölçümü** (n-back + işlem hızı) — Bölüm 5'ten ertelendi, bununla birlikte.
 
 ---
 
 ## 3. Kariyer & Mülakat
 
-**Mevcut:** şirket/pozisyon seçimli simülasyon, geri sayım, kamera, yapay zekâ analizi
-(kriz yönetimi, duruş, akıcılık, dolgu kelime), mülakat geçmişi, sektör haberleri.
+### Mülakat ses kaydı (2026-09-20)
 
-### Eklenecek
+⏳ **Uygulandı:** Mülakat sırasında kaydedilen ses **kalıcı** saklanıyor ve Mülakat Geçmişi'nden dinlenebiliyor.
+- Çıkış uyarısı üç seçenekli: "Kaydet ve çık" · "Kaydetmeden çık" · "Vazgeç". Kaydetmeden çıkışta ses kalıcı klasöre hiç taşınmaz, geçici dosyası silinir ve kayıt oluşmaz.
+- `RecordedSession`'a `audioFile?` ve `aborted?` alanları eklendi.
+- Yeni `src/utils/audioStore.ts`: ses dosyası `Paths.document/terakki-audio/` altına taşınıyor. Depo değil, ince bir dosya katmanı — tablo ya da JSON indeks yok, bağ geçmiş kaydındaki dosya adı.
+- iOS'ta veri klasörü yolu güncellemede değişebileceği için kayıtta **dosya adı** tutuluyor, tam yol değil.
+- Ses JSON deposuna girmiyor: megabaytlarca base64 her yazımda tüm bloğu yeniden serileştirirdi.
+- Mülakat Geçmişi'ne oynatma, "Yarıda kaldı" etiketi, toplam boyut göstergesi ve "Ses kayıtlarını sil" eklendi.
+- Analiz ekranı bellek buffer'ı boşsa sesi diskten okuyor (sonradan analiz imkanı).
+- **Cihazda doğrulanacak:** yarıda çıkış → kayıt kalıcı, Geçmiş'ten dinlenebiliyor; sessiz moddaki iPhone; ekrandan çıkınca oynatma kesilip durumu güncelleniyor.
 
-| Özellik | İş |
-| --- | --- |
-| **Başvuru takibi** | Hangi şirket, hangi aşama, hangi tarih, sonuç ne oldu — basit bir kanban/liste |
-| **STAR cevap kurucu** | Durum → Görev → Eylem → Sonuç şablonuyla cevap yazma ve kaydetme |
-| **Şirket araştırma notları** | Şirket başına not defteri; simülasyon öncesi hatırlatılır |
-| **Maaş görüşmesi senaryosu** | Ayrı bir simülasyon modu — sayı verme, gerekçelendirme, sessizlik yönetimi |
-| **Mülakat sonrası takip** | Teşekkür mesajı şablonu, kendi kendine değerlendirme formu |
-| **Teknik soru bankası** | Departman bazlı genişletme; yanlış cevaplananlar tekrar havuzuna düşer |
+### İleride
+
+- [ ] **Başvuru takibi** — şirket, aşama, tarih, sonuç; basit liste/kanban.
+- [ ] **STAR cevap kurucu** — Durum → Görev → Eylem → Sonuç şablonuyla yaz, kaydet.
+- [ ] **Şirket araştırma notları** — şirket başına not; simülasyon öncesi hatırlatılır.
+- [ ] **Maaş görüşmesi senaryosu** — ayrı simülasyon modu.
+- [ ] **Mülakat sonrası takip** — teşekkür mesajı şablonu, öz-değerlendirme formu.
+- [ ] **Teknik soru bankası** — departman bazlı; yanlışlar tekrar havuzuna düşer.
+
+⚠️ Bölüm 00 aşama 2'den (katalog) önce yapılırsa savunma sanayii varsayımı
+yeni özelliklere de gömülür — sıra kararı buna göre verilmeli.
 
 ---
 
-## 4. Alışkanlık & Rutin
+## 4. Alışkanlık & Rutin — teknik kısıtlar
 
-**Amaç:** uygulamayı "mülakat öncesi açılan" bir şey olmaktan çıkarıp günlük ritme
-yerleştirmek.
+4a (aralıklı hatırlatıcılar) ve 4b (serbest alarmlar) kod olarak tamam; açık
+olan yalnızca cihaz doğrulaması ve şunlar:
 
-### 4a. Aralıklı hatırlatıcılar
-
-Örnek: saatte bir su içme bildirimi.
-
-```
-enabled          → açık/kapalı
-intervalMinutes  → 30 | 45 | 60 | 90 | 120
-activeHours      → { start: 09:00, end: 22:00 }   ← gece uyandırmasın
-activeDays       → hafta günleri
-message          → özelleştirilebilir metin
-```
-
-**Hazır şablonlar:** su içme, ayağa kalk & esne, göz molası (20-20-20), duruş kontrolü,
-nefes molası (diyafram modülüne bağlanır), şükür/niyet notu.
-
-**Günlük sayaç:** "bugün 6/10 bardak" — bildirime dokununca artan sayaç.
-`dailyPracticeProgress.ts`'teki `dayKey` bazlı yapı aynen kullanılabilir.
-
-### 4b. Serbest alarmlar
-
-```
-{ id, label, time: { hour, minute }, days: [1,2,3,4,5], enabled, sound }
-```
-
-Birden fazla alarm, liste hâlinde yönetim (ekle / düzenle / sil / aç-kapat), gün seçimi
-ve ayrı bir Android kanalı (`personal-reminders`) — günlük pratik kanalından bağımsız
-sessize alınabilsin.
-
-### ⚠️ Teknik kısıtlar — tasarımdan önce çözülecek
-
-1. **Aktif saat aralığı + tekrarlı interval birlikte çalışmıyor.** `TIME_INTERVAL` +
-   `repeats: true` 7/24 çalar. Çözüm: aralığı **ayrık `DAILY` bildirimlere açmak**
-   (09:00-22:00 / 60 dk → 14 ayrı bildirim).
-
-2. **iOS'ta bekleyen bildirim limiti 64.** Yukarıdaki yöntem limiti hızla yer. Şu an 4
-   bildirim kullanılıyor. Çözüm: her açılışta yalnızca **önümüzdeki 2-3 günü** planla.
-
-3. **Silme tarafı çözüldü.** `cancelAllReminders()` artık sabit kimlik listesi yerine
-   `getAllScheduledNotificationsAsync()` üzerinden içerikteki `kind === 'daily-practice'`
-   alanına bakıyor — dinamik sayıda kayıt da temizleniyor. Yeni modüller kendi `kind`
-   değerini koyarsa aynı desen çalışır. Kimlik şeması yine de genişletilecek
-   (`savunma.habit.<id>.<slot>`), ama hayalet bildirim riski geçti.
-
-4. **Android 14+ tam zamanlı alarm.** `expo-notifications` varsayılan olarak *inexact*
-   alarm kuruyor; sistem birkaç dakika kaydırabilir. Su hatırlatıcısı için sorun değil,
-   gerçek "alarm saati" beklentisi için olabilir. Çalan/ısrarlı alarm isteniyorsa
-   `expo-notifications` yetmez, native taraf gerekir.
-
-5. **Gün aşırı mod emsal oluşturuyor.** `syncReminders(settings, { everyOtherDay: true })`
-   tekrarlayan tetikleyici kullanamadığı için 14 ayrı tek seferlik `DATE` bildirimi kuruyor
-   ve pencereyi her açılışta kaydırıyor. Aralıklı hatırlatıcılar da tam olarak bu deseni
-   kullanacak — yeniden icat edilmeyecek. iOS 64 limiti bu yüzden daha da önemli:
-   tek modül şimdiden 14 slot yiyor.
-
-6. **Bildirim izni akışı zaten doğru**: izin ana şalter açıldığında isteniyor,
-   `Device.isDevice` false ise `'unsupported'` dönüyor. Yeni modüller aynı akışı kullanacak.
+- [ ] Bildirim kimlik şeması `savunma.habit.<id>.<slot>` biçimine genişletilecek
+      (hayalet bildirim riski `kind` alanıyla zaten kapandı; bu temizlik işi).
+- [ ] **Gerçek alarm eklenecek** (karar 2026-09-19: şimdilik bildirim yeter,
+      ileride eklenecek). Tam saatinde, kullanıcı kapatana kadar çalan alarm.
+      `expo-notifications` *inexact* alarm kuruyor (Android 14+ birkaç dakika
+      kaydırabilir) ve ısrarlı çalmayı desteklemiyor; native iş (Android
+      `AlarmManager.setAlarmClock` + tam ekran bildirim, iOS'ta sınırlı —
+      iOS 26 AlarmKit araştırılmalı).
+- [ ] **Su hedefi kişiye göre** (karar 2026-09-19) — sabit 10 bardak yerine
+      kullanıcıya boy, kilo, günlük etkinlik (ve istenirse iklim) sorulup bir
+      **aralık** önerilir; kullanıcı değiştirebilir. Metin kuralı: öneri tıbbi
+      değil, abartmaz; böbrek/kalp rahatsızlığında hekime danış notu.
+      Kaynak/formül seçilirken yaygın kılavuzlar (ör. kg başına ml
+      yaklaşımları) karşılaştırılıp gerekçesi KARARLAR'a yazılmalı. Sayacı olan
+      diğer hatırlatıcılara da (göz molası vb.) elle hedef seçimi gelir.
+- ⚠️ **iOS 64 bekleyen bildirim sınırı:** bütçe `NOTIFICATION_BUDGET = 56`,
+  günlük pratiğe `DAILY_PRACTICE_RESERVE = 28`. Yeni bildirim kuran her modül
+  bu bütçeden pay almalı.
+- [ ] Alarm için özel ses (`sound`) — native kaynak gerektiriyor; istenirse ayrı madde.
 
 ---
 
 ## 5. Ölçüm & Karne
 
-**Amaç:** alıştırma yapmak ayrı, **ilerlediğini görmek** ayrı.
+**Kural:** yeni test `src/data/measureTests.ts` kaydı + `MeasureTests.tsx`
+arayüzüyle eklenir, altyapı ikinci kez kurulmaz. Öz-ölçüm olduğu ekranda yazar;
+"kapasite" yok; aynı koşul notu ölçümden önce; yönü aralık olan ölçümde
+`improvement: 'none'`. Mikrofonla otomatik süre ölçümü yok.
 
-### Zaten var olanlar
-
-Bu bölüm ilk yazıldığında "hiç yok" varsayılmıştı; doğru değil. Karne altyapısının
-büyük kısmı çalışıyor:
-
-| Parça | Durum |
-| --- | --- |
-| `TrendChart` — çok serili çizgi/alan grafiği (`react-native-svg`) | ✅ Var, `ProfileScreen` ve `ExerciseHistoryScreen` kullanıyor |
-| `interviewHistory` + `interviewStats` — oturum kaydı, ortalama puan | ✅ Var |
-| `exerciseHistory` + `exerciseStats` — süre, adet, favori kategori | ✅ Var |
-| `ProfileScreen` — istatistik kutuları + gelişim grafiği + boş durum | ✅ Var, karne ekranı bu |
-| `InterviewHistoryScreen` / `ExerciseHistoryScreen` — geçmiş + grafik + yapay zekâ yorumu | ✅ Var |
-| `dailyPracticeProgress` — modül serileri, belagat sanatı istatistikleri | ✅ Var |
-
-**Yani ayrı bir `TestsScreen` ve `Sparkline` yazmaya gerek yok.** Eksik olan tek şey
-şu: yukarıdakilerin hepsi *uygulama kullanıldıkça kendiliğinden biriken* veriler.
-**Kasıtlı ölçüm** kavramı yok — kullanıcının "şimdi ölçüyorum" deyip tekrarladığı,
-zaman içinde karşılaştırılan bir test yok. `longestExhaleSeconds` bunun tek örneği,
-o da yalnızca rekoru tutuyor, geçmişi yok.
-
-> **Baştan net olsun:** aşağıdaki testlerin **hiçbiri akciğer hacmi ölçmüyor.** Hacim
-> ölçümü spirometre işi. Buradakiler kontrol, dayanıklılık ve konuşma verimi ölçüyor —
-> hepsi **kendi geçmişinle** karşılaştırıldığında anlamlı. Ekranda "kapasite" geçmeyecek.
-
-### Testler
-
-| Alan | Test | Birim | Durum |
-| --- | --- | --- | --- |
-| Nefes | **Kontrollü veriş süresi** — tek nefeste sabit "sss" | sn | ✅ Ölçüm + geçmiş + eğri |
-| Nefes | **Nefes tutma** — tam al, tut | sn | ❌ |
-| Nefes | **Dinlenik solunum hızı** — 60 sn, her alışta dokun | nefes/dk | ✅ Ölçüm + geçmiş + eğri |
-| Nefes | **Kontrol duraklaması** — ilk nefes ihtiyacına kadar | sn | ❌ |
-| Nefes | **Diyafram izolasyonu** — 5 maddelik öz-kontrol | 0-5 | ❌ |
-| Veriş | **Tek nefeste sayma** | sayı | ❌ |
-| Veriş | **Nefes/cümle oranı** — metni kaç nefeste okudun | nefes | ❌ |
-| Diksiyon | **Okuma hızı** — günün metnini sesli oku | kelime/dk | ✅ Ölçüm + geçmiş + eğri |
-| Diksiyon | **Dolgu kelime oranı** — 60 sn serbest konuşma | dolgu/dk | ⚠️ Sayaç var, test formatı yok |
-| Diksiyon | **Zayıf ses tespiti** — hangi seslerde takılıyorsun | ses listesi | ❌ |
-| Zihin | **Bilişsel başlangıç** — n-back + işlem hızı | seviye | ❌ |
-| Belagat | **Seviye tespit** — 10 soruluk sınav | % | ⚠️ İstatistik var, sınav yok |
-
-**Zayıf ses tespiti en değerli bağlantı:** işaretlenen sesler `dictionDrills.ts`'teki
-`focus` alanıyla eşleşirse günün seansı otomatik o seslere ağırlık verir.
-
-### Altyapı
-
-```ts
-type TestResult = { testId: string; day: string; value: number; note?: string };
-```
-
-Ortak parça: `TestTrend` ("son N ölçüm", ilk→son farkı, eğri). `improvement` alanı
-üç durumlu — `'higher'` | `'lower'` | `'none'`. Hedefi bir ARALIK olan ölçümlerde
-(okuma hızı, dinlenik solunum hızı) `'none'` kullanılıyor: artışı yeşile boyamak
-yanlış bilgi verirdi.
-
-**✅ Kuruldu (2026-09-06).** `dailyPracticeProgress.ts` içinde: `TestResult` tipi,
-`ProgressState.tests`, `normalize()` satırı, `MAX_TEST_RESULTS = 100` ve genel
-`recordTest()` / `testHistory()` / `bestTestValue()` fonksiyonları. Gösterim mevcut
-`TrendChart` üzerinden — yeni grafik bileşeni yazılmadı. **Yeni testler bu yoldan
-geçecek, altyapı ikinci kez kurulmayacak.**
-
-Yol boyunca çıkan hata: `recordExhaleRecord()` rekor kırmayan ölçümleri tamamen
-atıyordu (`if (seconds <= best) return state`), yani ilerleme zaten görülemezdi.
-Artık her ölçüm geçmişe giriyor, rekor ayrıca güncelleniyor.
-
-Kalan altyapı işi:
-
-- **Başlangıç testi:** ilk açılışta seviye **önerisi** üretir; kullanıcının seçimini ezmez.
-- **Karne toplaması:** test geçmişleri şu an yalnızca kendi egzersiz ekranında görünüyor;
-  `ProfileScreen`'de hepsini bir arada gösteren bir bölüm henüz yok.
-
-### ⚠️ Ölçüm dürüstlüğü
-
-- Bunlar **öz-ölçüm**, klinik ölçüm değil — ekranda açıkça yazacak.
-- Hiçbir sonuç "akciğer kapasiten şu kadar" diye sunulmayacak. Ölçülen neyse o yazacak:
-  *kontrollü veriş süresi*, *nefes ihtiyacı eşiği*, *konuşma hızı*.
-- Karşılaştırma ancak **aynı koşullarda** anlamlı: benzer saat, oturur pozisyon, tok
-  karnına değil. Test ekranı bunu ölçümden önce hatırlatmalı.
-- Nefes tutma testleri **oturarak**; suda / araç kullanırken asla.
-- **Mikrofonla otomatik süre ölçümü** v1'de yok: gürültüde eşik güvenilmez, manuel
-  bas-tut daha dürüst sonuç veriyor.
+- [ ] **Zayıf ses tespiti** — sonucu ses listesi, `TestResult` sayısal; ayrı veri
+      yapısı + `dictionDrills.focus` eşlemesi. Bölüm 6'daki zayıf ses odaklı
+      seansla birlikte. Karar (2026-09-19): **öneri** — günün seansı değişmez.
+- [ ] **Belagat sanat seviye tespiti** — 10 soruluk sınav (istatistik var, sınav yok) — Bölüm 7.
+- [ ] **Nefes/metin oranı metin ayrımı** — skala metin değiştikçe kayıyor; aynı
+      metnin tekrar okunması için metin kimliğine göre ayrı geçmiş.
+- [ ] Bilişsel başlangıç → Bölüm 2. Başlangıç testi → Bölüm 0.1.
 
 ---
 
 ## 6. Konuşma & Diksiyon
 
-**Mevcut ve çalışıyor:** `SpeechExerciseScreen` + `dictionDrills.ts` — 5 tür, ~20
-alıştırma (artikülasyon, 8 tekerleme, vurgu-tonlama, tempo & ses hacmi, dolgu kelime avı),
-günün seansı, dolgu sayacı, seans özeti, günün fesahat kusuru.
-
-### Eklenecek
-
-- **Zayıf ses odaklı seans** — Bölüm 5'teki tespite göre günün seansı ağırlık değiştirir
-- **Kayıttan dinleme** — kendi sesini kaydet, geri dinle, önceki kayıtla karşılaştır
-  (`expo-av` projede var)
-- **Sunum provası** — belirlenen süreye konuşmayı sığdırma, süre aşımı uyarısı
+- [ ] **Zayıf ses odaklı seans** — `dictionDrills.ts`'e ses etiketleri; tespit
+      edilen sesler için günün seansının yanında "zayıf seslerine özel seans"
+      düğmesi. Günün seansı **değişmez** (karar 2026-09-19).
+- [ ] **Kayıttan dinleme** — sesini kaydet, geri dinle, önceki kayıtla karşılaştır (`expo-av` var).
+- [ ] **Sunum provası** — konuşmayı belirlenen süreye sığdırma, süre aşımı uyarısı.
 
 ---
 
-## 7. Dil & İfade — Belagat
+## 7. Dil & İfade — Lugat & Türkçe
 
-**Mevcut ve çalışıyor:** meânî (8) / beyân (7) / bedî' (12) müfredatı, 6 fesahat kusuru,
-öğren → tanı → üret akışı, sanat bazlı doğru/yanlış istatistiği.
+Sütunun ekseni söz varlığı ve doğru Türkçe; belagat ikincil/ileri düzey (KARARLAR).
 
-### Eklenecek
+### Yanıt Defteri (2026-09-20)
 
-- **Seviye tespit sınavı** (10 soru) ve kol bazlı başarı yüzdesi
-- **Zayıf sanat tekrarı** — yanlış bilinen sanatlar tanıma havuzunda daha sık çıkar
-- Okuma metinlerindeki sanat etiketleri (`belagatArtIds`) üzerinden **metinden sanata**
-  geçiş — metni okurken sanatı işaretleme
+⏳ **Uygulandı:** Lugat quizleri (anlam testi, boşluk doldurma, seviye tespiti) cevapları
+**Yanıt Defteri**'ne yazılıyor. Yeni `src/screens/ResponseJournalScreen.tsx` ekranı:
+- Beş sekme: Tümü · Belagat · Egzersiz · Lugat · Mülakat
+- Satır genişletme (soru + beklenen cevap), silme, sayfalama (ilk 50 + "Daha fazla" düğmesi)
+- Lugat sekmesinde quiz türü (anlam / boşluk doldurma / seviye tespiti) ve doğru-yanlış damgası görünüyor
+- **Açık:** kayıt sayısı sınırsız büyüyor, otomatik budama yok
 
----
+### İlerleme
 
-## 8. Kimlik: isim ve ikonlar
+- ⏳ **Tekrar sırası göstergesi** (2026-09-19, kod; cihazda doğrulanacak) —
+  Alıştırma sekmesinde (Anlam testi / Boşluk doldurma) "Tekrar sırası gelen: N
+  kelime — testlerde önce bunlar sorulur"; N=0 ve Seviye tespitinde gizli.
+  `lugatProgress.ts` → `useDueCount()` (gün dönümünde yenilenir). Ayrı tekrar
+  modu yapılmadı.
+- [ ] **Deyim/atasözü doğrulaması** — 22 madde TDK Atasözleri ve Deyimler
+      Sözlüğü ile tek tek doğrulanmadı (GTS uç noktası deyimlerde JSON dönmedi).
+- [ ] **İçerik genişletme** — hedef ≥500 kelime (şu an 68); TDK GTS doğrulama iş akışı; kaynak/lisans notu.
+- [ ] **Günün metninde kelime işaretleme** — okurken dokun → anlam.
+- [ ] **Eş/zıt anlam ve kök-ek (türetme) alıştırmaları.**
+- [ ] **Deyim/atasözü alıştırması.**
+- [ ] **Yazım kuralları mini dersleri** — "de/da", "mi", "ki".
+- [ ] **Okuduğunu anlama soruları** — günün metni üzerinden.
+- [ ] SQLite kataloğuna taşıma — Bölüm 0.4 aşama 3.
 
-### İsim ✅
+### Belagat
 
-**Terakki** (2026-09-07). Kaynak dosyalar, native taraf (`expo prebuild --clean`)
-ve derleme tamam; paket kimliği `com.terakki.app`. Gerekçe [KARARLAR.md](KARARLAR.md)'de.
+Şu anki durum (2026-09-20):
+- ⏳ **"Tamamladım" düğmesi düzeltildi** (kod tamam, cihazda doğrulanacak) — eskiden
+  basınca ekranda hiçbir değişiklik olmuyordu, kullanıcı "çalışmıyor" diye bildirdi.
+  Artık yeşil onay kartı çıkıyor, cümle yanıt defterine yazılıyor ve "Yanıt Defterini
+  Aç" düğmesi geliyor. Metin değişirse "Tamamladım" geri gelir (aynı cümle iki kez
+  yazılmaz); boş metinle kayıt açılmaz.
 
-### Logo ✅
-
-Mevcut logo **Kademe** (4 eşit adımla yükselen ve 4. adımı 'sıradaki gelişmeyi' simgeleyen boş modül) olarak belirlendi ve `assets/brand/` altında belgelendi.
-
-### İkon dosyalarının durumu (Güncellendi — 2026-09-10)
-
-Logo türetimleri `tools/icon-forge/build_app_assets.py` script'i çalıştırılarak saf Python rasterleştiricisi ile üretildi ve `assets/` dizinine yerleştirildi.
-
-| Dosya | Gereken | Durum |
-| --- | --- | --- |
-| `icon.png` | 1024×1024, kenarlara kadar dolu degrade zemin + beyaz Kademe figürü | ✅ 1024×1024 — üretildi ve güncellendi |
-| `splash-icon.png` | 1024×1024, **şeffaf zeminli** zümrüt yeşili Kademe logosu | ✅ 1024×1024, şeffaf — üretildi |
-| `android-icon-foreground.png` | 1024×1024, **şeffaf**, logo ortadaki güvenli alanda (scale %72) | ✅ 1024×1024, şeffaf — üretildi |
-| `android-icon-monochrome.png` | 1024×1024, tek renk beyaz siluet, şeffaf zemin | ✅ 1024×1024, şeffaf — üretildi |
-| `android-icon-background.png` | Düz / zümrüt yeşili degrade zemin | ✅ `#059669` `app.json` adaptiveIcon rengiyle eşlendi |
-| `notification-icon.png` | Beyaz siluet + şeffaf zemin (96×96) | ✅ 96×96, tek renk `#ffffff` siluet — üretildi |
-| `favicon.png` | 48×48 web simgesi | ✅ 48×48, degrade zemin + beyaz Kademe figürü — üretildi |
-
-`app.json` içinde `adaptiveIcon.backgroundColor: "#059669"` ve `foregroundImage` / `monochromeImage` yolları doğru şekilde bağlandı.
-
-### Yapılanlar & Tamamlanan Adımlar
-
-1. ✅ **Logo kararı** — "Kademe" (yükselen 4 modül) markası kabul edildi.
-2. ✅ **Şeffaf zeminli türetim** — `tools/icon-forge/build_app_assets.py` ile tek kaynaktan `icon.png`, `splash-icon.png`, `android-icon-foreground.png`, `android-icon-monochrome.png`, `notification-icon.png`, `favicon.png` dosyaları üretildi.
-3. ✅ `android-icon-monochrome.png` gerçek siluete çevrildi (şeffaf zemin üzerine beyaz maske).
-4. ✅ `favicon.png` 48×48 boyutuna indirildi.
-5. ✅ Adaptive icon güvenli alanı ayarlandı (%72 ölçekleme ile güvenli marj sağlandı).
-6. ✅ `app.json` konfigürasyonu güncellendi.
-7. ✅ Native çıktı derlemesi için icon asset'leri `assets/` klasörüne işlendi (`npx expo prebuild --clean` ile kullanılabilir).
-
-### Not: `userInterfaceStyle` ölü ayar
-
-`app.json` `userInterfaceStyle: "light"` diyor ama `expo-system-ui` kurulu değil;
-prebuild bunu açıkça uyarıyor ("Install expo-system-ui in your project to enable
-this feature"). Uygulama temayı zaten JS tarafında `ThemeContext` ile yönetiyor,
-o yüzden acil değil — ama ayar yanıltıcı: kaldırılmalı ya da paket eklenmeli.
+- [ ] **Seviye tespit sınavı** (10 soru) ve kol bazlı başarı yüzdesi.
+- [ ] **Zayıf sanat tekrarı** — yanlış bilinen sanatlar tanıma havuzunda daha sık.
+- [ ] **Metinden sanata geçiş** — okuma metinlerindeki `belagatArtIds` ile metni okurken sanatı işaretleme.
 
 ---
 
-## Ortak altyapı işleri
+## 8. Kimlik
 
-### Tamamlanan Altyapı İşleri (Bölüm 0 & 00)
-| Dosya | İş | Durum |
-| --- | --- | --- |
-| `src/screens/TodayScreen.tsx` | Bugün sekmesi — günlük pratik ve seri takibi | ✅ Yapıldı |
-| `src/screens/GrowthScreen.tsx` | Gelişim hub'ı — yedi sütun kartı ve dinamik başlıklar | ✅ Yapıldı |
-| `src/screens/ProgressScreen.tsx` | İlerleme sekmesi — seriler, karne ve test eğilimleri | ✅ Yapıldı |
-| `src/screens/InterviewScreen.tsx` | Kariyer & Mülakat modülü — simülasyon ve geçmiş | ✅ Yapıldı |
-| `src/screens/ProgressScreen.tsx` | Üst marj büzüldü; 4 modül serisi ve rehber test kartları dinamikleştirildi | ✅ Yapıldı (Bölüm 0.2) |
-| `src/screens/ProfileScreen.tsx` | Günlük taahhüt, rozet vitrini ve yapay zekâ/sistem durum kartları eklendi | ✅ Yapıldı (Bölüm 0.2) |
-| `src/screens/SettingsScreen.tsx` | Modül ayarlarından arındırıldı, genel uygulama ayarlarına odaklandı | ✅ Yapıldı (Bölüm 0.3) |
-| `src/screens/SimulationScreen.tsx` | Eski iki işlevli ekran kaldırıldı | ✅ Temizlendi |
-| `App.tsx` | Sekmeler 4'e çıkarıldı; stack yönlendirmeleri tamamlandı | ✅ Yapıldı |
-| `src/components/ScreenBackground.tsx` | Sekme isimlerine uygun degrade bağlamı eklendi | ✅ Yapıldı |
-| `app.json` & `assets/` | Terakki Kademe ikonu (1024x1024), splash ve zemin yeşili (`#059669`) kuruldu | ✅ Yapıldı |
+- ✅ **`favicon.png`** (2026-09-19) — `92912c1`'de silinmişti ama `app.json` →
+  `web.favicon` onu gösteriyordu. `build_from_brand.py` artık favicon da
+  üretiyor (alan ortalamasıyla 48×48); bu seferlik teslim edilen `icon.png`'den
+  küçültüldü (aşağıdaki madde yüzünden).
+- ✅ **İkon kaynağı ile çıktı eşitlendi** (2026-09-20). Ayrışma şuydu: `48c91c1` ikonlara 3
+      duraklı degrade (`#0EA876 → #0A8D65 → #077456`) uyguladı ama betik
+      üzerinden değil; `terakki-icon-master.svg` hâlâ 2 duraklı
+      (`#10B981 → #04614A`). `build_from_brand.py` çalıştırılırsa ikonlar eski
+      degradeye dönüyordu. Yapıldı: master.svg 3 duraklıya çevrildi, betiğin
+      çıktısı commit'teki ikonlarla piksel piksel karşılaştırıldı (Android
+      zemininde en büyük fark 1/255; ikon yalnızca figür kenar yumuşatmasında
+      ayrılıyor, gözle aynı). Ardından kullanıcı **B adayını** seçti:
+      `#05B179 → #029568 → #007B59` (doygunluk %12 artırıldı). Eski ikon ve
+      eski kaynak SVG `assets/brand/arsiv/` altında. Orta durak `#029568`
+      `app.json` (iki yer), `SplashOverlay.tsx` ve iOS
+      `SplashScreenBackground.colorset` ile eşitlendi; splash degradesi de
+      (eskiden hâlâ iki duraklıydı) yeni degradeye çevrildi. ⏳ Cihazda: ikon,
+      açılış ekranı ve Android adaptif zemin. ⚠️ Native taraftaki kopyalar
+      (`ios/Terakki/Images.xcassets/AppIcon.appiconset/…`, Android res klasörleri)
+      hâlâ eski degradede — `npx expo prebuild` (ya da yeniden derleme)
+      çalıştırılmadan telefonda yeni ikon görünmez.
+- ⏳ **`expo-system-ui` kuruldu** (2026-09-20) — `~6.0.9`; `npx patch-package`
+      çalıştırıldı, `tsc` temiz. Etkisi ancak **yeniden derlemeden sonra**
+      görülür: `userInterfaceStyle: "automatic"` Android'de çalışmalı, prebuild
+      uyarısı kalkmalı.
 
-### Bekleyen Altyapı & Modül Dosyaları
-| Yeni / Değişecek Dosya | İş | Bölüm |
-| --- | --- | --- |
-| `src/screens/OnboardingScreen.tsx` | Duolingo tarzı oryantasyon ve ilk ısındırma akışı ekranı | Bölüm 0.1 |
-| `src/utils/sqliteDatabase.ts` | `expo-sqlite` ilişkisel veritabanı sürücüsü & göç (migration) altyapısı | Bölüm 0.4 |
-| `src/data/breathControlDrills.ts` | Nefes kontrolü egzersizleri + 4 haftalık plan | Bölüm 1 |
-| `src/screens/BreathControlScreen.tsx` | Antrenman akışı + ölçüm | Bölüm 1 |
-| `src/data/personalTests.ts` | Test tanımları: birim, talimat, güvenlik notu | Bölüm 5 |
-| `src/screens/TestsScreen.tsx` | Ölçüm akışı — kayıt ve karşılaştırma (grafik `TrendChart`'tan) | Bölüm 5 |
-| `src/utils/habitReminders.ts` | Aralıklı hatırlatıcı ayarları + slot açma | Bölüm 4 |
-| `src/utils/customAlarms.ts` | Serbest alarm CRUD + planlama | Bölüm 4 |
-| `src/screens/RemindersScreen.tsx` | Hatırlatıcı ve alarm yönetimi | Bölüm 4 |
-| `src/components/practice/HabitCard.tsx` | Ana ekranda günlük sayaç kartı | Bölüm 4 |
-| `src/data/cognitiveDrills.ts` | Zihin egzersizleri + zorluk uyarlaması | Bölüm 2 |
-| `src/data/breathingPrograms.ts` | 5 dk sade 4-6 preset'i + yeni faz türleri | Bölüm 1 |
-| `src/screens/DiaphragmExerciseScreen.tsx` | Preset girişi, aralıklı hatırlatma, bitişte döngü sayısı | Bölüm 1 |
-| `src/utils/dailyPracticeSettings.tsx` | Yeni modül ayarları (`onboardingCompleted`, `userGoals` vb.) | Bölüm 0.1 / 4 |
-| `src/utils/dailyNotifications.ts` | Dinamik kimlik şeması, slot açma, iOS bildirim bütçesi | Bölüm 4 |
-| `src/data/dictionDrills.ts` | Zayıf ses eşleşmesi için ses etiketleri | Bölüm 6 |
-| `src/screens/SpeechExerciseScreen.tsx` | Dolgu sayacı test formatına bağlanacak | Bölüm 6 |
-| `app.json` & `assets/` | Uygulama İkonu Arka Plan Degradesi & İkon Boyut Ayarlaması: İkon amblem boyutu mevcut %52 ideal oranında korunacak; arka plan rengi ise `assets/brand/ikon/` içerisindeki özgün zümrüt yeşili degrade (`#0EA876` → `#0A8D65` → `#077456`) ile kaplanacak. Hem iOS `icon.png` hem de Android adaptif ikon arka plan katmanı (`android.adaptiveIcon.backgroundImage`) bu degrade ile senkronize edilecek. | Bölüm 8 |
-| `README.md` | Yeni modüllerin özellik listesine eklenmesi | Genel |
+---
+
+## 9. Kişisel içerik — dinî mod
+
+⚠️ Terakki'ye özel; İrtifa'ya eklenmez, Fesahat için karar açık (KARARLAR →
+"Kişiye özel içerik diğer uygulamalara taşınmaz").
+
+- [ ] **Vecize doğrulaması** — 10 vecizenin lafzı ve künyesi asıl metinden
+      doğrulanmadı; netleşmeyenin `source`'u düzeltilecek ya da madde çıkacak.
+- [ ] Doğrulama bitince havuzu genişlet.
+**Vecize kaynağı — karar (2026-09-19): uygulama + sunucu.** Ayrı bir "admin
+modu" yok: uygulama tek kişilik, telefonu tutan zaten sahibi.
+
+- [ ] **Vecizelerim (uygulama)** — Günün Metni içinde liste: yaz / yapıştır /
+      dosyadan al (`expo-document-picker`, satır başına bir vecize), düzenle,
+      sil. Eklenenler yerel havuza katılır, günlük seçim ikisinden birden
+      yapılır. Çevrimdışı çalışır. Yeni depo `createPersistentStore` ile.
+- [ ] **Gmail'den çekme (sunucu)** — `server/server.ts`'e belirli bir Gmail
+      etiketini okuyan uç; OAuth2 yalnızca sunucuda (istemci sırrı uygulamaya
+      gömülmez). Uygulama sunucuya ulaşınca yeni vecizeleri çeker, yerel
+      havuza kaydeder (tekrarları atar); sunucu kapalıyken hiçbir şey bozulmaz
+      ve teknik hata gösterilmez (`aiAvailability` benzeri kontrol). Bültenin
+      HTML'i değişirse ayrıştırıcı boş dönebilir — boş sonuç sessizce yok
+      sayılmalı, havuzu silmemeli.
+- [ ] Gmail tarafı için kullanıcıdan: hangi gönderici/bülten, hangi etiket;
+      Google Cloud projesi ve OAuth onayı (kurulum adımları sunucu README'sine).
+
+---
+
+## Genel
+
+- [ ] `README.md` — yeni modüllerin özellik listesine eklenmesi.
+- ⚠️ **Türkçe büyük harf:** `uppercase` sınıflı yerlere küçük harfli başlık
+  yazılırsa "KELIMESI" hatası geri döner. Yeni başlıkları doğrudan büyük harfle
+  yaz ya da `src/utils/text.ts` → `trUpper()`'dan geçir.
+
+---
+
+## Cihazda doğrulanacaklar
+
+Aşağıdakiler yalnızca `tsc` (ve saf modüller için Node betikleri) ile doğrulandı;
+telefonda görülmedi. Build aldıktan sonra bakılacak.
+
+**Yeni (2026-09-20 turu — 3. kısım: yapay zekâ kurulumu)**
+
+- [ ] `expo-secure-store` native modülü: prebuild + yeniden derleme sonrası uygulama açılıyor mu; anahtar kaydedilip uygulama yeniden başlatıldığında hâlâ duruyor mu.
+- [ ] Kurulum akışı: "Ücretsiz anahtar al" tarayıcıyı açıyor mu; "Panodan yapıştır" çalışıyor mu; geçersiz anahtar **kaydedilmeden** anlaşılır bir hata veriyor mu.
+- [ ] Kapalıyken kartlardaki ve analiz ekranındaki "Yapay Zekâyı Aç" düğmeleri kuruluma götürüyor mu; anahtar girilip dönünce ekranlar kendiliğinden tazeleniyor mu.
+- [ ] Gerçek mülakat analizi uçtan uca: metin ve **ses** ile (ses MIME değişikliği yüzünden özellikle sesli olan).
+- [ ] Anahtarı kaldırınca yapay zekâ tekrar kapanıyor ve uygulamanın geri kalanı bozulmuyor mu.
+
+**Yeni (2026-09-20 turu — 2. kısım)**
+
+- [ ] Mülakat ses kaydı: kamera modunda kayıt sürerken kapat → "Kaydet ve çık"; ses dosyası gerçekten kalıcı klasöre taşınıp Mülakat Geçmişi'nde dinlenebiliyor mu. "Kaydetmeden çık" → ne kayıt ne ses dosyası kalıyor mu, mikrofon serbest bırakılıyor mu (sonraki mülakatta kayıt başlıyor mu).
+- [ ] Mülakattan geri tuşu/jestiyle çıkış: Android donanım geri tuşu ve iOS kenardan kaydırma da çıkış uyarısını getiriyor mu (denetimde bulundu: eskiden yalnızca başlıktaki X çalışıyordu, geri tuşuyla çıkan kaydını kaybediyordu).
+- [ ] Ses oynatma: sessiz moddaki iPhone'da duyuluyor mu; ikinci bir kayda basınca ilki duruyor mu; ekrandan çıkınca ses kesiliyor mu.
+- [ ] Egzersiz yazı girişi: klavye açıkken "Kontrol Et"e **ilk** dokunuş çalışıyor mu; doğru/yanlış kararı beklendiği gibi mi (özellikle Türkçe harfsiz yazımda); `accept`'siz iki soruda öz-değerlendirme düğmeleri çıkıyor mu; efor puanı ve trend grafiği eskisi gibi mi.
+- [ ] Yanıt Defteri: beş sekme de doğru listeyi gösteriyor mu; satır genişletme ve silme çalışıyor mu; "Daha fazla" düğmesi; birkaç yüz kayıtla akıcı mı; belagat üretim satırında doğru/yanlış damgası **görünmüyor** mu (tek doğru yok).
+- [ ] SQLite v3 göçü: mevcut veritabanı (v2) açılıp `practice_responses` tablosu yaratılıyor mu; eski mülakat/egzersiz geçmişi yerinde duruyor mu; göç başarısız olursa uygulama `kv` yoluna düşüp çalışmaya devam ediyor mu.
+- [ ] Belagat "Tamamladım": yeşil onay kartı çıkıyor, cümle deftere yazılıyor, "Yanıt Defterini Aç" çalışıyor; metin değişince "Tamamladım" geri geliyor; boş metinle kayıt açılmıyor.
+
+**Yeni (2026-09-20 turu — 1. kısım)**
+
+- [ ] İkon: telefon ana ekranında yeni degrade (`#05B179 → #029568 → #007B59`) nasıl duruyor; Android adaptif ikon zemini ve açılış ekranı aynı yeşilde mi; native (düz) açılıştan degradeli katmana geçişte renk sıçraması var mı.
+- [ ] `expo-system-ui`: yeniden derlemeden sonra prebuild uyarısı kalktı mı; koyu temada sistem parçaları (durum çubuğu, klavye zemini) uyumlu mu.
+- [ ] Oryantasyon: süre adımında hiçbir şeye dokunmadan "Devam" → Bugün listesi 5 dk'ya göre kısalıyor mu (özetle tutuyor mu); en üstteki "Atla" ile çıkınca liste kısalmıyor mu.
+- [ ] Günlük süre: 3 dk seçince Bugün listesi kısalıyor, "Daha fazlası" hepsini açıyor mu; 10 dk'da hepsi görünüyor mu; Ayarlar ve Profil'den değiştirince liste anında değişiyor mu; süre hiç seçilmemişken (mevcut kurulum) liste **kısalmıyor** mu; gizlenen modülün hatırlatması yine geliyor mu; seriler bozulmadı mı.
+- [ ] Duruş öz-kontrol: Dinlenme & Denge → Duruş & Sırt'ta kart görünüyor, işaretleme kaydediliyor mu; Karne'de "DURUŞ" alanı noktalı Ş/İ ile doğru mu; ikinci ölçümden sonra skala ve eğri çıkıyor mu.
+
+**2026-09-19 turu**
+
+- [ ] Sade 5 dk 4-6: tek dokunuşla başlıyor mu; 30 döngü 4/6 sn; her 5 döngüde hatırlatma; bitişte döngü sayısı; `benefits` görünmüyor mu.
+- [ ] Rahat Tutma bitişinde ölçüm yönlendirmesi çıkıyor mu, Diyafram → Ölçüm sekmesini açıyor mu; diğer egzersizlerin bitişi değişmedi mi.
+- [ ] Çene gevşetme hatırlatıcısı Aralıklı Hatırlatıcılar'da varsayılan kapalı görünüyor mu, açınca bildirim geliyor mu.
+- [ ] Torasik ekstansiyon Dinlenme & Denge → Duruş & Sırt'ta listeleniyor, adım adım ilerliyor mu.
+- [ ] Dil & İfade → Alıştırma'da tekrar sırası sayacı; yanlış cevaplanan kelimeden sonra artıyor mu.
+
+**Arayüz**
+
+- [ ] Ayarlar'daki anahtarlar: tutamak iki uçta eşit boşlukta mı, açıp kapatırken takılma var mı (özellikle Android).
+- [ ] Belagat'ta "Günün Sanatı" sekmesi taşmıyor mu; diğer dört sekmeli ekranlarda etiketler okunur mu.
+- [ ] Sekme ikonları: Diyafram (Pratik/Ölçüm/Rehber), Zihin (Bilişsel/Fizyolojik), Konuşma (Alıştırma/Fesahat), Günün Metni (Okuma/Hız & Tahlil) — dar ekranda etiketler taşmıyor mu.
+- [ ] Kaydırma göstergesi: uzun ekranlarda sağda çubuk görünüyor mu.
+- [ ] Alt boşluk: dört sekmede de son kart yüzen sekme çubuğunun altında kalmıyor mu — jest çubuğu olan ve olmayan cihazda.
+- [ ] Alt çubuğun dört sekmeyle görünümü ve her sekmenin degrade zemini.
+- [ ] Türkçe büyük harf: "GÜNÜN KELİMESİ", "GÜNLÜK PRATİK", "PROFİLİ DÜZENLE", Karne'de "DİL & İFADE", İlerleme'de "EGZERSİZ" noktalı İ ile mi; hiçbir başlık taşmıyor mu.
+- [ ] Profil → Hedef ve tercihler: dört satır basılınca soluyor mu; "Dinî İçerik Modu" satırı Ayarlar'ı açıyor, sağında ok var mı.
+- [ ] Profil rengi: fotoğrafla ve fotoğrafsız, iki temada.
+
+**Açılış ekranı**
+
+- [ ] Splash geçişi; yazı figürün altında ortalı, eskisiyle aynı boyda mı (genişlik 134px, arası 21px); "Terakki"nin son 'i' noktası çıkıyor mu.
+- [ ] Splash hızı: font beklemesi kalktı, degradeye geçiş eskisinden erken olmalı.
+- [ ] Splash süresi **sürüm derlemesinde**: düz yeşil native ekran kısa mı? Uzunsa ayrı madde açılacak.
+
+**Sekmeler ve ekranlar**
+
+- [ ] Bugün: dua ve vecize tek kartta mı; seri kartı ve "Gelişim sekmesine bak" yazısı gitti mi; dinî mod kapalıyken kart hiç çıkmıyor mu. Günün Metni → Okuma'da da aynı birleşik kart.
+- [ ] Gelişim: alan listesi 6 satır mı; sıralama hedeflere göre doğru mu; Alışkanlık & Rutin Hatırlatıcılar'ı açıyor mu.
+- [ ] İlerleme: üç bölüm (Özet · Seriler · Kayıtlar); Seriler'de yalnız başlanmış modüller satır, başlanmamışlar altta adlarıyla tek satırda; hiçbiri başlanmamışken kart düzgün mü; hepsi başlanmışken özet satırı çıkmıyor mu. Özet kutuları (compact) iki tema ve dar ekranda taşmıyor mu; Egzersiz Geçmişi/Detayı'ndaki kutuların boyutu değişmemiş mi. Gelişim eğrisi verisi yokken bölüm görünmüyor mu.
+- [ ] Dört modül ekranında sağ üst çark → panel açılıyor mu; hatırlatma saati değişince bildirim yeni saate kuruluyor mu.
+- [ ] Hatırlatıcılar ekranı Gelişim → Alışkanlık & Rutin ve Profil → Hatırlatıcılar'dan açılıyor mu.
+- [ ] Dil & İfade: dört sekme, dar ekranda etiketler; öğrenilen/kaydedilen kelimeler uygulama kapanıp açılınca duruyor mu.
+- [ ] Günün Kelimesi: Bugün kartında "Öğrendim" → sayaç artıyor mu; hepsi bitince ✓ ve seri Bugün'den çıkmadan güncelleniyor mu.
+- [ ] Paylaşılan ilerleme: başka modülü tamamlayıp Bugün / İlerleme / Profil'e dönünce ✓ ve seri yeniden başlatmadan görünüyor mu.
+
+**Oryantasyon**
+
+- [ ] Temiz kurulumda açılıyor, kullanılan cihazda açılmıyor mu; saat seçilince izin isteniyor ve bildirim o saate kuruluyor mu; izin reddinde akış ilerliyor mu; nefes ısınması ekrandan çıkınca duruyor mu; bitince geri tuşu oryantasyona dönmüyor mu; Ayarlar'dan yeniden açılıp geri çıkılınca bir sonraki açılışta tekrar çıkmıyor mu.
+- [ ] Hedefler: Bugün listesi ve Gelişim sırası değişiyor mu; Profil → Hedef ve tercihler paneli; "Kısa tur" kartı "Anladım" ile kalıcı kapanıyor mu.
+
+**Depolama (önce yeniden derle — `expo-sqlite` native modül)**
+
+- [ ] Ayarlar → Sistem Bilgileri'nde "Depolama: SQLite"; profil, seriler, ayarlar, kelimeler ve geçmiş derleme sonrası **aynen** duruyor mu; değişiklik uygulama kapanıp açılınca kalıyor mu; `savunma-store/` yedek olarak yerinde mi.
+- [ ] Aşama 2: mülakat ve egzersiz geçmişi aynı sırayla mı; yeni kayıt en üstte ve kalıcı mı; silinen kayıt geri gelmiyor mu.
+- [ ] Yedek yol: yeniden derlenmemiş eski derleme Metro ile çökmeden "Depolama: Dosya" ile çalışıyor mu.
+
+**Ölçüm**
+
+- [ ] Her test (nefes tutma, kontrol duraklaması, tek nefeste sayma, diyafram izolasyonu, dolgu oranı, nefes/metin, kelime seviyesi) ölçülüp kaydediliyor mu; ikinci ölçümden sonra eğri; koşul/güvenlik notu ölçümden önce.
+- [ ] Ölçüme başlama: sayaç/liste testlerinde "başla" düğmesi; ölçüm kaydedildikten sonra kapı kapanmıyor mu.
+- [ ] Skala: işaretçi doğru dilimde mi (ör. 16 nefes/dk "Tipik"); Karne'de de görünüyor mu; dar ekran ve iki tema. Kişisel skala tek ölçümde "ikinci ölçümünden sonra" yazısı; bütün ölçümler aynıysa uyarı satırı.
+- [ ] Karne: İlerleme'deki düğme ayrı ekranı açıyor mu; "Ölç" doğru ekran + sekme; geri dönünce "N/M testte ölçümün var" güncel mi.
+
+**Bildirimler**
+
+- [ ] Günün kelimeleri hatırlatması Dil & İfade'yi açıyor mu; diğer modül bildirimleri kendi ekranlarını açıyor mu.
+- [ ] Aralıklı hatırlatıcılar: bildirim aktif saat aralığında geliyor, gece gelmiyor mu; gün süzgeci çalışıyor mu.
+- [ ] Sayaç: bildirime dokununca artıyor mu; kartta "+1"; ertesi gün sıfırlanıyor mu.
+- [ ] "Duruş kontrolü" bildirimi Dinlenme & Denge'yi açıyor, sayacı artırıyor mu.
+- [ ] Bütçe: 5 modül + "2 günde 1" + birkaç aralıklı hatırlatıcı açıkken iOS'ta sessizce düşen bildirim var mı.
+- [ ] Android kanalları: Günlük Pratik, Aralıklı Hatırlatıcılar, Alarmlar ayrı mı; biri sessizken diğerleri geliyor mu.
+- [ ] Serbest alarmlar: o saatte çalıyor mu; "her gün" alarmı uygulama açılmadan ertesi gün de çalıyor mu; gün seçimi; silinen/kapatılan alarm susuyor mu. 10 alarm sınırında "ekle" pasif mi; boş etikette "Alarm" yazıyor mu.
+
+**İçerik**
+
+- [ ] Duruş egzersizleri: Duruş & Sırt kategorisi; üç (artık dört) egzersiz adım adım; süreler tutuyor mu.
+- [ ] Rahat Tutma — Hazırlık/Geliştirme: 6 ve 12 sn tutma doğru sayılıyor mu; güvenlik uyarısı başlamadan önce okunuyor, kartta kesilmiyor mu.
+- [ ] Gün dönümü: uygulama açıkken gece yarısı geçince (ya da arka plandan dönünce) günün kelimesi, metni, dua/vecize ve pratik satırları yenileniyor mu; yarıda kalan mülakatta soru **değişmiyor** mu.
+- [ ] Aralıklı tekrar: yanlış cevaplanan kelime testi yeniden açınca ilk sorularda mı; doğru cevaplanan ertesi gün gelmiyor mu; eski kayıtlar çökertmiyor mu.
+- [ ] Günün vecizesi: dinî mod açıkken Bugün ve Günün Metni'nde; kapalıyken yok; ertesi gün değişiyor, duayla aynı sıraya düşmüyor mu.
 
 ---
 
 ## Açık sorular
 
-- [x] ~~Uygulama adı ne olacak?~~ **Terakki** (2026-09-07). Ayrıntı [KARARLAR.md](KARARLAR.md)'de.
-- [x] ~~Sekme yapısı ne olacak?~~ **Dört sekme: Bugün · Gelişim · İlerleme · Profil**
-      (2026-09-08). Ayrıntı Bölüm 0'da.
-- [x] ~~Testler ayrı sekme mi, `ProfileScreen` altında "karne" bölümü mü?~~
-      **Ayrı sekme (İlerleme)** ve yedi sütunun tamamını gösterecek.
-- [ ] Nefes modülü ayrı ekran mı, `DiaphragmExerciseScreen` içinde iki sekme mi?
-- [ ] Alarm beklentisi: sıradan bildirim mi, çalan/ısrarlı alarm mı? (İkincisi native iş.)
-- [ ] Sayım sesli mi olacak? `expo-av` var; konuşan sayım için `expo-speech` gerekir.
-- [ ] Zayıf ses tespiti günün seansını otomatik mi değiştirsin, öneri olarak mı kalsın?
-      (Otomatik olursa günlük içerik deterministik olmaktan çıkar; bildirim metniyle
-      ekran içeriği tutmayabilir.)
-- [ ] Su sayacı hedefi sabit mi (8 bardak), kullanıcı mı belirleyecek?
+2026-09-19'da hepsi cevaplandı → KARARLAR → "Kullanıcı karar turu (2026-09-19)".
+Açık soru kalmadı.

@@ -42,29 +42,48 @@ buradaki değerler onların kopyası, değişirse birlikte değişmeli.
 | Figür | `#059669` | `#34d399` |
 | Ekran zemini | `#f6fdf9` | `#121214` |
 
-Uygulama ikonu degradesi profil ekranıyla **aynı yönde** — üstte açık, altta derin:
-`#10b981` → `#059669` → `#047857`.
+Uygulama ikonu degradesi `ikon/terakki-icon-master.svg`'den gelir — yukarıdan
+aşağı üç duraklı: `#05B179` → `#029568` → `#007B59` (2026-09-19 kararı; eski
+iki duraklı `#10B981` → `#04614A` ve ara sürüm `#0EA876 → #0A8D65 → #077456`
+`arsiv/` altında). Orta durak `#029568`; Android `adaptiveIcon.backgroundColor`,
+native splash zemini ve `SplashOverlay` bu değeri kullanıyor.
 
 ## Dosyalar
 
 | Dosya | Ne |
 | --- | --- |
-| `mark.png` | 1024×1024, **şeffaf zemin**, kimlik yeşili. Bütün türetmelerin kaynağı. |
-| `app-icon.png` | 1024×1024, degrade zemin + beyaz figür. `assets/icon.png`'nin olacağı hâl. |
-| `contexts.png` | Dört bağlam tek karede: uygulama ikonu · açık tema · koyu tema · 96px beyaz siluet. |
+| `ikon/terakki-icon-master.svg` | Uygulama ikonunun kaynağı: degrade zemin + beyaz figür. **Degrade renkleri buradan okunur.** |
+| `ikon/terakki-icon-mark.svg` | Şeffaf zeminde yalnız figür. **Figür geometrisi buradan okunur.** |
+| `ikon/terakki-icon-white.svg` | Beyaz zeminli varyant |
+| `ikon/terakki-1024.png` · `512` · `192` | Master'ın rasterları (figür tam boy) |
+| `app-icon.png` | `assets/icon.png`'nin kopyası (figür %52) |
+| `adaylar/` | Elenen adaylar |
 
 ## Yeniden üretmek
 
 ```bash
-python3 tools/icon-forge/brand.py assets/brand
+python3 tools/icon-forge/build_from_brand.py
 ```
 
-Geometri `tools/icon-forge/marks.py` içinde; başka aday seçilirse
-`brand.py`'deki `CHOSEN` değiştirilir.
+`assets/icon.png`, `android-icon-background.png`, `android-icon-foreground.png`,
+`android-icon-monochrome.png`, `splash-icon.png` ve `brand/app-icon.png` üretilir.
+İkon figür boyutu betikteki `MARK_SCALE` (şu an `0.52`); splash görseli tam boy
+figür taşır (`SPLASH_SCALE`). Native tarafa işlemek için ardından
+`npx expo prebuild` — önce `DEVAM.md` "Ortam tuzakları"nı oku.
 
-## Henüz yapılmadı
+`notification-icon.png` bu betikle üretilmiyor.
 
-`assets/` kökündeki altı hedef (`icon.png`, `splash-icon.png`, `favicon.png`,
-`android-icon-foreground.png`, `android-icon-monochrome.png`,
-`notification-icon.png`) hâlâ eski kalkan logosunu taşıyor. Marka onaylanınca
-buradan türetilecek — kuralları `YAPILACAKLAR.md` Bölüm 8'de.
+## Açılış ekranı (splash)
+
+İki katman:
+
+1. **Native splash** — `app.json` → `expo-splash-screen`: düz `#029568` zemin,
+   ortada `splash-icon.png` 170 dp genişlikte. Android 12+ native splash degrade
+   ve yazı desteklemediği için bu kadar.
+2. **`src/components/SplashOverlay.tsx`** — native splash'in birebir aynısıyla
+   başlar, onu kapatır; degradeyi (`#05B179` → `#029568` → `#007B59`) ve altındaki
+   kaligrafik "Terakki" yazısını açar, sonra uygulamaya solar.
+
+Yazı fontu **Italianno** (`assets/fonts/`, SIL Open Font License —
+`Italianno-OFL.txt`). Zemin rengi ve `imageWidth` iki yerde birden geçiyor;
+biri değişirse diğeri de değişmeli.

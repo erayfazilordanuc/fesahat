@@ -1,6 +1,16 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { Wind, Mic, Feather, BookOpen, Check, ChevronRight } from 'lucide-react-native';
+import {
+  Wind,
+  Mic,
+  Feather,
+  BookOpen,
+  BookOpenText,
+  Check,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react-native';
 
 import { Card, ProgressBar, useThemeTokens } from './PracticeUI';
 import { useDailyPracticeSettings } from '../../utils/dailyPracticeSettings';
@@ -10,10 +20,14 @@ import {
   type PracticeModule,
 } from '../../utils/dailyPracticeProgress';
 import { getBreathingProgram } from '../../data/breathingPrograms';
-import { pickDailyDrill } from '../../data/dictionDrills';
+import { drillSeconds, pickDailyDrill } from '../../data/dictionDrills';
 import { pickDailyBelagatArt } from '../../data/belagat';
 import { pickDailyPrayer, pickDailyText } from '../../data/dailyTexts';
+import { pickDailyVecize } from '../../data/risale';
+import { useDayKey } from '../../utils/today';
+import { lugatProgressStore, todaysWords } from '../../utils/lugatProgress';
 import { formatTime } from '../../utils/dateUtils';
+import { useOnboarding, moduleOrderForGoals } from '../../utils/onboarding';
 
 // Ana ekran (Mülakat sekmesi) kartları.
 // Yalnızca ayarlarda açık olan modüller görünür; hepsi kapalıysa kart hiç render edilmez.
@@ -25,12 +39,35 @@ type Row = {
   detail: string;
   time: string;
   icon: React.ReactNode;
+  /** Kaba süre tahmini (dk) — bkz. `minutesFromSeconds` altındaki not. */
+  minutes: number;
 };
+
+/**
+ * Modül başına kaba süre tahmini (dakika) — Bugün listesini
+ * `onboarding.dailyMinutes` bütçesine sığdırmak için kullanılıyor
+ * (YAPILACAKLAR Bölüm 0.1 → "Günlük süre Bugün listesini ayarlasın").
+ *
+ * Diyafram, konuşma ve günün metni günün gerçekten seçilen içeriğinden
+ * (nefes programının toplam saniyesi, tekerlemenin öğe × saniye'si, metnin
+ * `approxSeconds` alanı) hesaplanıyor. Lügat ve belagatin veri kaynağında
+ * süre alanı olmadığı için sabit bir tahmin kullanılıyor.
+ */
+const LUGAT_SECONDS_PER_WORD = 25; // kelime + anlam + örnek okuma, kaba tahmin
+const BELAGAT_ESTIMATED_MINUTES = 3; // tanım + örnek + alıştırma, süre verisi yok
+
+function minutesFromSeconds(seconds: number): number {
+  return Math.max(1, Math.round(seconds / 60));
+}
 
 export function DailyPracticeCard({ navigation }: { navigation?: any }) {
   const t = useThemeTokens();
   const { settings } = useDailyPracticeSettings();
   const { progress } = useDailyProgress();
+  const lugatState = lugatProgressStore.use();
+  const { goals, dailyMinutes, dailyMinutesChosen } = useOnboarding();
+  const day = useDayKey();
+  const [expanded, setExpanded] = React.useState(false);
 
   const rows = React.useMemo<Row[]>(() => {
     const iconColor = t.isLight ? '#475569' : '#cbd5e1';
@@ -45,6 +82,21 @@ export function DailyPracticeCard({ navigation }: { navigation?: any }) {
         detail: `${text.title} · ${text.source}`,
         time: formatTime(settings.dailyText.time.hour, settings.dailyText.time.minute),
         icon: <BookOpen size={18} color={iconColor} />,
+        minutes: minutesFromSeconds(text.approxSeconds),
+      });
+    }
+
+    if (settings.lugat.enabled) {
+      const { words } = todaysWords(lugatState);
+      const detail = words.map((w) => w.word).join(' · ');
+      list.push({
+        module: 'lugat',
+        screen: 'Language',
+        title: 'Günün kelimeleri',
+        detail: detail || 'Kelimeler hazırlanıyor',
+        time: formatTime(settings.lugat.time.hour, settings.lugat.time.minute),
+        icon: <BookOpenText size={18} color={iconColor} />,
+        minutes: minutesFromSeconds(words.length * LUGAT_SECONDS_PER_WORD),
       });
     }
 
@@ -57,6 +109,7 @@ export function DailyPracticeCard({ navigation }: { navigation?: any }) {
         detail: `${program.title} · ${program.durationLabel}`,
         time: formatTime(settings.diaphragm.time.hour, settings.diaphragm.time.minute),
         icon: <Wind size={18} color={iconColor} />,
+        minutes: minutesFromSeconds(program.totalSeconds),
       });
     }
 
@@ -69,6 +122,7 @@ export function DailyPracticeCard({ navigation }: { navigation?: any }) {
         detail: drill.title,
         time: formatTime(settings.speech.time.hour, settings.speech.time.minute),
         icon: <Mic size={18} color={iconColor} />,
+        minutes: minutesFromSeconds(drillSeconds(drill)),
       });
     }
 
@@ -81,32 +135,62 @@ export function DailyPracticeCard({ navigation }: { navigation?: any }) {
         detail: art.name,
         time: formatTime(settings.belagat.time.hour, settings.belagat.time.minute),
         icon: <Feather size={18} color={iconColor} />,
+        minutes: BELAGAT_ESTIMATED_MINUTES,
       });
     }
 
-    return list;
-  }, [settings, t.isLight]);
+    // Hedeflenen modüller seçim sırasıyla öne alınır; hedef seçilmemişken
+    // `moduleOrderForGoals([])` mevcut sırayı (yukarıdaki push sırasını) verir.
+    const order = moduleOrderForGoals(goals);
+    return [...list].sort((a, b) => order.indexOf(a.module) - order.indexOf(b.module));
+    // `day`: gün dönümünde satırların içeriği (metin, tekerleme, sanat, kelime)
+    // tazelensin (YAPILACAKLAR Bölüm 7 → "Gün dönümünde yenileme").
+  }, [settings, t.isLight, lugatState, goals, day]);
+
+  // Bütçeleme: hedef sırasına göre modülleri günlük dakika hedefine sığdırır.
+  // En az bir modül her zaman görünür; bütçeye sığmayanlar "Daha fazlası"
+  // altına düşer, kapanmaz (KARARLAR.md → "Kullanıcı karar turu (2026-09-19)").
+  // 10 dk en üst kademe: kaba süre tahminleri toplamı 10'u aşabilse de bu
+  // kademe "hepsini göster" anlamına geliyor, bütçe uygulanmıyor.
+  const { visibleRows, hiddenCount } = React.useMemo(() => {
+    // Süre seçilmediyse (eski kullanıcı, oryantasyonu atlayan) liste kısalmaz.
+    if (!dailyMinutesChosen || dailyMinutes >= 10) return { visibleRows: rows, hiddenCount: 0 };
+    // Sıra bozulmuyor: bütçeye sığmayan ilk modülde kesiliyor. Sığmayanı atlayıp
+    // arkasındaki küçük modülü öne almak, kullanıcının hedef sırasını sessizce
+    // değiştirirdi.
+    let used = 0;
+    const visible: Row[] = [];
+    for (const row of rows) {
+      if (visible.length > 0 && used + row.minutes > dailyMinutes) break;
+      visible.push(row);
+      used += row.minutes;
+    }
+    return { visibleRows: visible, hiddenCount: rows.length - visible.length };
+  }, [rows, dailyMinutes, dailyMinutesChosen]);
 
   if (rows.length === 0) return null;
 
-  const doneCount = rows.filter((row) => isCompletedToday(progress, row.module)).length;
+  const displayRows = expanded ? rows : visibleRows;
+  // Gün hedefi görünür (bütçelenmiş) listeye göre; genişletilince açılan
+  // ekstra modüller bonus sayılır, oranı değiştirmez.
+  const doneCount = visibleRows.filter((row) => isCompletedToday(progress, row.module)).length;
 
   return (
     <Card className="mt-4" style={{paddingBottom: 6}}>
       <View className="flex-row items-center justify-between mb-1">
-        <Text className={`text-[11px] font-bold uppercase tracking-widest ${t.muted}`}>
-          Günlük Pratik
+        <Text className={`text-[11px] font-bold tracking-widest ${t.muted}`}>
+          GÜNLÜK PRATİK
         </Text>
-        <Text className={`text-[11px] font-bold ${doneCount === rows.length ? (t.isLight ? 'text-emerald-600' : 'text-emerald-400') : t.muted}`}>
-          {doneCount}/{rows.length}
+        <Text className={`text-[11px] font-bold ${doneCount === visibleRows.length ? (t.isLight ? 'text-emerald-600' : 'text-emerald-400') : t.muted}`}>
+          {doneCount}/{visibleRows.length}
         </Text>
       </View>
 
       <View className="mt-2 mb-2">
-        <ProgressBar value={rows.length === 0 ? 0 : doneCount / rows.length} tone="emerald" />
+        <ProgressBar value={visibleRows.length === 0 ? 0 : doneCount / visibleRows.length} tone="emerald" />
       </View>
 
-      {rows.map((row, index) => {
+      {displayRows.map((row, index) => {
         const done = isCompletedToday(progress, row.module);
         return (
           <Pressable
@@ -146,18 +230,65 @@ export function DailyPracticeCard({ navigation }: { navigation?: any }) {
           </Pressable>
         );
       })}
+
+      {/* Bütçe dışında kalan modüller — kapanmaz, "Daha fazlası" ile açılır. */}
+      {hiddenCount > 0 ? (
+        <Pressable
+          onPress={() => setExpanded((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            expanded ? 'Günlük pratik listesini daralt' : `Kalan ${hiddenCount} modülü göster`
+          }
+          className="flex-row items-center py-3.5 mt-0.5"
+        >
+          <View
+            className={`w-9 h-9 rounded-xl items-center justify-center ${
+              t.isLight ? 'bg-slate-100' : 'bg-slate-800'
+            }`}
+          >
+            {expanded ? (
+              <ChevronUp size={18} color={t.iconColor} />
+            ) : (
+              <ChevronDown size={18} color={t.iconColor} />
+            )}
+          </View>
+          <View className="flex-1 ml-3 pr-2">
+            <Text className={`text-[13px] font-bold ${t.title}`}>
+              {expanded ? 'Daha az göster' : `Daha fazlası (${hiddenCount})`}
+            </Text>
+            {!expanded ? (
+              <Text className={`text-[11px] mt-0.5 ${t.muted}`} numberOfLines={1}>
+                Günlük hedefin {dailyMinutes} dk — daha fazlası için aç
+              </Text>
+            ) : null}
+          </View>
+        </Pressable>
+      ) : null}
     </Card>
   );
 }
 
 /**
- * Günün duası kartı — web sürümündeki "Günün Duası" bloğunun mobil karşılığı.
+ * Günün duası + günün Risale-i Nur vecizesi — tek kartta.
  * Yalnızca ayarlarda dinî içerik açıkken görünür.
+ *
+ * 2026-09-18'de birleştirildi: ikisi de aynı şaltere bağlı ve Bugün sekmesinde
+ * arka arkaya iki ayrı kutu olarak duruyordu; ekran gereksiz uzuyordu.
+ *
+ * ⚠️ KİŞİSEL İÇERİK: bu kart Fesahat ve İrtifa'ya taşınmaz (bkz.
+ * `src/data/risale.ts` başlığı ve YAPILACAKLAR Bölüm 9).
+ *
+ * Başlıklar kaynakta doğrudan büyük harfle yazılı; `uppercase` sınıfı
+ * kullanılmıyor, çünkü CSS/JS büyütmesi Türkçede 'i'yi 'I' yapıyor
+ * (YAPILACAKLAR → "Türkçe büyük harf dönüşümü").
  */
-export function DailyPrayerCard({ navigation }: { navigation?: any }) {
+export function DailyFaithCard({ navigation }: { navigation?: any }) {
   const t = useThemeTokens();
   const { settings } = useDailyPracticeSettings();
-  const prayer = React.useMemo(() => pickDailyPrayer(), []);
+  // `day`: gün dönümünde dua ve vecize tazelensin (Bölüm 7).
+  const day = useDayKey();
+  const prayer = React.useMemo(() => pickDailyPrayer(), [day]);
+  const vecize = React.useMemo(() => pickDailyVecize(), [day]);
 
   if (!settings.religiousMode) return null;
 
@@ -169,30 +300,30 @@ export function DailyPrayerCard({ navigation }: { navigation?: any }) {
 
   return (
     <Wrapper onPress={openDailyText} className="mt-4">
-      <View
-        className={`rounded-2xl border p-4 items-center justify-center ${
-          t.isLight
-            ? 'bg-emerald-50/80 border-emerald-300'
-            : 'bg-[#061e19] border-emerald-800/60'
-        }`}
-      >
+      <Card>
+        <Text className={`text-[10px] font-bold tracking-widest ${t.muted}`}>GÜNÜN DUASI</Text>
         <Text
-          className={`text-[12px] italic font-medium text-center leading-5 ${
+          className={`text-[13px] italic leading-6 mt-2 ${
             t.isLight ? 'text-emerald-800' : 'text-emerald-400'
           }`}
         >
           “{prayer.text}”
         </Text>
         {prayer.meaning ? (
-          <Text
-            className={`text-[11px] italic text-center mt-1 ${
-              t.isLight ? 'text-emerald-700' : 'text-emerald-400/80'
-            }`}
-          >
-            ({prayer.meaning})
-          </Text>
+          <Text className={`text-[11px] mt-1 leading-5 ${t.muted}`}>{prayer.meaning}</Text>
         ) : null}
-      </View>
+
+        <View className={`mt-3 pt-3 border-t ${t.dividerColor}`}>
+          <Text className={`text-[10px] font-bold tracking-widest ${t.muted}`}>
+            GÜNÜN VECİZESİ
+          </Text>
+          <Text className={`text-[13px] italic leading-6 mt-2 ${t.title}`}>“{vecize.text}”</Text>
+          {vecize.plain ? (
+            <Text className={`text-[11px] mt-1.5 leading-5 ${t.muted}`}>{vecize.plain}</Text>
+          ) : null}
+          <Text className={`text-[10px] mt-2 ${t.muted}`}>{vecize.source}</Text>
+        </View>
+      </Card>
     </Wrapper>
   );
 }

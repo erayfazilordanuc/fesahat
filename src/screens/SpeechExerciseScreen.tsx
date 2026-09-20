@@ -11,8 +11,10 @@ import {
   GhostButton,
   Chip,
   ProgressBar,
+  SettingsButton,
   useThemeTokens,
 } from '../components/practice/PracticeUI';
+import { ModuleSettingsSheet } from '../components/practice/ModuleSettingsSheet';
 import {
   DRILL_KIND_LABELS,
   allDrills,
@@ -22,20 +24,28 @@ import {
   type DictionDrill,
 } from '../data/dictionDrills';
 import { FESAHAT_FLAWS, pickDailyFesahatFlaw } from '../data/belagat';
+import { useDayKey } from '../utils/today';
 import { useDailyPracticeSettings } from '../utils/dailyPracticeSettings';
-import { useDailyProgress } from '../utils/dailyPracticeProgress';
+import { testHistory, useDailyProgress, type TestResult } from '../utils/dailyPracticeProgress';
+import { MeasureCard } from '../components/practice/MeasureTests';
+import { findMeasureTest, TEST_FILLER_RATE } from '../data/measureTests';
 import { formatDuration } from '../utils/dateUtils';
 
 // Günlük konuşma (diksiyon) egzersizi.
 // Günün seansı bir artikülasyon ısınması + havuzdan seçilen bir ana egzersizden oluşur.
 // Ayarlarda tekerleme veya dolgu kelime avı kapatılmışsa o türler havuza hiç girmez.
 
-export default function SpeechExerciseScreen({ navigation }: any) {
+export default function SpeechExerciseScreen({ navigation, route }: any) {
   const t = useThemeTokens();
   const { settings, updateModule } = useDailyPracticeSettings();
-  const { progress, complete } = useDailyProgress();
+  const { progress, complete, logTest } = useDailyProgress();
 
-  const [activeTab, setActiveTab] = React.useState<'alistirma' | 'fesahat'>('alistirma');
+  // Karnedeki "Ölç" düğmesi dolgu kelime oranı ölçümünü barındıran sekmeyi
+  // doğrudan açabilsin diye.
+  const [activeTab, setActiveTab] = React.useState<'alistirma' | 'fesahat'>(
+    route?.params?.test === 'filler' ? 'fesahat' : 'alistirma',
+  );
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
 
   const session = React.useMemo(() => buildDailySession(settings.speech), [settings.speech]);
   const pool = React.useMemo(() => availableDrills(settings.speech), [settings.speech]);
@@ -59,7 +69,10 @@ export default function SpeechExerciseScreen({ navigation }: any) {
     remainingRef.current = remaining;
   }, [remaining]);
 
-  const fesahatFlaw = React.useMemo(() => pickDailyFesahatFlaw(), []);
+  // `day` bağımlılığı: gece yarısı geçildiğinde günün kusuru tazelensin
+  // (YAPILACAKLAR Bölüm 7 → "Gün dönümünde yenileme").
+  const day = useDayKey();
+  const fesahatFlaw = React.useMemo(() => pickDailyFesahatFlaw(), [day]);
 
   // Egzersiz veya öğe değişince sayacı yeni süreye ayarla.
   React.useEffect(() => {
@@ -160,6 +173,7 @@ export default function SpeechExerciseScreen({ navigation }: any) {
             )}`
       }
       onClose={() => navigation?.goBack?.()}
+      right={<SettingsButton onPress={() => setSettingsOpen(true)} />}
       footer={
         sessionDone ? (
           <View className="gap-2">
@@ -214,8 +228,12 @@ export default function SpeechExerciseScreen({ navigation }: any) {
           value={activeTab}
           onChange={setActiveTab}
           options={[
-            { value: 'alistirma', label: '🎙️ Alıştırma' },
-            { value: 'fesahat', label: '📚 Fesahat & Kitaplık' },
+            { value: 'alistirma', label: 'Alıştırma', icon: <Mic size={14} color={t.iconColor} /> },
+            {
+              value: 'fesahat',
+              label: 'Fesahat & Kitaplık',
+              icon: <BookOpen size={14} color={t.iconColor} />,
+            },
           ]}
         />
       </View>
@@ -272,7 +290,7 @@ export default function SpeechExerciseScreen({ navigation }: any) {
           {/* Kendini değerlendirme */}
           <Card className="mt-3">
             <Text className={`text-[11px] font-bold uppercase tracking-widest mb-2 ${t.muted}`}>
-              Kendini Kontrol Et
+              KENDİNİ KONTROL ET
             </Text>
             <Text className={`text-[12px] leading-5 ${t.body}`}>{drill.selfCheck}</Text>
           </Card>
@@ -304,35 +322,6 @@ export default function SpeechExerciseScreen({ navigation }: any) {
             </Text>
           </Card>
 
-          {/* Konuşma Tercihleri */}
-          <SectionTitle hint="Günün seansına girecek alıştırma türlerini buradan değiştirebilirsiniz.">
-            Konuşma Tercihleri
-          </SectionTitle>
-          <Card>
-            <View className="flex-row items-center justify-between py-1">
-              <View className="flex-1 pr-3">
-                <Text className={`text-[13px] font-bold ${t.title}`}>Tekerlemeler</Text>
-                <Text className={`text-[11px] mt-0.5 ${t.muted}`}>Seans havuzunda tekerleme kartları yer alsın.</Text>
-              </View>
-              <Toggle
-                value={settings.speech.includeTongueTwisters}
-                onValueChange={(v) => updateModule('speech', { includeTongueTwisters: v })}
-                tone="violet"
-              />
-            </View>
-            <View className={`flex-row items-center justify-between pt-3 mt-3 border-t ${t.dividerColor}`}>
-              <View className="flex-1 pr-3">
-                <Text className={`text-[13px] font-bold ${t.title}`}>Dolgu Kelime Avı</Text>
-                <Text className={`text-[11px] mt-0.5 ${t.muted}`}>"yani, şey, eee" temizliği sayacı dahil edilsin.</Text>
-              </View>
-              <Toggle
-                value={settings.speech.includeFillerHunt}
-                onValueChange={(v) => updateModule('speech', { includeFillerHunt: v })}
-                tone="violet"
-              />
-            </View>
-          </Card>
-
           {/* Diğer egzersizler */}
           <SectionTitle hint="Günün seansı dışında serbest çalışmak için seçin.">
             Tüm Egzersizler Kataloğu
@@ -353,8 +342,41 @@ export default function SpeechExerciseScreen({ navigation }: any) {
               Bazı egzersiz türleri ayarlardan kapatıldığı için listede yok.
             </Text>
           ) : null}
+
+          {/* Dolgu kelime oranı ölçümü — kasıtlı test (Bölüm 5), günün seansından
+              bağımsız: "Dolgu Kelime Avı" şalteri yalnızca seans havuzunu
+              yönetir, bu ölçüm şalter kapalıyken de yapılabilir. */}
+          <FillerRateMeasure
+            history={testHistory(progress, TEST_FILLER_RATE)}
+            onSave={(value) => logTest(TEST_FILLER_RATE, value)}
+          />
         </>
       )}
+
+      <ModuleSettingsSheet module="speech" visible={settingsOpen} onClose={() => setSettingsOpen(false)}>
+        <View className="flex-row items-center justify-between py-1">
+          <View className="flex-1 pr-3">
+            <Text className={`text-[13px] font-bold ${t.title}`}>Tekerlemeler</Text>
+            <Text className={`text-[11px] mt-0.5 ${t.muted}`}>Seans havuzunda tekerleme kartları yer alsın.</Text>
+          </View>
+          <Toggle
+            value={settings.speech.includeTongueTwisters}
+            onValueChange={(v) => updateModule('speech', { includeTongueTwisters: v })}
+            tone="violet"
+          />
+        </View>
+        <View className={`flex-row items-center justify-between pt-3 mt-3 border-t ${t.dividerColor}`}>
+          <View className="flex-1 pr-3">
+            <Text className={`text-[13px] font-bold ${t.title}`}>Dolgu Kelime Avı</Text>
+            <Text className={`text-[11px] mt-0.5 ${t.muted}`}>"yani, şey, eee" temizliği sayacı dahil edilsin.</Text>
+          </View>
+          <Toggle
+            value={settings.speech.includeFillerHunt}
+            onValueChange={(v) => updateModule('speech', { includeFillerHunt: v })}
+            tone="violet"
+          />
+        </View>
+      </ModuleSettingsSheet>
     </ScreenShell>
   );
 }
@@ -402,6 +424,101 @@ function FillerCounter({
         Hedef: 60 saniyede sıfır. Üç ve üzeri, mülakat analizinde fark edilir düzeydedir.
       </Text>
     </Card>
+  );
+}
+
+/**
+ * Dolgu kelime oranı ölçümü — 60 saniyelik serbest konuşma testi (Bölüm 5).
+ * Seans içindeki `FillerCounter`'dan ayrı bir state'tir; günün seansına
+ * karışmaz ve "Dolgu Kelime Avı" şalteri kapalıyken de çalışır çünkü o şalter
+ * yalnızca seans havuzunu yönetir, kasıtlı ölçümü değil.
+ */
+function FillerRateMeasure({
+  history,
+  onSave,
+}: {
+  history: TestResult[];
+  onSave: (count: number) => void;
+}) {
+  const t = useThemeTokens();
+  const TEST_SECONDS = 60;
+  const [phase, setPhase] = React.useState<'idle' | 'running' | 'done'>('idle');
+  const [remaining, setRemaining] = React.useState(TEST_SECONDS);
+  const [count, setCount] = React.useState(0);
+  const deadlineRef = React.useRef<number | null>(null);
+
+  // Sayaç yalnızca 'running' fazındayken kurulur; faz değişince ya da ekrandan
+  // çıkılınca temizlenir — sızıntı olmaz.
+  React.useEffect(() => {
+    if (phase !== 'running') return;
+    const id = setInterval(() => {
+      const deadline = deadlineRef.current;
+      if (deadline === null) return;
+      const left = (deadline - Date.now()) / 1000;
+      if (left > 0) {
+        setRemaining(left);
+      } else {
+        clearInterval(id);
+        deadlineRef.current = null;
+        setRemaining(0);
+        setPhase('done');
+      }
+    }, 200);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  const start = () => {
+    setCount(0);
+    setRemaining(TEST_SECONDS);
+    deadlineRef.current = Date.now() + TEST_SECONDS * 1000;
+    setPhase('running');
+  };
+
+  const reset = () => {
+    deadlineRef.current = null;
+    setCount(0);
+    setRemaining(TEST_SECONDS);
+    setPhase('idle');
+  };
+
+  // 60 saniyelik test = 1 dakika; birim zaten "dolgu/dk" olduğu için sayıyı
+  // olduğu gibi kullanıyoruz, ek bir dönüşüm gerekmiyor.
+  const value = phase === 'done' ? count : null;
+
+  return (
+    <MeasureCard test={findMeasureTest(TEST_FILLER_RATE)!} history={history} value={value} onSave={onSave}>
+      <View className="items-center py-2">
+        <Text className={`text-[40px] font-black ${phase === 'running' ? t.title : t.muted}`}>
+          {Math.ceil(remaining)}
+        </Text>
+        <Text className={`text-[11px] ${t.muted}`}>saniye kaldı</Text>
+      </View>
+
+      {phase === 'idle' ? (
+        <GhostButton label="Başlat · 60 sn" onPress={start} />
+      ) : (
+        <>
+          <Pressable
+            onPress={() => setCount((c) => c + 1)}
+            disabled={phase !== 'running'}
+            accessibilityRole="button"
+            accessibilityLabel="Ölçüm dolgu kelime sayacını artır"
+            className={`rounded-2xl py-5 items-center justify-center border-2 mb-3 ${
+              phase === 'running'
+                ? t.isLight
+                  ? 'bg-violet-50 border-violet-300'
+                  : 'bg-violet-950 border-violet-700'
+                : `${t.cardBg} ${t.cardBorder} opacity-50`
+            }`}
+          >
+            <Plus size={18} color={t.isLight ? '#7c3aed' : '#a78bfa'} />
+            <Text className={`text-[32px] font-black mt-1 ${t.title}`}>{count}</Text>
+            <Text className={`text-[11px] mt-1 ${t.muted}`}>duydukça dokun</Text>
+          </Pressable>
+          {phase === 'done' ? <GhostButton label="Yeniden ölç" onPress={reset} /> : null}
+        </>
+      )}
+    </MeasureCard>
   );
 }
 

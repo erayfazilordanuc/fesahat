@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Sparkles, TrendingUp, Check, Target, ListChecks } from 'lucide-react-native';
 
 import { Surface, ActionButton, toneColor, toneSoft, toneText } from './AppUI';
@@ -62,9 +63,11 @@ export function AiInsightCard({
   disabledHint?: string;
 }) {
   const t = useThemeTokens();
+  const navigation = useNavigation<any>();
   // Yapay zekâ kapalıyken düğme çalışır görünüp hata basmıyor; baştan kapalı
   // ve nedeni sade bir dille yazılı. Kart tamamen gizlenmiyor ki özelliğin
-  // varlığı bilinsin.
+  // varlığı bilinsin. Hemen altında kuruluma giden bir düğme var — eskiden
+  // yalnızca bu ipucu vardı ve kullanıcı nereden açacağını bulamıyordu.
   const aiOn = useAiAvailable();
   const blocked = disabled || !aiOn;
   const blockedHint = !aiOn ? AI_UNAVAILABLE_HINT : disabledHint;
@@ -106,7 +109,7 @@ export function AiInsightCard({
             <Text
               className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${toneText('emerald', t.isLight)}`}
             >
-              Gemini Motoru Destekli
+              GEMİNİ MOTORU DESTEKLİ
             </Text>
           </View>
         </View>
@@ -123,6 +126,18 @@ export function AiInsightCard({
 
         {blocked && blockedHint ? (
           <Text className={`text-[11px] mt-2 text-center ${t.muted}`}>{blockedHint}</Text>
+        ) : null}
+
+        {!aiOn ? (
+          <View className="mt-3">
+            <ActionButton
+              label="Yapay Zekâyı Aç"
+              tone="emerald"
+              variant="outline"
+              icon={<Sparkles size={16} color={toneColor('emerald', t.isLight)} />}
+              onPress={() => navigation.navigate('AiSetup')}
+            />
+          </View>
         ) : null}
 
         {loading ? (

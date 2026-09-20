@@ -1,32 +1,24 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { TrendingUp, Award, Cpu, Flame, ChevronRight } from 'lucide-react-native';
+import { TrendingUp, Award, Cpu, Flame, ChartColumn, NotebookPen } from 'lucide-react-native';
 
 import {
   AppScreen,
   TabHeader,
   Surface,
   SectionLabel,
-  ActionRow,
   StatTile,
-  EmptyState,
   toneColor,
   toneSoft,
   toneText,
+  type Tone,
 } from '../components/AppUI';
 import { useThemeTokens } from '../components/practice/PracticeUI';
 import { TrendChart } from '../components/TrendChart';
-import { TestTrend } from '../components/practice/TestTrend';
-import {
-  TEST_BREATHING_RATE,
-  TEST_EXHALE_CONTROL,
-  TEST_READING_WPM,
-  testHistory,
-  useDailyProgress,
-  type PracticeModule,
-} from '../utils/dailyPracticeProgress';
+import { testHistory, useDailyProgress, type PracticeModule } from '../utils/dailyPracticeProgress';
 import { interviewStats, useInterviewSessions } from '../utils/interviewHistory';
 import { exerciseStats, useExerciseLogs } from '../utils/exerciseHistory';
+import { MEASURE_TESTS } from '../data/measureTests';
 
 // İlerleme sekmesi — uygulamanın ölçtüğü **her şey**.
 //
@@ -34,15 +26,26 @@ import { exerciseStats, useExerciseLogs } from '../utils/exerciseHistory';
 // aldım**. İki sekmenin adı anlamca yakın olduğu için alt başlıklar bunu açıkça
 // söylüyor.
 //
-// Eskiden bu içerik `ProfileScreen`'in içindeydi ve yalnızca iki şey ölçüyordu:
-// mülakat puanı ve egzersiz eforu. Metin, nefes, konuşma, belagat serileri
-// tutuluyor ama hiçbir yerde görünmüyordu (YAPILACAKLAR Bölüm 0).
+// DÜZEN (2026-09-18'de sadeleştirildi): ekran üç bölüme indi — Özet, Seriler,
+// Kayıtlar — ve gelişim eğrisi yalnızca verisi varken çiziliyor.
+// Önceki hâlin iki sorunu vardı:
+//   1. Beş seri kartı iki sütunlu ızgaraya diziliyordu; tek sayı olduğu için
+//      sonuncusu yarım satırda yalnız kalıyor, sayfa "yamuk" duruyordu.
+//      Artık tek bir kartın içinde eşit satırlar hâlinde.
+//   2. Aynı ekranda üç ayrı kart biçimi vardı (ızgara kutusu, geçmiş kartı,
+//      karne kartı). Hepsi tek bir satır biçimine indi.
+//
+// 2026-09-20: "Kayıtlar" dördüncü girişini (Yanıt defteri) alınca alt alta
+// dört satır ekranın yarısını kaplar oldu; ikişerli ızgaraya geçildi
+// (`RecordGrid`). Yukarıdaki 1. maddedeki "yamuk" sorunu burada yok: giriş
+// sayısı çift ve tek kalırsa boş dolgu ekleniyor.
 
 const MODULE_LABELS: Record<PracticeModule, string> = {
   dailyText: 'Günün metni',
   diaphragm: 'Diyafram nefesi',
   speech: 'Konuşma egzersizi',
   belagat: 'Belagat',
+  lugat: 'Günün kelimeleri',
 };
 
 /** Grafiğe beslenecek son N kaydı eskiden yeniye sıralar. */
@@ -59,8 +62,16 @@ export default function ProgressScreen({ navigation }: any) {
   const interviews = interviewStats(sessions);
   const exercises = exerciseStats(logs);
 
-  const modules = Object.entries(progress.modules) as [PracticeModule, { streak: number; bestStreak: number; totalSessions: number }][];
-  const activeModules = modules.filter(([, m]) => m.totalSessions > 0);
+  const modules = Object.entries(progress.modules) as [
+    PracticeModule,
+    { streak: number; bestStreak: number; totalSessions: number },
+  ][];
+
+  // Başlanmamış modüller satır olarak yer kaplamıyor; adları tek satırda
+  // özetleniyor (2026-09-19). Eskiden beşi de listeleniyordu ve çoğu "0 gün"
+  // yazan, bilgi vermeyen satırlardı.
+  const started = modules.filter(([, m]) => m.totalSessions > 0);
+  const notStarted = modules.filter(([, m]) => m.totalSessions === 0);
 
   const interviewSeries = lastValues(
     sessions.filter((session) => session.analysis),
@@ -70,12 +81,10 @@ export default function ProgressScreen({ navigation }: any) {
   const exerciseSeries = lastValues(logs, 7, (log) => log.effort);
   const hasChartData = interviewSeries.length > 1 || exerciseSeries.length > 1;
 
-  const tests = [
-    { id: TEST_EXHALE_CONTROL, label: 'Kontrollü veriş süresi', unit: 's', decimals: 1, improvement: 'higher' as const },
-    { id: TEST_BREATHING_RATE, label: 'Dinlenik solunum hızı', unit: 'nefes/dk', decimals: 0, improvement: 'none' as const },
-    { id: TEST_READING_WPM, label: 'Okuma hızı', unit: 'kelime/dk', decimals: 0, improvement: 'higher' as const },
-  ].map((test) => ({ ...test, history: testHistory(progress, test.id) }))
-    .filter((test) => test.history.length > 0);
+  // Karne satırının alt yazısı: kaç testte en az bir ölçüm var.
+  const measuredCount = MEASURE_TESTS.filter(
+    (test) => testHistory(progress, test.id).length > 0,
+  ).length;
 
   return (
     <AppScreen
@@ -89,55 +98,12 @@ export default function ProgressScreen({ navigation }: any) {
       }
     >
       <View className="-mt-5">
-        <SectionLabel>SERİLER</SectionLabel>
-      </View>
-      <View className="flex-row flex-wrap gap-2">
-        {modules.map(([id, m]) => {
-          const active = m.totalSessions > 0;
-          return (
-            <View
-              key={id}
-              className={`w-[48.5%] p-3 rounded-xl border flex-row items-center ${
-                t.isLight ? 'bg-white border-slate-200/80' : 'bg-[#1e1e22] border-[#2e2e34]'
-              }`}
-            >
-              <View
-                className={`w-7 h-7 rounded-lg items-center justify-center mr-2.5 ${
-                  active ? toneSoft('emerald', t.isLight) : t.isLight ? 'bg-slate-100' : 'bg-slate-800'
-                }`}
-              >
-                <Flame
-                  size={14}
-                  color={active ? toneColor('emerald', t.isLight) : t.isLight ? '#94a3b8' : '#64748b'}
-                />
-              </View>
-              <View className="flex-1">
-                <Text className={`text-[12px] font-semibold ${t.title}`} numberOfLines={1}>
-                  {MODULE_LABELS[id]}
-                </Text>
-                <View className="flex-row items-baseline justify-between mt-0.5">
-                  <Text
-                    className={`text-[11px] font-bold ${
-                      active ? toneText('emerald', t.isLight) : t.muted
-                    }`}
-                  >
-                    {m.streak} gün
-                  </Text>
-                  {active && m.bestStreak > 0 ? (
-                    <Text className={`text-[9px] ${t.muted}`}>en iyi {m.bestStreak}</Text>
-                  ) : null}
-                </View>
-              </View>
-            </View>
-          );
-        })}
-      </View>
-
-      <View className="mt-4">
-        <SectionLabel>KARİYER VE ZİHİN</SectionLabel>
+        <SectionLabel>ÖZET</SectionLabel>
       </View>
       <View className="flex-row gap-2.5">
+        {/* `compact`: tasarım aynı, kutular alçaldı — ekran kalabalık geliyordu. */}
         <StatTile
+          compact
           label="Mülakat"
           icon={<Award size={14} color={toneColor('blue', t.isLight)} />}
           tone="blue"
@@ -146,6 +112,7 @@ export default function ProgressScreen({ navigation }: any) {
           hint={`${interviews.total} oturum`}
         />
         <StatTile
+          compact
           label="Egzersiz"
           icon={<Cpu size={14} color={toneColor('violet', t.isLight)} />}
           tone="violet"
@@ -155,101 +122,135 @@ export default function ProgressScreen({ navigation }: any) {
         />
       </View>
 
-      <View className="mt-4">
-        <SectionLabel>GEÇMİŞ</SectionLabel>
-      </View>
-      <View className="flex-row gap-2.5">
-        <Pressable
-          onPress={() => navigation.navigate('InterviewHistory')}
-          className={`flex-1 p-3 rounded-xl border flex-row items-center ${
-            t.isLight ? 'bg-white border-slate-200/80' : 'bg-[#1e1e22] border-[#2e2e34]'
-          }`}
-        >
-          <View className={`w-8 h-8 rounded-lg items-center justify-center mr-2.5 ${toneSoft('blue', t.isLight)}`}>
-            <Award size={16} color={toneColor('blue', t.isLight)} />
-          </View>
-          <View className="flex-1">
-            <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
-              Mülakat
-            </Text>
-            <Text className={`text-[10px] ${t.muted}`} numberOfLines={1}>
-              Kayıtlar & puanlar
-            </Text>
-          </View>
-          <ChevronRight size={14} color={t.isLight ? '#94a3b8' : '#64748b'} />
-        </Pressable>
+      <SectionLabel>SERİLER</SectionLabel>
+      <Surface>
+        {started.map(([id, m], index) => (
+          <StreakRow
+            key={id}
+            label={MODULE_LABELS[id]}
+            streak={m.streak}
+            bestStreak={m.bestStreak}
+            first={index === 0}
+          />
+        ))}
+        {notStarted.length > 0 ? (
+          <Text
+            className={`text-[11px] leading-4 ${t.muted} ${
+              started.length > 0 ? `mt-3 pt-3 border-t ${t.dividerColor}` : ''
+            }`}
+          >
+            Henüz başlanmadı: {notStarted.map(([id]) => MODULE_LABELS[id]).join(' · ')}
+          </Text>
+        ) : null}
+      </Surface>
 
-        <Pressable
-          onPress={() => navigation.navigate('ExerciseHistory')}
-          className={`flex-1 p-3 rounded-xl border flex-row items-center ${
-            t.isLight ? 'bg-white border-slate-200/80' : 'bg-[#1e1e22] border-[#2e2e34]'
-          }`}
-        >
-          <View className={`w-8 h-8 rounded-lg items-center justify-center mr-2.5 ${toneSoft('violet', t.isLight)}`}>
-            <Cpu size={16} color={toneColor('violet', t.isLight)} />
-          </View>
-          <View className="flex-1">
-            <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
-              Egzersiz
-            </Text>
-            <Text className={`text-[10px] ${t.muted}`} numberOfLines={1}>
-              Zihin kayıtları
-            </Text>
-          </View>
-          <ChevronRight size={14} color={t.isLight ? '#94a3b8' : '#64748b'} />
-        </Pressable>
-      </View>
+      <SectionLabel>KAYITLAR</SectionLabel>
+      <RecordGrid
+        items={[
+          {
+            key: 'karne',
+            icon: <ChartColumn size={16} color={toneColor('emerald', t.isLight)} />,
+            tone: 'emerald',
+            title: 'Karne',
+            subtitle: `${measuredCount}/${MEASURE_TESTS.length} ölçüm`,
+            label: `Karne. Bütün ölçümler; ${MEASURE_TESTS.length} testin ${measuredCount} tanesinde ölçümün var.`,
+            onPress: () => navigation.navigate('Measurements'),
+          },
+          {
+            key: 'mulakat',
+            icon: <Award size={16} color={toneColor('blue', t.isLight)} />,
+            tone: 'blue',
+            title: 'Mülakat',
+            subtitle: 'Kayıt, puan',
+            label: 'Mülakat geçmişi. Kayıtlar ve puanlar.',
+            onPress: () => navigation.navigate('InterviewHistory'),
+          },
+          {
+            key: 'egzersiz',
+            icon: <Cpu size={16} color={toneColor('violet', t.isLight)} />,
+            tone: 'violet',
+            title: 'Egzersiz',
+            subtitle: 'Zihin ve nefes',
+            label: 'Egzersiz geçmişi. Zihin ve nefes kayıtları.',
+            onPress: () => navigation.navigate('ExerciseHistory'),
+          },
+          {
+            key: 'yanit',
+            icon: <NotebookPen size={16} color={toneColor('amber', t.isLight)} />,
+            tone: 'amber',
+            title: 'Yanıt defteri',
+            subtitle: 'Yazdıkların',
+            label: 'Yanıt defteri. Yazdıkların ve verdiğin cevaplar.',
+            onPress: () => navigation.navigate('ResponseJournal'),
+          },
+        ]}
+      />
 
-      {tests.length > 0 ? (
+      {/* Eğri yalnızca çizilebiliyorsa görünüyor: veri yokken "veri yok" kartı
+          koymak ekranı bir şey söylemeyen bir kutuyla uzatıyordu. */}
+      {hasChartData ? (
         <>
-          <View className="mt-4">
-            <SectionLabel>ÖLÇÜMLER</SectionLabel>
-          </View>
-          <View className="gap-2">
-            {tests.map((test) => (
-              <Surface key={test.id}>
-                <Text className={`text-[12px] font-bold mb-2 ${t.title}`}>{test.label}</Text>
-                <TestTrend
-                  history={test.history}
-                  unit={test.unit}
-                  decimals={test.decimals}
-                  improvement={test.improvement}
-                />
-              </Surface>
-            ))}
-          </View>
+          <SectionLabel>GELİŞİM EĞRİSİ</SectionLabel>
+          <Surface>
+            <View className="flex-row items-center justify-end mb-2">
+              <LegendDot color={toneColor('blue', t.isLight)} label="Mülakat" />
+              <View className="w-3" />
+              <LegendDot color={toneColor('violet', t.isLight)} label="Egzersiz" />
+            </View>
+            <TrendChart
+              height={115}
+              maxValue={100}
+              series={[
+                ...(interviewSeries.length > 1
+                  ? [{ color: toneColor('blue', t.isLight), values: interviewSeries, fill: true }]
+                  : []),
+                ...(exerciseSeries.length > 1
+                  ? [{ color: toneColor('violet', t.isLight), values: exerciseSeries, fill: true }]
+                  : []),
+              ]}
+            />
+          </Surface>
         </>
       ) : null}
-
-      <View className="flex-row items-center justify-between mt-4 mb-2">
-        <Text className={`text-[14px] font-bold ${t.title}`}>Gelişim Eğrisi</Text>
-        <View className="flex-row items-center">
-          <LegendDot color={toneColor('blue', t.isLight)} label="Mülakat" />
-          <View className="w-3" />
-          <LegendDot color={toneColor('violet', t.isLight)} label="Egzersiz" />
-        </View>
-      </View>
-      {hasChartData ? (
-        <TrendChart
-          height={115}
-          maxValue={100}
-          series={[
-            ...(interviewSeries.length > 1
-              ? [{ color: toneColor('blue', t.isLight), values: interviewSeries, fill: true }]
-              : []),
-            ...(exerciseSeries.length > 1
-              ? [{ color: toneColor('violet', t.isLight), values: exerciseSeries, fill: true }]
-              : []),
-          ]}
-        />
-      ) : (
-        <Surface>
-          <Text className={`text-[11px] leading-5 ${t.muted}`}>
-            Eğrinin oluşması için en az iki mülakat ya da iki egzersiz kaydı gerekiyor.
-          </Text>
-        </Surface>
-      )}
     </AppScreen>
+  );
+}
+
+/** Seriler kartındaki tek satır: modül adı, güncel seri ve en iyi seri. */
+function StreakRow({
+  label,
+  streak,
+  bestStreak,
+  first,
+}: {
+  label: string;
+  streak: number;
+  bestStreak: number;
+  first: boolean;
+}) {
+  const t = useThemeTokens();
+
+  // `active` ayrımı kalktı: artık yalnızca başlanmış modüller satır oluyor,
+  // başlanmamışlar kartın altında adlarıyla özetleniyor.
+  return (
+    <View
+      className={`flex-row items-center ${first ? '' : `mt-3 pt-3 border-t ${t.dividerColor}`}`}
+    >
+      <View
+        className={`w-8 h-8 rounded-xl items-center justify-center mr-3 ${toneSoft('emerald', t.isLight)}`}
+      >
+        <Flame size={15} color={toneColor('emerald', t.isLight)} />
+      </View>
+      <Text className={`flex-1 text-[13px] font-semibold ${t.title}`} numberOfLines={1}>
+        {label}
+      </Text>
+      {bestStreak > 0 ? (
+        <Text className={`text-[11px] mr-3 ${t.muted}`}>en iyi {bestStreak}</Text>
+      ) : null}
+      <Text className={`text-[13px] font-bold ${toneText('emerald', t.isLight)}`}>
+        {streak} gün
+      </Text>
+    </View>
   );
 }
 
@@ -260,5 +261,83 @@ function LegendDot({ color, label }: { color: string; label: string }) {
       <View className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: color }} />
       <Text className={`text-[10px] font-bold ${t.muted}`}>{label}</Text>
     </View>
+  );
+}
+
+/**
+ * "Kayıtlar" girişlerinin ikişerli ızgarası.
+ *
+ * Bu dört giriş eskiden alt alta birer `ActionRow`'du ve ekranın yarısını
+ * kaplıyordu; ikişerli dizilince dördü de tek bakışta görünüyor. Hücreler
+ * `flex-1` ile eşit bölünüyor, satırlar ayrı ayrı sarılıyor — `flex-wrap` +
+ * yüzde genişlik yerine bu, yazı tipi ölçeği büyüdüğünde de hizayı koruyor.
+ *
+ * Tek sayıda giriş kalırsa son hücre tüm satırı kaplamasın diye boş bir
+ * dolgu ekleniyor.
+ */
+type RecordItem = {
+  key: string;
+  icon: React.ReactNode;
+  tone: Tone;
+  title: string;
+  subtitle: string;
+  /** Ekran okuyucu için uzun hâli — kart üstünde başlık ve alt satır kısaltılmış. */
+  label: string;
+  onPress: () => void;
+};
+
+function RecordGrid({ items }: { items: RecordItem[] }) {
+  const rows: RecordItem[][] = [];
+  for (let i = 0; i < items.length; i += 2) {
+    rows.push(items.slice(i, i + 2));
+  }
+
+  return (
+    <View className="gap-2">
+      {rows.map((row) => (
+        <View key={row[0].key} className="flex-row gap-2">
+          {row.map((item) => (
+            <View key={item.key} className="flex-1">
+              <RecordTile item={item} />
+            </View>
+          ))}
+          {row.length === 1 ? <View className="flex-1" /> : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Hücre içi YATAY: ikon solda, iki satır yazı sağında.
+ *
+ * Önce ikon üstte / yazı altında dikey bir kart denendi ve iki satır ızgara
+ * ~220 px tutuyordu — listeden az, ama hâlâ ekranın önemli bir kısmı. Yatay
+ * düzende aynı bilgi hücre başına ~56 px'e iniyor, çünkü ikonun yüksekliği
+ * yazıyla üst üste biniyor, arka arkaya eklenmiyor.
+ */
+function RecordTile({ item }: { item: RecordItem }) {
+  const t = useThemeTokens();
+  return (
+    <Pressable
+      onPress={item.onPress}
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
+      className={`flex-row items-center rounded-2xl p-3 ${t.cardBg}`}
+    >
+      <View
+        className={`w-8 h-8 rounded-xl items-center justify-center ${toneSoft(item.tone, t.isLight)}`}
+      >
+        {item.icon}
+      </View>
+      <View className="flex-1 ml-2.5">
+        <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text className={`text-[10px] mt-0.5 ${t.muted}`} numberOfLines={1}>
+          {item.subtitle}
+        </Text>
+      </View>
+    </Pressable>
   );
 }

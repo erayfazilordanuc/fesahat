@@ -159,6 +159,13 @@ grep -o 'usesCleartextTraffic="[^"]*"' android/app/src/main/AndroidManifest.xml
 SDK 54'te kaldırılacağını söylüyor, proje SDK 54'te. Çalışıyor;
 `expo-audio` + `expo-video`'ya geçiş yol haritasında.
 
+### 6. İkon betiğini şimdilik çalıştırma (2026-09-19)
+
+`build_from_brand.py` 2 duraklı degrade (`terakki-icon-master.svg`) üretiyor,
+teslim edilen ikonlar ise `48c91c1`'de 3 duraklıya geçti. Betik çalışırsa
+ikonlar eskiye döner. Degrade kararı verilip master.svg güncellenene kadar
+çalıştırma (YAPILACAKLAR Bölüm 8, `tools/icon-forge/README.md`).
+
 ---
 
 ## Kod taraması (2026-09-08)
@@ -216,12 +223,12 @@ yanlış pozitif veriyor — çıktısına doğrulamadan güvenilmemeli.
 
 ## Bilinen, dokunulmayan izler
 
-- ⚠️ **`STORE_DIR` hâlâ `savunma-store`** (`src/utils/storage.ts:16`). Cihazda
-  doğrulandı: veriler `files/savunma-store/` altında duruyor. Bildirim
-  öneklerinden farklı olarak bu **gerçek kullanıcı verisi** tutuyor (profil,
-  ilerleme, ayarlar) — düz yeniden adlandırma hepsini öksüz bırakır. Düzeltmek
-  için açılışta bir kerelik göç gerekiyor: yeni klasör yoksa ve eskisi varsa
-  klasörü taşı. Kullanıcı kararı bekliyor.
+- ✅ ~~**`STORE_DIR` hâlâ `savunma-store`**~~ — **2026-09-11:** klasör göçü
+  gerekmeden kapandı. SQLite aşama 1 (YAPILACAKLAR 0.4) ilk açılışta
+  `savunma-store/*.json` dosyalarını tek transaction'da `terakki.db`'ye aktarıyor;
+  eski klasör artık yalnızca yedek (silinmiyor). Adı, SQLite açılamadığında
+  kullanılan yedek dosya yolunda aynı kalıyor ki eski veri bulunabilsin.
+  Klasörün silinmesi cihazda doğrulandıktan birkaç sürüm sonra (0.4 → Temizlik).
 
 - `Segmented`'in seçili seçeneği açık temada `shadow-sm` alıyor; sınıf yalnızca
   seçiliyken eklendiği için NativeWind her seçimde "components … will remount"

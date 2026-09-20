@@ -104,9 +104,13 @@ analizini görmek için kendi makinesinde Express sunucusu ayağa kaldırıp
 telefonu aynı ağa almak zorunda. "Başkaları da kullansın" hedefi bu satırda
 duruyordu.
 
-**Elenen seçenek:** kullanıcının kendi API anahtarını girmesi — anahtar almak
-için Google hesabı, konsol, fatura kartı adımları var; sıradan kullanıcı
-buradan döner.
+**Elenen seçenek (2026-09-08):** kullanıcının kendi API anahtarını girmesi —
+anahtar almak için Google hesabı, konsol, fatura kartı adımları var; sıradan
+kullanıcı buradan döner.
+
+> ⚠️ **Bu eleme 2026-09-20'de geri alındı.** Aşağıdaki "Yapay zekâ kullanıcının
+> kendi anahtarıyla çalışır" kararı bu bölümün yerini alıyor: BYOK artık
+> varsayılan yol. Gerekçe orada.
 
 ### Bedavaya nasıl olur — araştırılacak yol
 
@@ -251,15 +255,356 @@ bildirimlerine dokunmuyor.
 - Bir modülün bildirimi ancak `notificationsEnabled && module.enabled &&
   module.reminder` üçü birden doğruysa kuruluyor (`reminderActive`).
 - Bildirim metni o günün içeriğinden üretiliyor, böylece bildirimle ekran tutuyor.
+  ⚠️ **Sınırı (2026-09-11'de fark edildi):** günlük tekrarlayan (`DAILY`)
+  bildirimin içeriği kurulduğu anda sabitleniyor ve yalnızca uygulama açılınca
+  yeniden kuruluyor. Uygulama birkaç gün açılmazsa diyafram / konuşma / belagat /
+  günün metni bildirimleri eski günün içeriğini gösterir. Lugat bu yüzden belirli
+  kelime yazmıyor; diğer modüller için çözüm (tarihli tek seferlik bildirimler ya
+  da genel metin) henüz seçilmedi.
 
 **Kimlik önekleri kozmetik.** `cancelAllReminders()` planlanmış bildirimleri
 kimlik dizesine göre değil `data.kind === 'daily-practice'` alanına göre
 süzüyor. Bu yüzden önek `savunma.daily.*` → `terakki.daily.*` yeniden
 adlandırması (2026-09-07) hiçbir geçiş planı gerektirmedi.
 
+### Ek karar (2026-09-13): bildirim bütçesi paylaştırılıyor
+
+**Karar:** Bekleyen bildirim sayısı tek bir tavanla yönetiliyor
+(`NOTIFICATION_BUDGET = 56`, iOS'un 64 sınırının altında pay bırakarak). Önce
+günlük pratik kuruluyor (`DAILY_PRACTICE_RESERVE = 28`, modül başına
+`max(2, min(14, 28 / açık modül))`), **kalan** bütçe aralıklı hatırlatıcılara
+gidiyor. Sıra `useReminderSync`'te sabit.
+
+**Neden:** "2 günde 1" modunda modül başına 14 bildirim kuruluyordu; beş modül
+açıkken 70 bekleyen bildirim ediyor ve iOS sınırı aşınca **en eskileri sessizce
+düşürüyor** — yani hatırlatmalar hata vermeden kayboluyordu. Tek tavan olmadan
+her yeni bildirim türü (4b serbest alarmlar) aynı sessiz kaybı büyütürdü.
+
+**Bağlı kurallar:**
+- Her tür kendi `data.kind` değeriyle süzülüp iptal ediliyor; türler birbirinin
+  bildirimini silmiyor (`daily-practice`, `habit-reminder`, sırada
+  `personal-reminder`).
+- Bütçeye sığmayan bildirim sayısı gizlenmiyor; hatırlatıcılar arasında
+  **sırayla** paylaştırılıyor ki biri hepsini yemesin (`habitPlan.ts`).
+- Sayaçlar bildirim planını tetiklemiyor: `habitReminders.ts` sayaçları ayrı
+  alanda tutuyor, `useReminderSync` yalnızca `reminders` alanını izliyor. Aksi
+  hâlde her "+1" bütün bildirimleri iptal edip yeniden kurardı.
+
+### Ek karar (2026-09-13): serbest alarmlar tekrarlayan tetikleyici kullanıyor
+
+**Karar:** Serbest alarmlar (Bölüm 4b) tek tek tarihli bildirimlerle değil,
+tekrarlayan tetikleyicilerle kuruluyor: her gün çalan alarm **1 adet `DAILY`**,
+gün seçilmiş alarm **gün başına 1 adet `WEEKLY`**. Sıra: günlük pratik →
+alarmlar → aralıklı hatırlatıcılar.
+
+**Neden:** Aralıklı hatırlatıcılar (4a) tarihli bildirim kurmak zorunda, çünkü
+"09:00-22:00 arası her saat" kuralını hiçbir tekrarlayan tetikleyici tutamıyor.
+Alarmda böyle bir aralık yok — sabit saat, sabit gün. Yukarıdaki DAILY içerik
+bayatlama sınırı da alarmları bağlamıyor: metin günün içeriğinden üretilmiyor,
+kullanıcının yazdığı etiket. Sonuç: alarm başına 1-7 bekleyen bildirim, kayan
+pencere yok, uygulama açılmasa da alarm çalmaya devam ediyor.
+
+**Alarmlar aralıklı hatırlatıcılardan önce kuruluyor,** çünkü kullanıcı onları
+bilerek kurdu; aralıklı hatırlatıcılar ise ambiyans ve zaten kırpılmaya uygun.
+
+**Bütçeye sığmayan alarm kısmen kurulmuyor.** Haftanın üç günü çalıp iki günü
+sessiz kalan bir alarm, hiç çalmayan alarmdan daha kötü — kullanıcı ona güvenir.
+Sığmayan alarm bütünüyle atlanıyor ve kimliği `skippedForBudget` ile ekrana
+taşınıyor.
+
+**Android kanalı ayrı** (`personal-reminders`) ve önem derecesi **HIGH**:
+ilaç/uyanış gibi kaçırılmaması gereken hatırlatmalar. Günlük pratik ve aralıklı
+hatırlatıcılar DEFAULT'ta kalıyor.
+
+---
+
+## Verildi · Kişiye özel içerik diğer uygulamalara taşınmaz
+
+**Karar:** Dinî içerik modunun kartları — **günün duası** ve **günün Risale-i
+Nur vecizesi** (`src/data/risale.ts`, `DailyVecizeCard`) — Terakki'ye özeldir.
+**İrtifa'ya eklenmeyecek**; **Fesahat için karar açık bırakıldı** ("belki",
+koşulları `YAPILACAKLAR_FESAHAT.md`'de).
+
+**Neden:** Üç uygulama ortak bir gövdeden ayrılıyor ve kod taşınırken "hazır
+varken alalım" refleksi kapsamı bozuyor. İrtifa kurumsal mülakat hazırlığı;
+orada dinî içerik kapsam dışı. Fesahat'ın ekseni ise dil ve okuma — oraya
+uyarlanacaksa havuz tek bir esere değil geniş bir vecize/aforizma birikimine
+dayanmalı ve dinî şaltere değil genel bir "günün sözü" ayarına bağlanmalı.
+
+**Bağlı kural:** Bu içerikler `religiousMode` şalterine bağlı; şalter kapalıyken
+hiçbir yerde görünmüyorlar.
+
+⚠️ **Metin doğrulaması açık:** Vecize listesi yaygın dolaşan metinlerden
+kuruldu; **birebir lafız ve künye asıl eserden doğrulanmadı**. Doğrulanana
+kadar liste kısa tutuluyor — sayı artırmak yerine doğruluk korunuyor.
+
+---
+
+## Verildi · Ölçüm skalası norm uydurmaz
+
+**Karar:** Ölçümden sonra gösterilen "ben neredeyim" çubuğu iki türlü
+(`MeasureScale`):
+
+- **`reference`** — savunulabilir bir tipik aralığı (dinlenik solunum hızı
+  12-20, sesli okuma 120-150 kelime/dk) ya da doğal sınırları (0-5 öz-kontrol,
+  %0-100 sınav) olan ölçümlerde.
+- **`personal`** — genel normu OLMAYAN ölçümlerde (nefes tutma, kontrol
+  duraklaması, tek nefeste sayma, kontrollü veriş, nefes/metin). Bunlarda skala
+  kişinin **kendi** ölçüm aralığıdır; iki ölçümden önce hiç gösterilmez.
+
+**Neden:** Kullanıcı "nerede olduğunu" görmek istiyor, ama bunun için norm icat
+etmek Bölüm 5'teki ölçüm dürüstlüğü kuralını çiğnerdi. Nefes tutmada bir
+"hedef" göstermek doğrudan zararlı: hedef gören kişi zorlar. Kontrol
+duraklamasında dolaşan eşiklerin (BOLT vb.) kanıtı zayıf, tekrar edilmiyor.
+Dolgu kelime bantları ise kaba bir yol gösterici ve ekranda **nüfus normu
+olmadığı açıkça yazıyor**.
+
+---
+
+## Verildi · Splash başlığı görsel olarak üretiliyor (2026-09-18)
+
+**Karar:** `SplashOverlay`'deki "Terakki" yazısı canlı metin değil, hazır bir
+görsel: `assets/brand/wordmark-terakki.png`. Üreteci
+`tools/icon-forge/build_wordmark.py`, kaynağı yine Italianno fontu — harfler
+fontun kendi eğrilerinden çiziliyor, şekillendirme (shaping) devreye girmiyor.
+
+**Yan kazanç:** Splash artık font yüklenmesini beklemiyor; `useFonts` ve
+`FONT_TIMEOUT` kalktı, native ekrandan JS katmanına geçiş erkene alındı.
+
+**Font yerinde kalıyor** (`assets/fonts/Italianno-Regular.ttf` + OFL metni):
+görsel ondan türetilmiş bir eser, lisans bildirimi saklanmalı.
+
+**Neden:** Italianno'da 'i'nin **noktası, harfin ilerleme genişliğinin dışında
+duruyor**. Glif 77'nin konturları ölçüldü: gövde x=32..247, nokta x=218..278;
+harfin ilerleme genişliği ise 192. Nokta bir sonraki harfin alanına taşıyor —
+kaligrafik fontlarda olağan. "Terakki"de 'i' son harf olduğu için metin kutusu
+son ilerleme genişliğinde bitiyor ve nokta kutunun dışında kalıp kırpılıyordu;
+ekranda **"Terakkı"** görünüyordu (cihaz ekran görüntüsüyle saptandı).
+
+Ölçü: taşma 86 birim = 5.16 px (fontSize 60); NBSP 169 birim = 10.14 px pay
+veriyor. İki yana konuyor ki yazı ortalı kalsın. Sıradan boşluk değil NBSP:
+Android satır sonundaki normal boşluğu genişlik hesabından düşürebiliyor.
+
+**Elenen açıklamalar** (aynı yer ikinci kez kazılmasın — üçü de ölçülerek
+çürütüldü):
+
+- **`locl` / Türkçe yerelleştirme değil.** Fontta `latn`→`TRK ` dil sistemi ve
+  `locl` özelliği var, ama cihazın dili **en-US**; ayrıca TRK'nin verdiği glif
+  (691) bileşik ve nokta bileşeni taşıyor, yani noktalı.
+- **`ccmp` değil.** Noktayı düşüren lookup'ları (3, 4) çağıran zincirin koşulu
+  çözüldü: yalnızca 'i'den **sonra birleşen bir aksan** gelirse tetikleniyor
+  ("i + ´" → noktasız i + ´). Standart ve doğru davranış; "Terakki"de aksan yok.
+- **`init` / `fina` değil.** Bu özelliklerin verdiği glifler (688, 689) zaten
+  noktalı (2 kontur, yMax 436).
+
+**Denenip işe yaramayan çözümler** (üçü de cihazda denendi, üçü de çözmedi):
+
+1. Araya **ZWNJ** (U+200C) koymak — sorun şekillendirme/ikame olmadığı için etkisiz.
+2. Son harfi **ayrı bir `Text`**'e almak — durumu kötüleştiriyor: tek başına kutu
+   192 birim, nokta 218'de başlıyor, tamamen dışarıda kalıyor.
+3. İki yana **NBSP** koymak — ölçüye göre yetmeliydi (nokta 86 birim taşıyor,
+   NBSP 169 birim pay veriyor) ama ekranda nokta yine çıkmadı. Android'in metin
+   kutusunu tam olarak neye göre kırptığı aydınlatılamadı; bu yüzden yazı canlı
+   metin olmaktan çıkarıldı.
+
+---
+
+## Verildi · Native açılış ekranı düz renk kalıyor
+
+**Karar:** Android'in native açılış ekranı düz `#0A8D65` zemin + beyaz figür
+olarak kalıyor; degrade ve "Terakki" yazısı yalnızca JS katmanında
+(`SplashOverlay`) gösteriliyor.
+
+**Neden:** Android 12+ açılış ekranı API'si zemin için **yalnızca tek bir renk**
+kabul ediyor; degrade verilemiyor. Bu yüzden ilk kare kaçınılmaz olarak düz
+renk.
+
+**Ölçüldü (2026-09-13):** Bu "eski görünen" ilk ekran **bayat varlık değil** —
+native zemin tam olarak `#0A8D65`, figür `assets/icon.png`'deki güncel marka
+figürünün aynısı ve native ile JS katmanındaki figür **1 piksel farkla** aynı
+yerde/aynı boyutta. Yani geçişte sıçrama yok, tek fark degrade ve yazı.
+
+Geliştirme derlemesinde düz ekranın 4-5 saniye durmasının sebebi Metro'nun JS
+paketini yüklemesi; sürüm derlemesinde bu süre kısadır. Ölçülmesi
+"Cihazda doğrulanacaklar" listesine yazıldı.
+
+---
+
+## Verildi · Karne ayrı ekranda (Bölüm 5)
+
+**Karar (2026-09-12, kullanıcı):** Ölçümlerin listesi (karne) İlerleme sekmesinin
+içinde değil, **ayrı bir ekranda** (`MeasurementsScreen`); İlerleme'den bir
+düğmeyle açılır.
+
+**Neden:** İlerleme bir **özet** sayfası — seriler, kariyer/zihin kutuları,
+geçmiş kısayolları, gelişim eğrisi. On testi (her biri başlık + son değer + eğri
++ "Ölç" düğmesi) aynı sayfaya koymak özeti uzun bir listeye çeviriyordu.
+
+**Bu, bölümün ilk kararını tersine çeviriyor.** Bölüm 5 "ayrı bir `TestsScreen`
+yazmaya gerek yok" diyordu; o karar karnenin küçük kalacağı varsayımına
+dayanıyordu, test sayısı 3'ten 10'a çıkınca geçerliliğini yitirdi. `Sparkline`
+kararı hâlâ geçerli: ayrı bir grafik bileşeni yazılmadı, `TrendChart` yetiyor.
+
+**Sınırı:** ölçümün kendisi karnede yapılmaz. Her test kendi modül ekranında
+ölçülür (nefes testleri Diyafram → Ölçüm, okuma Günün Metni, dolgu oranı
+Konuşma, kelime seviyesi Dil & İfade); karnedeki "Ölç" düğmesi yalnızca o ekranı
+doğru sekmesiyle açar. Böylece ölçüm, yapıldığı pratiğin bağlamında kalıyor.
+
+---
+
+## Verildi · SQLite'a geçiş aşamalı (Bölüm 0.4)
+
+**Karar (2026-09-11):** `expo-sqlite`'a geçiş üç aşamada yapılıyor: (1) kalıcılık
+katmanının arka ucu, (2) geçmiş ve test sonuçları için ilişkisel tablolar,
+(3) katalog tabloları + FTS5. Plan tablosu YAPILACAKLAR Bölüm 0.4'te.
+
+**Neden aşamalı:** Buradaki veri gerçek kullanıcı verisi — profil, seriler,
+ayarlar, öğrenilen kelimeler, geçmiş. Spec'teki tablo şemasına tek seferde
+geçmek dokuz depoyu ve onlarca ekranı aynı anda değiştirip veri taşımayı en
+riskli hâliyle yapmak demekti. Aşama 1'de dış API (`readJson` / `writeJson`)
+aynı kaldığı için depo ve ekran kodu değişmiyor; hata yalnızca `storage.ts` ve
+`db.native.ts`'te olabilir.
+
+**Aşama 1 kuralları:**
+- **Senkron API.** Depolar ilk değerlerini modül yüklenirken senkron okuyor;
+  `openDatabaseSync` / `getFirstSync` / `withTransactionSync` bu yapıyı koruyor.
+- **Aktarım bir kez ve bölünmez.** `savunma-store/` altındaki bütün `*.json`
+  dosyaları (sabit liste değil) tek transaction'da `kv` tablosuna. Bozuk JSON
+  atlanır; veritabanında olan anahtarın üstüne yazılmaz. Hata olursa geri alınır
+  ve o oturum dosyalarla devam eder — yarım aktarım yok.
+- **JSON dosyaları silinmiyor.** Aşama 1 cihazda doğrulanıp birkaç sürüm geçene
+  kadar yedek.
+- **Native modül yoksa çökme yok.** `expo-sqlite` geç ve korumalı yükleniyor;
+  yeniden derlenmemiş bir geliştirme derlemesinde dosya depolamasına düşülüyor.
+  Web paketine SQLite hiç girmiyor (`db.ts` / `db.native.ts` ayrımı).
+- **Yazma hatası veri silmiyor.** Transaction başarısızsa bekleyen yazımlar
+  korunur, sonraki flush'ta yeniden denenir. (Dosya yolunda eskiden hata olsa da
+  bekleyenler siliniyordu.)
+- Ayrı `settings` tablosu yok: ayarlar zaten `kv`'de birer anahtar.
+
+**Bilinen sınır:** Aktarım yapıldıktan sonra bir oturumda veritabanı açılamaz ve
+dosyalara düşülürse, o oturumun yazımları sonraki açılışta veritabanındaki daha
+eski değerin gerisinde kalır. Aynı derlemede native modül bir açılışta var bir
+açılışta yok olmayacağı için olasılığı düşük; kabul edildi.
+
+**Yan sonuç:** DEVAM.md'deki "`STORE_DIR` hâlâ `savunma-store`" izi ayrı bir
+klasör göçü gerekmeden kapanıyor — veri `terakki.db`'ye taşınıyor, eski klasör
+yalnızca yedek olarak kalıyor.
+
+### Aşama 2 kapsamı (2026-09-11)
+
+- **Yalnızca büyüyen iki veri seti tabloya geçiyor:** mülakat oturumları
+  (`interview_sessions`) ve egzersiz kayıtları (`exercise_logs`). İkisinin de
+  üst sınırı yok; tamamlanan her oturum bir kayıt ekliyor.
+- **Test sonuçları taşınmıyor.** `daily-practice-progress.tests` test başına
+  100 kayıtla sınırlı (`MAX_TEST_RESULTS`), büyümüyor. Taşımak
+  `useDailyProgress`'in dönüş şeklini ve saf fonksiyonları değiştirip ölçüm
+  ekranlarına dokunmayı gerektiriyordu; kazancı yok, riski var.
+- **Karma şema:** her tabloda sorgulanacak birkaç sütun (`created_at`, puan /
+  kategori / efor / süre) + kaydın tamamı `data` sütununda JSON. Kayıt tipine
+  alan eklendiğinde şema göçü gerekmiyor.
+- **Sorgular ihtiyaçla birlikte.** Spec'teki tarih aralığı / ortalama /
+  `GROUP BY` sorgularına bugün hiçbir ekran ihtiyaç duymuyor (istatistikler
+  bellekteki diziden hesaplanıyor). Ölü kod yazılmadı; Bölüm 5 ekranlarıyla
+  birlikte eklenecek.
+- **Göç aşama 1'i bozmaz.** Tablo göçü ayrı ve bölünmez; başarısız olursa
+  yalnızca bu iki depo o oturumda eski `kv` kaydıyla çalışır, `kv` arka ucu
+  kapanmaz. Eski `kv` kayıtları yedek olarak kalır.
+- **Yazma hatası veri silmez.** Tek satırlık yazım başarısız olursa depo "kirli"
+  işaretlenir; sonraki değişiklikte ya da uygulama arka plana geçerken bellekteki
+  liste tek transaction'da tabloya yeniden yazılır.
+
+---
+
+## Verildi · İlk açılış oryantasyonu (Bölüm 0.1)
+
+**Karar (2026-09-11):** İlk açılışta kısa bir akış: hoş geldin → hedefler (1-3)
+→ günlük süre → hatırlatma saati → 30-60 sn ısınma → bitiş. YAPILACAKLAR
+Bölüm 0.1'deki spec'ten şu noktalarda sapıldı:
+
+- **Ayrı depo.** Hedefler ve oryantasyon durumu `dailyPracticeSettings`'e değil
+  `onboarding` deposuna (`src/utils/onboarding.ts`) yazılıyor. **Neden:** o dosya
+  modül ayarlarını tutuyor; "kullanıcı neyi hedefliyor" bir modül ayarı değil.
+- **Eski kullanıcı atlanır.** Serisi, öğrenilmiş kelimesi, mülakat/egzersiz
+  geçmişi ya da profil adı olan biri oryantasyonu görmez. Karar ilk açılışta
+  bir kez verilip **hemen kaydedilir**. **Neden:** kaydedilmeseydi akışı yarıda
+  bırakan yeni biri (ısınmada kelime öğrenip çıkan) bir sonraki açılışta eski
+  kullanıcı sayılır, akışı hiç bitirmezdi.
+- **Isınma seriye sayılmaz.** Spec "1 Günlük Seri Başladı!" diyordu. 30 saniyelik
+  ısınmayı günlük pratik gibi saymak seriyi anlamsızlaştırır (bkz. "Modüller
+  abartılı vaat vermez"). Bitişte "İlk adımını attın" yazar. Isınmada gerçek bir
+  eylem olursa — günün kelimesine "Öğrendim" — o normal yoldan kaydedilir.
+- **Ad sorulmaz.** "Kullanıcıdan içerik yazması istenmez" kararı gereği; profil
+  adı isteğe bağlı olarak Profil'de kalır.
+- **Hedef modül kapatmaz, sıralar.** Seçilmeyen alanlar kaybolmaz; seçilenler
+  Bugün listesinde ve Gelişim'de öne alınır. **Neden:** ilk dakikada verilen
+  seçim kullanıcıyı uygulamanın geri kalanından koparmamalı.
+- **Hatırlatma izni yalnızca saat seçilirse istenir** ("Bildirim planlaması tek
+  yönlü" kararındaki "izin açılışta istenmez" kuralıyla uyumlu). Seçilen saat,
+  hedeflerin günlük pratik modüllerinin hatırlatma saati olur.
+- **Her adımda "Atla".**
+- **İpucu balonları ertelendi.** İlk sürümde Bugün'de tek, kapatılabilir bir
+  "hızlı tur" kartı; sekmelere işaret eden konumlu balonlar sonraki sürüm.
+
+---
+
+## Verildi · Dil & İfade'nin odağı lugat ve Türkçe
+
+**Karar (2026-09-11):** "Dil & İfade" sütununun ana ekseni **lugat (kelime
+hazinesi) ve Türkçeyi daha iyi anlama/doğru kullanma**; söz sanatları
+(belagat) ikincil / ileri düzey bir bölüm olarak kalır.
+
+**Neden:** Sütunün içeriği zamanla belagate (söz sanatlarına) kaymıştı; oysa
+alanın amacı kelime öğrenmek, lugat geliştirmek, Türkçeyi daha iyi anlamak ve
+doğru kullanmak.
+
+**Sonuçları:**
+- Gelişim'deki "Dil & İfade" kartı yeni `LanguageScreen`'e açılır.
+- Belagat ekranı silinmez; ileri düzey/ikincil bölüm olarak kalır.
+- Belagat günlük pratik modülü şimdilik olduğu gibi yerinde duruyor.
+- ~~Lugat henüz günlük pratik modülü değil.~~ Aynı gün değişti — aşağıdaki ek karar.
+
+**İçerik kuralı:** anlam ve köken TDK Güncel Türkçe Sözlük ile doğrulanır;
+örnek cümleler özgün yazılır.
+
+### Ek karar (2026-09-11): lugat günlük pratik modülü
+
+**Karar:** Kullanıcı "günün metni gibi günlük kelime de olsun, ana ekranda da
+olsun" dedi. Lugat, günün metniyle aynı düzeyde bir günlük pratik modülü
+(`lugat`) oldu: aç/kapa, hatırlatma + saat, seri, Bugün listesi, İlerleme.
+
+**Kurallar:**
+- **Tamamlanma:** bugünün kelimelerinin hepsi "Öğrendim" olarak işaretlenince
+  gün tamamlanır ve seriye sayılır. Mantık tek yerde (`lugatProgress.markLearned`);
+  ekranlar ayrı kural yazmaz.
+- **Yeni kelime önceliği:** önceki günlerde öğrenilen kelimeler günün listesine
+  girmez. Bugün öğrenilenler listeden **çıkmaz** — yoksa her "Öğrendim"de liste
+  değişir, deterministik seçim kuralı (aynı gün aynı içerik) bozulurdu.
+- **Tekrar günü:** seviyede yeni kelime kalmadıysa liste tekrardır; "Öğrendim"
+  düğmeleri zaten dolu olacağı için ayrı bir "Tekrarı tamamladım" eylemiyle seri
+  işaretlenir.
+- **Ana ekran:** Günlük Pratik listesinde satır + bugünün ilk öğrenilmemiş
+  kelimesini gösteren "Günün Kelimesi" kartı. Kart `lugat.showOnHome` ile
+  kapatılabilir (günün metnindeki `showOnHome` gibi); satır modül açıkken hep var.
+- **Bildirim metni belirli bir kelime içermez.** Günlük tekrarlayan bildirimin
+  içeriği kurulduğu gün sabitleniyor; uygulama birkaç gün açılmazsa eski günün
+  kelimesini gösterirdi.
+- Günlük kelime sayısı ve seviye tercihi `lugatProgress`'te kalıyor; modül
+  ayarları (aç/kapa, hatırlatma) `dailyPracticeSettings`'te. Gelişim'deki
+  Dil & İfade kartının görünürlüğü `lugat.enabled`'a bağlı.
+
+**Yol üstünde bulunan hata:** `useDailyProgress` her ekranda ayrı yerel state
+tutuyordu; Bugün / İlerleme / Profil sekmeleri açık kaldığı için başka ekranda
+tamamlanan modülün ✓'i ve serisi uygulama yeniden başlayana kadar
+güncellenmiyordu. İlerleme verisi paylaşılan depoya (`createPersistentStore`)
+taşındı.
+
 ---
 
 ## Verildi · Belagat müfredatı klasik tasnife göre kuruldu
+
+> **Not (2026-09-11):** Bu karar, "Dil & İfade"nin odağının lugat ve Türkçeye
+> kaymasıyla ikincil/ileri düzey konuma geçti — bkz. yukarıdaki karar.
 
 **Karar:** Modül, belâgatın klasik üç kolunu izliyor ve önkoşulu olan fesahati
 diksiyon tarafına bağlıyor.
@@ -343,3 +688,266 @@ günlüktür — yani **kullanıcıya yansıyan bir hata yok**, çünkü türetm
 Temizliği: `reminderFrequency`'den `'off'` seçeneğini kaldırıp sıklığı yalnızca
 `daily`/`everyOtherDay` yapmak, açık/kapalıyı tek başına `notificationsEnabled`e
 bırakmak. Küçük iş, davranış değişmiyor — Bölüm 00 turunda yapılabilir.
+
+**2026-09-11:** Modül panelindeki ve Hatırlatıcılar ekranındaki yeni ana şalter
+(`NotificationsMainToggle`) iki alanı birlikte güncelliyor — açılınca sıklık
+`'off'` ise `'daily'`, kapatılınca `'off'`. Çelişki bu yoldan artık oluşmuyor;
+yukarıdaki temizlik yine de geçerli (iki kaynak hâlâ var).
+
+---
+
+## Verildi · Kullanıcı karar turu (2026-09-19)
+
+YAPILACAKLAR'daki açık sorular kullanıcıya soruldu. Cevaplar:
+
+| Konu | Karar |
+| --- | --- |
+| **Uygulama ikonu** | Teslim edilen 3 duraklı degrade (`#0EA876 → #0A8D65 → #077456`) doğru — "ikon iyiydi". Renkler **çok az** daha canlı olabilir, ama çok az. Kaynak SVG bu degradeye eşitlenecek; eski 2 duraklı (`#10B981 → #04614A`) terk edildi. |
+| **Katalog sektörleri** | Savunma sanayii + **Yazılım & teknoloji**. Diğerleri (finans, kamu, sektörsüz) şimdilik yok. |
+| **Vecize kaynağı** | **Uygulama + sunucu.** Uygulamada "Vecizelerim" listesi (yaz / yapıştır / dosyadan al, düzenle, sil) — ayrı "admin modu" **yok**, çünkü uygulama tek kişilik; telefonu tutan zaten sahibi. Gmail'i `server/server.ts` okur; uygulama sunucuya ulaşınca yeni vecizeleri çekip yerel havuza kaydeder. Sunucu kapalıyken hiçbir şey bozulmaz (sunucusuz %100 çalışma kuralı). Yerel havuz varsayılan kalır. |
+| **Nefes ekranı** | Nefesle ilgili **her şey tek "Nefes" çatısı altında** — diyafram programları, nefes kontrolü egzersizleri (büzük dudak, kaburga genişletme, basamaklı alma, MPT, sayarak verme), CO₂ tabloları, Rahat Tutma. Ayrı dağınık girişler yok. |
+| **Duruş öz-kontrol ölçümü** | Duruş egzersizlerinin yanında (Dinlenme & Denge → Duruş & Sırt); Karne'deki "Ölç" oraya açar. |
+| **Sesli sayım** | Yok; görsel geri sayım yeter. |
+| **Oryantasyondaki günlük süre** | Bugün listesini ayarlasın (3 dk → az ve kısa pratik, 10 dk → hepsi; egzersizlerin kendisi kısalmaz). **Ayarlar'dan değiştirilebilsin.** |
+| **Alarm** | Şimdilik bildirim yeter. Gerçek (tam saatinde, kapatılana kadar çalan) alarm **ileride eklenecek** — YAPILACAKLAR'da iş olarak duruyor. |
+| **Zayıf ses tespiti** | Günün seansını değiştirmez; **öneri** olarak "zayıf seslerine özel seans" düğmesi çıkar. Günlük içerik deterministik kalır. |
+| **Su hedefi** | Sabit değil; kullanıcıya boy/kilo/etkinlik gibi bilgiler sorulup **aralık** önerilir. Öneri tıbbi değildir, abartmaz (bkz. "Modüller abartılı vaat vermez"); böbrek/kalp rahatsızlığında hekime danışma notu. Kullanıcı öneriyi değiştirebilir. |
+| **"Bugün" sekme ikonu** | Güneş doğuşu (`Sunrise`) kalıyor. |
+| **Profil rengi** | Yalnızca profilde (avatar zemini/çerçevesi). |
+| **`expo-system-ui`** | Eklenecek (yeniden derleme gerekir). |
+
+### Ek kararlar (2026-09-19, aynı tur)
+
+- **Mola sıklığı önerisi eklenecek.** Metin farkındalık önerisi olarak yazılır
+  ("belli aralıklarla kalk, esne"), sağlık iddiası kurulmaz; mevcut "Ayağa
+  kalk & esne" hatırlatıcısına bağlanır.
+- **Nefes ekranının düzeni:** Pratik · Antrenman · Konuşma Nefesi · Ölçüm ·
+  Rehber.
+  - Pratik: diyafram programları, sade 5 dk 4-6.
+  - Antrenman: kaburga genişletme, büzük dudak, basamaklı alma, Rahat Tutma, CO₂ tabloları.
+  - Konuşma Nefesi: tek nefeste "aaa" uzatma (MPT), sayarak verme; Diksiyon
+    ekranından buraya kısayol.
+  - Diksiyon (artikülasyon, tekerleme, vurgu, tempo, dolgu) ayrı modül olarak
+    aynen kalır.
+  - Adlandırma: "akciğer genişletme" denmez — akciğeri büyütmez; egzersizin adı
+    "kaburga genişletme".
+- **Yalnız Zihin ya da Kariyer hedefi seçenin günlük hatırlatması** kendi
+  ekranını açar (zihin egzersizleri / mülakat ekranı); "Günün metni"ne
+  kurulmaz.
+
+### Ek karar (2026-09-20): ikon degradesi B, eskisi arşivde
+
+Üç aday gösterildi (mevcut / doygunluk %12 / %25). Seçilen **B**:
+`#05B179 → #029568 → #007B59` — doygunluk %12 artırıldı, parlaklık ve ton
+korundu ("çok az canlı" isteği).
+
+- Kaynak: `assets/brand/ikon/terakki-icon-master.svg`; bütün ikonlar
+  `tools/icon-forge/build_from_brand.py` ile bundan üretiliyor. Kaynak ile
+  teslim edilen ikon arasındaki ayrışma (bkz. YAPILACAKLAR Bölüm 8) bu turda
+  kapandı: önce 3 duraklı eski degrade eşitlenip çıktı commit'teki ikonlarla
+  piksel piksel karşılaştırıldı (Android zemininde en büyük fark 1/255),
+  sonra B uygulandı.
+- **Eski ikonlar silinmedi:** `assets/brand/arsiv/` — `icon-48c91c1-commit.png`
+  (teslim edilen eski ikon), `icon-2026-09-19-eski-degrade.png` ve eski kaynak
+  SVG.
+- Orta durak `#029568` tek nokta değil **dört** yerde geçiyor ve aynı kalmalı:
+  `app.json` (adaptiveIcon + splash), `src/components/SplashOverlay.tsx`
+  (`NATIVE_BACKGROUND`), iOS `SplashScreenBackground.colorset`.
+- `SplashOverlay`'in degradesi bugüne kadar hâlâ iki duraklıydı (`#10B981 →
+  #04614A`), yani açılış ekranı ikonla aynı yeşilde değildi; yeni degradeye
+  çevrildi.
+
+### Ek karar (2026-09-20): günlük süre yalnızca seçilmişse listeyi kısaltır
+
+`onboarding.dailyMinutes` varsayılanı 5. Bütçe doğrudan bu değere bağlansaydı,
+uygulamayı zaten kullanan (oryantasyon görmeyen) biri hiçbir şey seçmeden
+Bugün listesinin kısaldığını görürdü. Bu yüzden `dailyMinutesChosen` alanı
+eklendi: süre oryantasyonda, Ayarlar'da ya da Profil panelinde **açıkça
+seçilene kadar** liste kısalmaz. Eski kayıtlarda alan yok → `false`.
+
+---
+
+## Verildi · Mülakat ses kayıtları cihazda kalıcı saklanır (2026-09-20)
+
+**Karar:** Kamera modunda kaydedilen ses, oturum kaydedildiğinde cihazda
+**kalıcı** saklanır: hem normal bitişte (süre dolması ya da "Kaydı Bitir ve
+Analiz Et") hem de çıkış uyarısında "Kaydet ve çık" seçildiğinde. "Kaydetmeden
+çık" seçildiğinde ses kalıcı klasöre hiç taşınmaz ve geçici dosyası silinir.
+
+**Neden:** Ses daha önce yalnızca `captureBuffer`'da, bellekte tutuluyordu ve
+analiz biter bitmez siliniyordu. Sonuç: mülakat yarıda kalırsa hiçbir iz
+kalmıyordu, analiz de yalnızca aynı oturumda yapılabiliyordu. Artık (a) yarıda
+kalan mülakatın kaydı duruyor, (b) analiz sonradan yapılabiliyor (bellekteki
+tampon boşsa `AnalysisScreen` sesi diskten okuyor), (c) kayıt Mülakat
+Geçmişi'nden dinlenebiliyor.
+
+**Kasıtlı tasarım — tam yol değil dosya adı:** Geçmiş kaydında yalnızca dosya
+adı tutulur (`audioFile`), tam URI değil. iOS'ta uygulamanın veri klasörü yolu
+güncellemelerde değişebiliyor; tam URI yazılsaydı her güncellemeden sonra
+bütün sesler "kayıp" olurdu. Yol, okunacağı anda `audioStore.audioUri()` ile o
+günkü klasöre göre kurulur.
+
+**Kasıtlı tasarım — JSON deposunun dışında:** Ses `storage.ts`'in JSON deposuna
+GİRMEZ; megabaytlarca base64 her yazımda tüm bloğu yeniden serileştirirdi.
+`audioStore.ts` bir depo değil, ince bir dosya katmanıdır: kayıtlar
+`Paths.document/terakki-audio/` altında ham ses dosyası olarak (uzantı
+`expo-av`'ın ürettiğine göre, pratikte `.m4a`) durur. Tablo ya da JSON indeks
+yoktur; bağ, geçmiş kaydındaki dosya adıdır.
+
+**Bağlı kural — ses kaydın ömrü kayda bağlıdır:** `removeSession` sesi de
+siler, `clearSessions` ses klasörünü boşaltır. Mülakat Geçmişi'nde ayrıca
+toplam boyut göstergesi ve "Ses kayıtlarını sil" toplu eylemi vardır; bu eylem
+sesleri siler, kayıtların kendisini (soru, süre, puan, yazılı cevap) bırakır.
+Tek tek satır için ses silme arayüzü yoktur — gerekirse `dropSessionAudio(id)`
+hazır.
+
+**Yer ve gizlilik:** Kayıtlar uygulamanın belge klasöründe durur, yani cihaz
+yedeklemesine (iOS'ta iCloud Backup) dahil olabilir. Ses yalnızca analiz için
+sunucuya gider; bu zaten yapay zekâ şalterine bağlıdır (sunucusuz kullanımda
+hiçbir yere gönderilmez).
+
+**Bilinen sınır:** Toplam boyut sınırı ve otomatik temizlik **yok**. Geçmiş
+büyüdükçe yer kullanımı kullanıcının elindedir; göstergeyle görünür kılındı,
+sınır politikası açık iş olarak YAPILACAKLAR'da duruyor.
+
+---
+
+## Verildi · Yanıt defteri kapsamı; mülakat defterin dışında
+
+**Karar (2026-09-20):** Kullanıcının verdiği yanıtlar tek bir defterde toplanır.
+Kapsam: **serbest metin + çoktan seçmeli cevaplar**. Defter ekranı modül modül
+ayrılır (Tümü · Belagat · Egzersiz · Lugat · Mülakat). **Mülakat yanıtları
+defter deposuna yazılmaz**; defterin mülakat sekmesi doğrudan
+`interviewHistory`'yi okur.
+
+**Neden defter:** Yanıtlar ya hiç saklanmıyordu (belagat üretim cümlesi yazılıp
+atılıyordu) ya da yalnızca doğru/yanlış **sayacı** tutuluyordu (belagat tanıma,
+lugat). "Geçen sefer ne yazmıştım", "hangi soruyu yanlış bilmiştim"
+sorularının cevabı yoktu.
+
+**Neden mülakat dışarıda:** Mülakatın kendi deposu (`interviewHistory`) aynı
+yanıtın yanında kurumu, süreyi, ses dosyasını ve yapay zekâ analizini de
+tutuyor. Aynı yanıtı iki yere yazmak iki ayrı doğruluk kaynağı demek olurdu:
+biri silinince ya da güncellenince diğeri geride kalırdı. Defter, o kaynağı
+kopyalamak yerine gösteriyor.
+
+**Kapsanan yerler:**
+- **Belagat** — üretim cümlesi (`ProductionTab`) ve tanıma quizi (`RecognitionTab`).
+- **Egzersiz** — `ExerciseEngineScreen`'deki yazı yanıtları; "Kontrol Et" ile,
+  öz-değerlendirmeyle ya da süre dolarken otomatik olarak kaydedilir.
+- **Lugat** — üç quiz akışı: anlam testi, boşluk doldurma, seviye tespiti.
+- **Mülakat** — yazılmaz, `interviewHistory`'den okunur.
+
+**Teknik:** `src/utils/responseHistory.ts`, `createCollectionStore` üzerine
+kurulu (`interviewHistory` / `exerciseHistory` ile aynı desen): native'de
+`practice_responses` tablosu (şema v3), değilse `response-history` anahtarı
+altında JSON blok. `correct` alanı **opsiyoneldir**: belagat üretimi gibi tek
+doğrusu olmayan alıştırmalarda tanımsız kalır ve defterde hiçbir doğru/yanlış
+damgası gösterilmez.
+
+**Bilinen sınır:** Kayıt sayısı sınırı yok; quiz cevapları hızlı birikir.
+Defterde tek tek silme var, sayfalama var (ilk 50 + "daha fazla"), ama otomatik
+budama yok — açık iş olarak YAPILACAKLAR'da.
+
+---
+
+## Verildi · Egzersizde otomatik kontrol ile öz-değerlendirmenin ayrımı
+
+**Karar (2026-09-20):** Egzersiz motorundaki cevaplı sorularda kullanıcı
+cevabını yazar. `PromptEngine.prompts` öğesi `accept?: string[]` alanı taşır:
+**varsa** yanıt otomatik kontrol edilir (doğru/yanlış kartı), **yoksa** cevap
+gösterilip kullanıcı kendisi işaretler ("Doğru bildim" / "Bilemedim").
+
+**İlke — tek doğru yazımı olmayan soruya `accept` yazılmaz.** Otomatik kontrol
+ancak cevabın çekirdeği tek ve yazımı öngörülebilirse kurulur: bir sayı, bir
+yön, bir sıralama. Cevap serbest ifadeyse otomatik kontrol kurmak, doğru
+düşünen kullanıcıya "yanlış" damgası vurur — bu, alıştırmanın kendisinden daha
+çok zarar verir. Beş egzersizin 32 sorusu tek tek geçildi; 30'una `accept`
+yazıldı, ikisi kasıtlı olarak öz-değerlendirmede bırakıldı:
+- *Mekansal Kurgu* — "'L' harfini 90° döndürünce ne çıkar": cevap bir şeklin
+  tarifi, tek bir doğru cümlesi yok.
+- *Konum Sıralama* — "B çökerse hangi servisler etkilenir": cevap iki ayrı
+  önerme içeriyor, yazımı kişiden kişiye değişir.
+
+**Karşılaştırma nasıl yapılır** (`src/utils/text.ts` → `answersMatch`): normalize
+edilmiş **tam eşitlik** aranır. Sırayla üç deneme: (1) noktalama/ayraç temizlenmiş
+ve Türkçeye duyarlı küçük harfe çevrilmiş eşitlik, (2) Türkçe harfler ASCII'ye
+indirgenmiş eşitlik — Türkçe klavye kullanmayan kullanıcı "bati" yazınca haksız
+yere yanlış saymamak için, (3) sayısal eşitlik — "1.200" ile "1200" aynı sayılsın
+diye. `includes` **kullanılmaz**: "13" girdisi "113" cevabını doğrulardı. Kelime
+sırası ve eksik kelime hoş görülmez; yalnızca yazım varyasyonu karşılanır.
+
+**Efor puanının tanımı değişmedi.** `ExerciseLog.effort` hâlâ tamamlanan adım
+oranıdır; geçmişteki trend grafiği onu okuyor. Doğruluk ayrı taşınır
+(`correctCount` / `checkedCount`, ikisi de opsiyonel — eski kayıtlar geçerli
+kalır) ve tamamlama kartında ayrı bir kutuda gösterilir.
+
+**Bağlı davranış:** Süre dolarken yazılmış ama kontrol edilmemiş yanıt, adım
+kapanmadan kaydedilir — yazılan emek kaybolmasın diye. `accept` varsa otomatik
+karar verilir, yoksa doğru/yanlış damgası vurulmadan yalnızca deftere yazılır.
+
+
+---
+
+## Verildi · Yapay zekâ kullanıcının kendi anahtarıyla çalışır (BYOK)
+
+**Karar (2026-09-20):** Yapay zekâ değerlendirmesi, uygulamayı kuran kişinin
+**kendi Google Gemini anahtarıyla** çalışır. Anahtar Ayarlar → Yapay Zekâ
+Değerlendirmesi ekranından giriliyor, cihazın kasasında saklanıyor ve çağrılar
+doğrudan Google'a gidiyor. Sunucu (proxy) yolu kodda duruyor ama artık
+varsayılan değil, "Gelişmiş" altında.
+
+**Bu karar 2026-09-08'deki elemeyi geri alıyor.** O gün BYOK "sıradan kullanıcı
+konsol ve fatura kartı adımlarından döner" diye elenmişti. İki şey değişti:
+
+1. **Gerekçe büyük ölçüde geçersiz.** Google AI Studio anahtarı bugün kredi
+   kartı istemeden, ücretsiz katmanla alınıyor. Adım sayısı üç: sayfayı aç,
+   anahtarı kopyala, yapıştır.
+2. **Alternatifin bedeli netleşti.** "Aşama 1b" (geliştiricinin sunucusu +
+   ortak ücretsiz kota) tek anahtarın kotasını bütün kullanıcılara
+   paylaştırıyor, maliyeti ve kötüye kullanım riskini geliştiriciye yüklüyor ve
+   sürekli ayakta duran bir sunucu gerektiriyor. Kullanıcı sayısı arttıkça
+   önce kota biter, sonra fatura gelir.
+
+**Neden şimdi:** Uygulama bugüne kadar yapay zekâyı yalnızca Ayarlar'da *sunucu
+adresi* doluysa açıyordu. Yani değerlendirmeyi görmek için kullanıcının kendi
+makinesinde `server/server.ts`'i çalıştırıp telefonu aynı ağa alması
+gerekiyordu. Pratikte özellik hiç kimsede açılmıyordu — geliştiricide bile.
+
+**Kasıtlı tasarım:**
+- **Anahtar kasada, JSON deposunda değil.** `expo-secure-store` (iOS Keychain /
+  Android Keystore), `WHEN_UNLOCKED_THIS_DEVICE_ONLY` ile: cihaz yedeğine
+  girmiyor, başka cihaza kopyalanmıyor. `storage.ts` her şeyi düz JSON olarak
+  belge klasörüne yazdığı için anahtar oraya konmadı.
+- **Anahtar başlıkta gidiyor, sorgu dizesinde değil** (`x-goog-api-key`). URL'ler
+  günlüklere ve çökme raporlarına düşebiliyor, başlıklar düşmüyor.
+- **Anahtarın tamamı hiçbir ekranda gösterilmiyor** — yalnızca maskeli biçim
+  (`AIza…7f3K`).
+- **Önce doğrula, sonra kaydet.** Kurulumda anahtar canlı bir çağrıyla
+  sınanıyor; geçmezse kaydedilmiyor. Böylece "kaydettim ama çalışmıyor" hâli
+  oluşmuyor.
+- **Eşzamansızlık.** Kasadan okuma `await` gerektiriyor, oysa `aiAvailable()`
+  senkron cevap veriyor. Anahtar açılışta bir kez okunup bellekte tutuluyor;
+  ekranlar `useApiKey()` / `useAiAvailable()` ile abone. Senkron `aiAvailable()`
+  çağıran ekranlar hook'a çevrildi, yoksa ilk karede "kapalı" deyip öyle
+  kalıyorlardı.
+
+**Bağlı kural — yapay zekâ hâlâ şart değil.** Yukarıdaki "uygulamayla gelir ama
+şart değildir" kuralı aynen geçerli: anahtar yokken uygulamanın tamamı
+çalışıyor, yalnızca değerlendirme katmanı kapalı. Kapalıyken gösterilen metnin
+yanında artık kuruluma götüren bir düğme var — eskiden yalnızca "kullanılamıyor"
+yazıyordu ve kullanıcı nereden açacağını bulamıyordu.
+
+**Gizlilik:** Anahtar hiçbir sunucuya gönderilmiyor. Değerlendirme istendiğinde
+mülakat metni/sesi doğrudan Google'a gidiyor ve kullanım kullanıcının kendi
+hesabının kotasından düşüyor. Bu, kurulum ekranında açıkça yazıyor.
+
+**Neden "Google ile devam et" değil:** Google Sign-In kimlik doğrular, Gemini
+erişimi vermez. Gemini API anahtar tabanlı; son kullanıcının Google hesabıyla
+oturum açıp kendi Gemini kotasını harcaması diye bir yol yok (Vertex AI tarafı
+servis hesabı ve GCP projesi istiyor, son kullanıcı OAuth'u değil). Bu yüzden
+"giriş yap → yapay zekâ açılsın" akışı kurulamıyor.
+
+**Açık kalan:** Ortak sunucu yolu (Aşama 1b) tamamen kapanmadı; kod duruyor ve
+ileride ücretsiz kota/sunucusuz barındırma sınırları ölçülürse ikinci bir
+seçenek olarak açılabilir — YAPILACAKLAR Bölüm 00.

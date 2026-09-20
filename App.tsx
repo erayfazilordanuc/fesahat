@@ -34,8 +34,11 @@ import {
   backgroundBase,
   type BackgroundVariant,
 } from './src/components/ScreenBackground';
+import { TAB_BAR_HEIGHT, TAB_BAR_MARGIN } from './src/components/tabBar';
 import { DailyPracticeSettingsProvider } from './src/utils/dailyPracticeSettings';
 import { useReminderSync, useReminderNavigation } from './src/utils/useReminderSync';
+import { onboardingStore } from './src/utils/onboarding';
+import { loadApiKey } from './src/utils/aiCredentials';
 
 import TodayScreen from './src/screens/TodayScreen';
 import GrowthScreen from './src/screens/GrowthScreen';
@@ -47,15 +50,21 @@ import AnalysisScreen from './src/screens/AnalysisScreen';
 import BrainExercisesScreen from './src/screens/BrainExercisesScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import AiSetupScreen from './src/screens/AiSetupScreen';
 import ExerciseEngineScreen from './src/screens/ExerciseEngineScreen';
 import InterviewHistoryScreen from './src/screens/InterviewHistoryScreen';
 import ExerciseHistoryScreen from './src/screens/ExerciseHistoryScreen';
+import ResponseJournalScreen from './src/screens/ResponseJournalScreen';
 import ExerciseDetailScreen from './src/screens/ExerciseDetailScreen';
 import NewsScreen from './src/screens/NewsScreen';
 import DiaphragmExerciseScreen from './src/screens/DiaphragmExerciseScreen';
 import SpeechExerciseScreen from './src/screens/SpeechExerciseScreen';
 import BelagatExerciseScreen from './src/screens/BelagatExerciseScreen';
 import DailyTextScreen from './src/screens/DailyTextScreen';
+import RemindersScreen from './src/screens/RemindersScreen';
+import LanguageScreen from './src/screens/LanguageScreen';
+import MeasurementsScreen from './src/screens/MeasurementsScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -140,42 +149,37 @@ function AnimatedTabButton(props: any) {
 
 
 import * as SplashScreen from 'expo-splash-screen';
+import { SplashOverlay } from './src/components/SplashOverlay';
 
-// Prevent auto hiding of the splash screen
+// Native splash'i SplashOverlay kendi ilk karesi hazır olunca kapatır.
 SplashScreen.preventAutoHideAsync().catch(() => {
   /* ignore */
 });
 
-export default function App() {
-  React.useEffect(() => {
-    // Hide the splash screen after a short delay or when fonts/assets are loaded.
-    // For now, just hide it once the component mounts.
-    const hideSplash = async () => {
-      try {
-        await SplashScreen.hideAsync();
-      } catch (e) {
-        console.warn(e);
-      }
-    };
-    
-    // Give a small delay to ensure the first frame is rendered smoothly
-    const timeout = setTimeout(hideSplash, 100);
-    return () => clearTimeout(timeout);
-  }, []);
+// Kullanıcının Gemini anahtarını cihazın kasasından belleğe okur. Eşzamansız
+// olduğu için burada başlatılıyor; okunana kadar yapay zekâ kapalı görünür,
+// okununca `useAiAvailable()` aboneleri kendiliğinden tazeleniyor. Açılışı
+// geciktirmiyor — beklenmiyor.
+void loadApiKey();
 
+export default function App() {
   return (
-    // Hata sınırı en dışta: sağlayıcıların kendisi hata verse bile yakalanır.
-    <ErrorBoundary>
-      <ThemeProvider>
-        <DailyPracticeSettingsProvider>
-          <SafeAreaProvider>
-            <NavigationContainer ref={navigationRef} theme={STATIC_NAV_THEME}>
-              <AppContent />
-            </NavigationContainer>
-          </SafeAreaProvider>
-        </DailyPracticeSettingsProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+    <React.Fragment>
+      {/* Hata sınırı en dışta: sağlayıcıların kendisi hata verse bile yakalanır. */}
+      <ErrorBoundary>
+        <ThemeProvider>
+          <DailyPracticeSettingsProvider>
+            <SafeAreaProvider>
+              <NavigationContainer ref={navigationRef} theme={STATIC_NAV_THEME}>
+                <AppContent />
+              </NavigationContainer>
+            </SafeAreaProvider>
+          </DailyPracticeSettingsProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
+      {/* Sınırın dışında: uygulama hata verse de native splash kapanır, hata ekranı görünür. */}
+      <SplashOverlay />
+    </React.Fragment>
   );
 }
 
@@ -195,6 +199,12 @@ function screenLayout({ children }: { children: React.ReactNode }) {
 function AppContent() {
   const { isLight } = useAppTheme();
   const [activeTab, setActiveTab] = React.useState<BackgroundVariant>('Bugün');
+
+  // İlk rota bir kez hesaplanır: oryantasyon tamamlanmışsa doğrudan MainTabs,
+  // değilse Onboarding. Sonraki `completed` değişiklikleri (Ayarlar →
+  // "Oryantasyonu yeniden göster") bu değeri değiştirmez — o zaten
+  // `navigation.navigate('Onboarding')` ile açılır.
+  const initialRoute = React.useRef(onboardingStore.get().completed ? 'MainTabs' : 'Onboarding').current;
 
   // Navigator'a giden nesneler sabitleniyor.
   //
@@ -231,10 +241,16 @@ function AppContent() {
   // Günlük pratik hatırlatmalarını ayarlarla eşitle ve bildirime dokunulduğunda ilgili ekranı aç.
   useReminderSync();
   useReminderNavigation(
-    React.useCallback((screen: string) => {
-      if (navigationRef.isReady()) {
-        navigationRef.navigate(screen as never);
-      }
+    React.useCallback((screen: string, params?: Record<string, unknown>) => {
+      if (!navigationRef.isReady()) return;
+      // Ekran adı bildirim verisinden geliyor, yani derleme anında bilinmiyor;
+      // navigate'in aşırı yüklü imzası bu yüzden gevşetiliyor. Hedefin geçerli
+      // olduğunu `habitTemplates.ts`/`dailyNotifications.ts` garanti ediyor.
+      const navigate = navigationRef.navigate as unknown as (
+        screen: string,
+        params?: Record<string, unknown>,
+      ) => void;
+      navigate(screen, params);
     }, []),
   );
 
@@ -245,21 +261,32 @@ function AppContent() {
       <View style={{ flex: 1, backgroundColor: backgroundBase(isLight) }}>
         <BackgroundVariantProvider variant={activeTab}>
           <Stack.Navigator
+            initialRouteName={initialRoute}
             screenOptions={stackScreenOptions}
             screenLayout={screenLayout}
             screenListeners={stackScreenListeners}
           >
             <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen
+              name="Onboarding"
+              component={OnboardingScreen}
+              options={{ gestureEnabled: false, animation: 'fade' }}
+            />
             <Stack.Screen name="DailyInterview" component={DailyInterviewScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="CustomInterview" component={CustomInterviewScreen} options={{ presentation: 'modal' }} />
             <Stack.Screen name="Analysis" component={AnalysisScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen name="AiSetup" component={AiSetupScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen name="Reminders" component={RemindersScreen} />
+            <Stack.Screen name="Measurements" component={MeasurementsScreen} />
+            <Stack.Screen name="Language" component={LanguageScreen} />
             <Stack.Screen name="Interview" component={InterviewScreen} />
             <Stack.Screen name="BrainExercises" component={BrainExercisesScreen} />
             <Stack.Screen name="ExerciseEngine" component={ExerciseEngineScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} options={{ presentation: 'modal' }} />
             <Stack.Screen name="InterviewHistory" component={InterviewHistoryScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="ExerciseHistory" component={ExerciseHistoryScreen} options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="ResponseJournal" component={ResponseJournalScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="NewsScreen" component={NewsScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="DiaphragmExercise" component={DiaphragmExerciseScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="SpeechExercise" component={SpeechExerciseScreen} options={{ presentation: 'fullScreenModal' }} />
@@ -274,7 +301,8 @@ function AppContent() {
 
 // Yüzen sekme çubuğunun yanlardan ve alttan bıraktığı eşit boşluk.
 // Çubuğun yanlardaki ve alttaki boşluğu — tek sabit, üçü de eşit olsun diye.
-const TAB_BAR_MARGIN = 20;
+// Ölçüler `src/components/tabBar.ts`'te: ekranların alt boşluğu (`AppScreen`)
+// da aynı sabitlerden hesaplanıyor, ikisi ayrışmasın diye.
 
 /**
  * Bir sekmenin `options` nesnesi. Dört sekme aynı kalıbı paylaşıyor: ikon,
@@ -336,8 +364,8 @@ function MainTabs() {
               left: 0,
               marginLeft: TAB_BAR_MARGIN,
               width: barWidth,
-              height: 68, // Biraz daha ince ve zarif
-              borderRadius: 34,
+              height: TAB_BAR_HEIGHT,
+              borderRadius: TAB_BAR_HEIGHT / 2,
               paddingBottom: 0,
               paddingTop: 0,
               borderTopWidth: 0,
@@ -359,7 +387,7 @@ function MainTabs() {
                 }
                 style={{ 
                   flex: 1, 
-                  borderRadius: 34,
+                  borderRadius: TAB_BAR_HEIGHT / 2,
                   borderWidth: 1,
                   // Açıkta cam efekti için beyaz; koyuda ince bir ayrım yeter —
                   // 0.15 opaklık çubuğu zeminden fazla koparıyordu.

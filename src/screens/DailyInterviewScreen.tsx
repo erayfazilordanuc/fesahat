@@ -24,6 +24,7 @@ import {
   type Question,
 } from '../data/questions';
 import { addSession, type InterviewMode } from '../utils/interviewHistory';
+import { keepAudio } from '../utils/audioStore';
 import { putCapture } from '../utils/captureBuffer';
 import { formatDuration } from '../utils/dateUtils';
 
@@ -80,6 +81,15 @@ export default function DailyInterviewScreen({ navigation, route }: any) {
   const [prepLeft, setPrepLeft] = React.useState(PREP_SECONDS);
   const [answerLeft, setAnswerLeft] = React.useState(ANSWER_SECONDS);
   const [transcript, setTranscript] = React.useState('');
+  const [stopRequested, setStopRequested] = React.useState(false);
+
+  // Geçmişe ve ses dosyasına yazılacak oturum kimliği — CameraPhase de aynı
+  // kimliği kullanmalı (kayıt kapanışında keepAudio çağırmak için), bu yüzden
+  // bir kez üretilip ref'te tutuluyor.
+  const sessionIdRef = React.useRef(`session-${Date.now()}`);
+  // Aşağıdaki `beforeRemove` dinleyicisi çıkışı yakalıyor; kayıt yazıldıktan
+  // sonra yapılan gezinmelerin ona takılmaması için açılan izin bayrağı.
+  const allowLeaveRef = React.useRef(false);
 
   // Düşünme payı sayacı — biterse kayıt kendiliğinden başlar.
   React.useEffect(() => {
@@ -108,9 +118,19 @@ export default function DailyInterviewScreen({ navigation, route }: any) {
   }, [phase]);
 
   const finish = React.useCallback(
-    (capture: { audioBase64?: string; photos?: string[]; dbLogs?: number[]; silentSeconds?: number }) => {
-      const id = `session-${Date.now()}`;
+    (
+      capture: {
+        audioBase64?: string;
+        audioFile?: string;
+        photos?: string[];
+        dbLogs?: number[];
+        silentSeconds?: number;
+      },
+      options?: { aborted?: boolean },
+    ) => {
+      const id = sessionIdRef.current;
       const spent = ANSWER_SECONDS - answerLeft;
+      const aborted = options?.aborted ?? false;
 
       addSession({
         id,
@@ -122,6 +142,8 @@ export default function DailyInterviewScreen({ navigation, route }: any) {
         durationSeconds: Math.max(spent, 1),
         transcript: mode === 'typing' ? transcript : undefined,
         silentSeconds: capture.silentSeconds,
+        audioFile: capture.audioFile,
+        aborted: aborted || undefined,
       });
 
       putCapture(id, {
@@ -130,21 +152,75 @@ export default function DailyInterviewScreen({ navigation, route }: any) {
         dbLogs: capture.dbLogs,
       });
 
-      navigation.replace('Analysis', { sessionId: id });
+      // Kayıt yazıldı; aşağıdaki gezinme `beforeRemove` tarafından durdurulmasın.
+      allowLeaveRef.current = true;
+
+      // Yarıda bitirilen oturumda analiz ekranına geçilmez — kayıt Mülakat
+      // Geçmişi'nde durur, analiz oradan sonra istenirse yapılır.
+      if (aborted) {
+        navigation.goBack();
+      } else {
+        navigation.replace('Analysis', { sessionId: id });
+      }
     },
     [answerLeft, company, mode, navigation, setup.question.text, transcript],
   );
 
+  const leaveWithoutSaving = React.useCallback(() => {
+    allowLeaveRef.current = true;
+    navigation.goBack();
+  }, [navigation]);
+
+  /** Çıkış uyarısı. Hem başlıktaki X hem de geri tuşu/jesti buraya düşer. */
+  const promptExit = React.useCallback(() => {
+    Alert.alert(
+      'Mülakattan çık',
+      'Kayıt yarıda kalsa da tutulur; analizi Mülakat Geçmişi\'nden daha sonra yapabilirsiniz.',
+      [
+        {
+          text: 'Kaydet ve çık',
+          onPress: () => {
+            if (mode === 'camera') {
+              setStopRequested(true);
+            } else {
+              finish({}, { aborted: true });
+            }
+          },
+        },
+        { text: 'Kaydetmeden çık', style: 'destructive', onPress: leaveWithoutSaving },
+        { text: 'Vazgeç', style: 'cancel' },
+      ],
+    );
+  }, [finish, leaveWithoutSaving, mode]);
+
   const close = () => {
     if (phase === 'prep') {
-      navigation.goBack();
+      leaveWithoutSaving();
       return;
     }
-    Alert.alert('Mülakattan çık', 'Kayıt iptal edilecek ve analiz yapılmayacak. Emin misiniz?', [
-      { text: 'Vazgeç', style: 'cancel' },
-      { text: 'Çık', style: 'destructive', onPress: () => navigation.goBack() },
-    ]);
+    promptExit();
   };
+
+  /**
+   * Ekrandan X'e basmadan çıkılırsa da kayıt sorulsun — Android'in donanım geri
+   * tuşu ve iOS'un kenardan kaydırma jesti `close()`'a hiç uğramıyor. Bu
+   * olmadan "yarıda bitse de kaydı tutulsun" garantisi yalnızca X düğmesinde
+   * geçerliydi: geri tuşuyla çıkanın yazdığı metin de, kaydedilen sesi de
+   * (CameraPhase sökülürken kaydı kapatıp geçici dosyayı sildiği için)
+   * kayboluyordu.
+   *
+   * `allowLeaveRef`: kaydı yazdıktan sonra `finish()` ve "Kaydetmeden çık"
+   * kendileri gezindiği için, o gezinmeler tekrar yakalanıp sonsuz döngüye
+   * girmesin diye açılan izin bayrağı.
+   */
+  React.useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (event: any) => {
+      if (allowLeaveRef.current || phase === 'prep') return;
+      event.preventDefault();
+      promptExit();
+    });
+    return unsubscribe;
+  }, [navigation, phase, promptExit]);
 
   return (
     <View className="flex-1" style={{ paddingTop: insets.top + SCREEN_TOP_GAP }}>
@@ -181,7 +257,9 @@ export default function DailyInterviewScreen({ navigation, route }: any) {
           />
         ) : mode === 'camera' ? (
           <CameraPhase
+            sessionId={sessionIdRef.current}
             timeUp={answerLeft <= 0}
+            stopRequested={stopRequested}
             onFinish={finish}
             finishing={phase === 'finishing'}
             onFinishing={() => setPhase('finishing')}
@@ -250,18 +328,27 @@ function PrepPhase({
 
 /** Kamera + mikrofon modu. Ses kaydedilir, arada duruş için kare yakalanır. */
 function CameraPhase({
+  sessionId,
   timeUp,
+  stopRequested,
   onFinish,
   finishing,
   onFinishing,
 }: {
+  sessionId: string;
   timeUp: boolean;
-  onFinish: (capture: {
-    audioBase64?: string;
-    photos?: string[];
-    dbLogs?: number[];
-    silentSeconds?: number;
-  }) => void;
+  /** close() içinden "Kaydet ve çık" seçilince true olur — kayıt dışarıdan kapatılır. */
+  stopRequested: boolean;
+  onFinish: (
+    capture: {
+      audioBase64?: string;
+      audioFile?: string;
+      photos?: string[];
+      dbLogs?: number[];
+      silentSeconds?: number;
+    },
+    options?: { aborted?: boolean },
+  ) => void;
   finishing: boolean;
   onFinishing: () => void;
 }) {
@@ -326,40 +413,76 @@ function CameraPhase({
 
     return () => {
       cancelled = true;
+      // "Kaydetmeden çık" ya da başka bir sebeple ekran sökülürse kayıt hâlâ
+      // açıksa burada kapanır. Yoksa native kayıt oturumu ve mikrofon serbest
+      // bırakılmıyor, sonraki mülakatta kayıt başlatılamıyordu. (Normal
+      // bitişte `stop()` zaten kapatıp `recordingRef`'i boşaltıyor, bu dal
+      // yalnızca yarıda sökülmede çalışır.)
+      const pending = recordingRef.current;
+      recordingRef.current = null;
+      if (!pending) return;
+      void (async () => {
+        try {
+          await pending.stopAndUnloadAsync();
+          // Kaydedilmeyen ses önbellekte çöp olarak kalmasın.
+          const uri = pending.getURI();
+          if (uri) new File(uri).delete();
+        } catch (e) {
+          console.warn('[mülakat] kayıt kapatılamadı', e);
+        }
+      })();
     };
   }, [ready, micPermission?.granted]);
 
-  const stop = React.useCallback(async () => {
-    if (stoppedRef.current) return;
-    stoppedRef.current = true;
-    onFinishing();
+  const stop = React.useCallback(
+    async (options?: { aborted?: boolean }) => {
+      if (stoppedRef.current) return;
+      stoppedRef.current = true;
+      onFinishing();
 
-    let audioBase64: string | undefined;
-    const recording = recordingRef.current;
-    if (recording) {
-      try {
-        await recording.stopAndUnloadAsync();
-        const uri = recording.getURI();
-        if (uri) audioBase64 = await new File(uri).base64();
-      } catch (e) {
-        console.warn('[mülakat] ses kaydı okunamadı', e);
+      let audioBase64: string | undefined;
+      let audioFile: string | undefined;
+      const recording = recordingRef.current;
+      if (recording) {
+        try {
+          await recording.stopAndUnloadAsync();
+          const uri = recording.getURI();
+          if (uri) {
+            // Sıra önemli: keepAudio dosyayı kalıcı klasöre TAŞIYOR, bu yüzden
+            // önce analiz için base64 okunuyor, taşıma sonra yapılıyor.
+            audioBase64 = await new File(uri).base64();
+            audioFile = keepAudio(sessionId, uri);
+          }
+        } catch (e) {
+          console.warn('[mülakat] ses kaydı okunamadı', e);
+        }
+        recordingRef.current = null;
       }
-      recordingRef.current = null;
-    }
 
-    onFinish({
-      audioBase64,
-      photos: photosRef.current.length > 0 ? photosRef.current : undefined,
-      dbLogs: dbLogsRef.current.length > 0 ? dbLogsRef.current : undefined,
-      // Ölçüm aralığı 500 ms olduğu için tik sayısının yarısı saniyeye karşılık gelir.
-      silentSeconds: Math.round(silentTicksRef.current / 2),
-    });
-  }, [onFinish, onFinishing]);
+      onFinish(
+        {
+          audioBase64,
+          audioFile,
+          photos: photosRef.current.length > 0 ? photosRef.current : undefined,
+          dbLogs: dbLogsRef.current.length > 0 ? dbLogsRef.current : undefined,
+          // Ölçüm aralığı 500 ms olduğu için tik sayısının yarısı saniyeye karşılık gelir.
+          silentSeconds: Math.round(silentTicksRef.current / 2),
+        },
+        options,
+      );
+    },
+    [onFinish, onFinishing, sessionId],
+  );
 
   // Süre dolduğunda kayıt kendiliğinden kapanır.
   React.useEffect(() => {
     if (ready && timeUp) stop();
   }, [ready, timeUp, stop]);
+
+  // close() içinden "Kaydet ve çık" seçilince dışarıdan kapatma isteği gelir.
+  React.useEffect(() => {
+    if (ready && stopRequested) stop({ aborted: true });
+  }, [ready, stopRequested, stop]);
 
   // Duruş analizi için periyodik kare yakalama.
   React.useEffect(() => {
@@ -406,13 +529,19 @@ function CameraPhase({
         <Text className={`text-[11px] mt-2 ${toneText('amber', t.isLight)}`}>{error}</Text>
       ) : null}
 
+      {micPermission?.granted ? (
+        <Text className={`text-[11px] mt-2 ${t.muted}`}>
+          Ses kaydı cihazınızda saklanır, Mülakat Geçmişi'nden dinleyebilirsiniz.
+        </Text>
+      ) : null}
+
       <View className="py-4">
         <ActionButton
           label={finishing ? 'Kayıt kapatılıyor…' : 'Kaydı Bitir ve Analiz Et'}
           tone="rose"
           disabled={finishing}
           icon={<Square size={16} color="#ffffff" fill="#ffffff" />}
-          onPress={stop}
+          onPress={() => stop()}
         />
       </View>
     </View>

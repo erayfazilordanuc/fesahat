@@ -23,11 +23,14 @@ import {
   toneText,
   type Tone,
 } from '../components/AppUI';
+import { File } from 'expo-file-system';
+
 import { useThemeTokens } from '../components/practice/PracticeUI';
 import { callGeminiJson, GeminiError } from '../utils/geminiClient';
 import { AI_UNAVAILABLE_HINT, useAiAvailable } from '../utils/aiAvailability';
 import { attachAnalysis, getSession, type InterviewAnalysis } from '../utils/interviewHistory';
 import { clearCapture, takeCapture } from '../utils/captureBuffer';
+import { audioUri } from '../utils/audioStore';
 import { careerContext, profileStore } from '../utils/profile';
 import { formatDuration } from '../utils/dateUtils';
 
@@ -112,6 +115,23 @@ export default function AnalysisScreen({ navigation, route }: any) {
     const capture = takeCapture(session.id);
     const profile = profileStore.get();
 
+    // Bellek arabelleği yalnızca uygulama açıkken dolu: oturum yarıda kalmışsa
+    // ya da geçmişten sonradan açıldıysa boştur, ama ses kalıcı olarak diskte
+    // duruyor olabilir (kullanıcı kararı 2026-09-20) — o zaman oradan okunur.
+    let audioBase64 = capture?.audioBase64;
+    if (!audioBase64 && session.audioFile) {
+      const uri = audioUri(session.audioFile);
+      if (uri) {
+        try {
+          audioBase64 = await new File(uri).base64();
+        } catch (e) {
+          console.warn('[mülakat analizi] ses dosyası okunamadı, sessiz devam ediliyor.', e);
+        }
+      }
+    }
+    // Kareler kalıcı saklanmıyor; yalnızca bellekten gelirse (aynı oturumda) kullanılır.
+    const photos = capture?.photos;
+
     const prompt = [
       'Sen Türk savunma sanayii firmalarında görev yapmış kıdemli bir mülakat kurulu üyesisin.',
       'Adayın aşağıdaki mülakat performansını değerlendir. Değerlendirmeyi Türkçe, ölçülü ve askeri disiplinli bir dille yaz.',
@@ -125,13 +145,16 @@ export default function AnalysisScreen({ navigation, route }: any) {
         ? `Sessiz kalınan toplam süre: yaklaşık ${session.silentSeconds} saniye.`
         : '',
       session.transcript ? `\nAdayın yazdığı cevap:\n"""${session.transcript}"""` : '',
-      capture?.audioBase64
+      audioBase64
         ? '\nAdayın sesli cevabı ek olarak gönderildi; akıcılık ve dolgu kelime analizini ses üzerinden yap.'
         : '',
-      capture?.photos?.length
-        ? `\nMülakat sırasında ${capture.photos.length} kare yakalandı; duruş ve göz teması analizini bu kareler üzerinden yap.`
+      photos?.length
+        ? `\nMülakat sırasında ${photos.length} kare yakalandı; duruş ve göz teması analizini bu kareler üzerinden yap.`
         : '',
-      !capture?.audioBase64 && !session.transcript
+      session.mode === 'camera' && !photos?.length
+        ? '\nBu oturumda kamera karesi yok (kareler kalıcı saklanmaz). Duruş ve göz teması hakkında yorum uydurma; postureFeedback alanında bu verinin bulunmadığını kısaca belirt.'
+        : '',
+      !audioBase64 && !session.transcript
         ? '\nSes veya metin verisi yok. Bu durumda akıcılık ve derinlik yorumlarını "veri alınamadı" olarak açıkla ve puanı buna göre temkinli ver.'
         : '',
     ]
@@ -142,14 +165,15 @@ export default function AnalysisScreen({ navigation, route }: any) {
       const result = await callGeminiJson<InterviewAnalysis>({
         prompt,
         responseSchema: ANALYSIS_SCHEMA as unknown as Record<string, unknown>,
-        audioBase64: capture?.audioBase64,
-        capturedPhotos: capture?.photos,
+        audioBase64,
+        capturedPhotos: photos,
         dbLogs: capture?.dbLogs,
       });
 
       attachAnalysis(session.id, result);
       setAnalysis(result);
-      // Ham ses/kare verisi analizden sonra bellekte tutulmaz.
+      // Ham ses verisi bellekte tutulmaz; dosya kalıcı kalmaya devam eder
+      // (kullanıcı kararı 2026-09-20) — clearCapture yalnızca belleği boşaltır.
       clearCapture(session.id);
     } catch (e) {
       const message =
@@ -188,7 +212,7 @@ export default function AnalysisScreen({ navigation, route }: any) {
       {/* Soru */}
       <Surface className="mt-1">
         <Text className={`text-[11px] font-bold uppercase tracking-widest mb-2 ${t.muted}`}>
-          Değerlendirilen Soru
+          DEĞERLENDİRİLEN SORU
         </Text>
         <Text className={`text-[14px] font-bold leading-6 ${t.title}`}>
           “{session.questionText}”
@@ -208,6 +232,15 @@ export default function AnalysisScreen({ navigation, route }: any) {
             <Text className={`text-[13px] font-bold ml-2 ${t.title}`}>Değerlendirme kapalı</Text>
           </View>
           <Text className={`text-[12px] leading-5 ${t.body}`}>{AI_UNAVAILABLE_HINT}</Text>
+          <View className="mt-4">
+            <ActionButton
+              label="Yapay Zekâyı Aç"
+              tone="emerald"
+              variant="outline"
+              icon={<Sparkles size={16} color={toneColor('emerald', t.isLight)} />}
+              onPress={() => navigation.navigate('AiSetup')}
+            />
+          </View>
         </Surface>
       ) : loading ? (
         <View className="items-center justify-center py-16">
@@ -315,7 +348,7 @@ function AnalysisResult({
       {/* Geliştirilecekler */}
       <Surface className="mt-3">
         <Text className={`text-[11px] font-bold uppercase tracking-widest mb-1 ${t.muted}`}>
-          Geliştirilecek Alanlar
+          GELİŞTİRİLECEK ALANLAR
         </Text>
         {analysis.improvementPoints.map((point, index) => (
           <View key={index} className="flex-row mt-2.5">

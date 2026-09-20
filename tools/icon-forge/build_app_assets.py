@@ -1,6 +1,13 @@
 import os
 import sys
 
+# Eski "Kademe" figürünü çizer; çalıştırılırsa güncel ikonları ezer.
+# Güncel ikonlar: python3 tools/icon-forge/build_from_brand.py
+if '--eski-kademe' not in sys.argv:
+    sys.exit("Bu betik eski 'Kademe' ikonlarını üretir. Güncel ikonlar için:\n"
+             "  python3 tools/icon-forge/build_from_brand.py\n"
+             "Yine de çalıştırmak için: --eski-kademe")
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from draw import rasterize

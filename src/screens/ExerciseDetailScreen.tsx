@@ -101,7 +101,7 @@ export default function ExerciseDetailScreen({ navigation, route }: any) {
         <Surface className="mt-3">
           <View className="flex-row items-center justify-between mb-2">
             <Text className={`text-[11px] font-bold uppercase tracking-widest ${t.muted}`}>
-              Egzersiz Hakkında
+              EGZERSİZ HAKKINDA
             </Text>
             <Badge
               label={DIFFICULTY_LABELS[exercise.difficulty]}

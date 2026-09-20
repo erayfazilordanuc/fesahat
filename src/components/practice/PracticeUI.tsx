@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView, ViewStyle } from 'react-native';
+import { View, Text, Pressable, ScrollView, ViewStyle, Modal, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Settings as SettingsIcon, X } from 'lucide-react-native';
 
 import { useAppTheme } from '../../utils/ThemeContext';
 import { useThemeTokens } from '../themeTokens';
-import { AppHeader, SCREEN_TOP_GAP } from '../AppUI';
+import { AppHeader, RoundButton, SCREEN_TOP_GAP } from '../AppUI';
 
 // Günlük pratik ekranlarının paylaştığı görsel parçalar.
 // Uygulamanın mevcut düzeni gibi tema ayrımı NativeWind sınıflarıyla isLight üzerinden yapılıyor.
@@ -21,6 +22,8 @@ type ScreenShellProps = {
   /** Alt kısımda sabit kalan aksiyon alanı. */
   footer?: React.ReactNode;
   scroll?: boolean;
+  /** Başlığın sağındaki düğme — modül ekranlarında `SettingsButton`. */
+  right?: React.ReactNode;
 };
 
 export function ScreenShell({
@@ -31,6 +34,7 @@ export function ScreenShell({
   children,
   footer,
   scroll = true,
+  right,
 }: ScreenShellProps) {
   const t = useThemeTokens();
   const insets = useSafeAreaInsets();
@@ -43,13 +47,16 @@ export function ScreenShell({
         subtitle={subtitle}
         onBack={onClose}
         backIcon={closeIcon === 'x' ? 'close' : 'back'}
+        right={right}
       />
 
       {scroll ? (
         <ScrollView
           className="flex-1"
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
-          showsVerticalScrollIndicator={false}
+          // Bkz. AppScreen: kaydırma çubuğu, sayfanın devam ettiğini gösteren
+          // standart işaret; modül ekranları da aynı davranışı paylaşsın.
+          showsVerticalScrollIndicator
         >
           {children}
         </ScrollView>
@@ -66,6 +73,89 @@ export function ScreenShell({
         </View>
       ) : null}
     </View>
+  );
+}
+
+/** Modül ekranlarının sağ üstündeki ayar düğmesi. */
+export function SettingsButton({ onPress, label = 'Modül ayarları' }: { onPress: () => void; label?: string }) {
+  const t = useThemeTokens();
+  return <RoundButton icon={<SettingsIcon size={19} color={t.iconColor} />} onPress={onPress} label={label} />;
+}
+
+/**
+ * Alttan açılan panel — ekrandan çıkmadan açılan ayarlar gibi içerikler için.
+ * Profil ekranındaki ikon seçiciyle aynı kalıp: yarı saydam örtü, yuvarlak üst
+ * köşeler. Örtüye dokunmak ya da geri tuşu paneli kapatır.
+ */
+export function BottomSheet({
+  visible,
+  title,
+  subtitle,
+  onClose,
+  children,
+}: {
+  visible: boolean;
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const t = useThemeTokens();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Paneli kapat"
+        />
+        <View
+          className={`rounded-t-3xl overflow-hidden ${t.isLight ? 'bg-white' : 'bg-[#1c1c1f]'}`}
+          style={{ maxHeight: '88%' }}
+        >
+          <View
+            className={`flex-row items-center px-5 pt-5 pb-3 border-b ${
+              t.isLight ? 'border-slate-200' : 'border-[#2e2e33]'
+            }`}
+          >
+            <View className="flex-1 pr-3">
+              <Text className={`text-[17px] font-bold ${t.title}`} numberOfLines={1}>
+                {title}
+              </Text>
+              {subtitle ? (
+                <Text className={`text-[11px] mt-0.5 ${t.muted}`} numberOfLines={2}>
+                  {subtitle}
+                </Text>
+              ) : null}
+            </View>
+            <Pressable
+              onPress={onClose}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Kapat"
+              className={`w-9 h-9 rounded-full items-center justify-center ${
+                t.isLight ? 'bg-slate-100' : 'bg-slate-800'
+              }`}
+            >
+              <X size={18} color={t.iconColor} />
+            </Pressable>
+          </View>
+          <ScrollView
+            contentContainerStyle={{
+              paddingHorizontal: 20,
+              paddingTop: 4,
+              paddingBottom: Math.max(insets.bottom, 16) + 16,
+            }}
+            showsVerticalScrollIndicator
+          >
+            {children}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -183,6 +273,10 @@ export function Chip({
   return (
     <Wrapper
       onPress={onPress}
+      // Seçilebilir çipler ekran okuyucuda düğme + seçili durumu olarak okunur.
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? label : undefined}
+      accessibilityState={onPress ? { selected: !!selected } : undefined}
       className={`px-3 py-2 rounded-full border mr-2 mb-2 ${selected ? selectedClasses : idleClasses}`}
     >
       <Text

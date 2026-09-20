@@ -24,6 +24,9 @@ import {
   type ExerciseCategory,
   type ExerciseTrack,
 } from '../data/exercises';
+import { MeasureCard, SelfCheckList } from '../components/practice/MeasureTests';
+import { findMeasureTest, TEST_POSTURE_SELF_CHECK } from '../data/measureTests';
+import { testHistory, useDailyProgress } from '../utils/dailyPracticeProgress';
 
 // Egzersizler sekmesi.
 // İki hat: bilişsel (beyin bölgelerine göre) ve fizyolojik (nefes/ses).
@@ -174,8 +177,16 @@ export default function BrainExercisesScreen({ navigation, route }: any) {
             }}
             tone={track === 'cognitive' ? 'violet' : 'emerald'}
             options={[
-              { value: 'cognitive', label: '🧠 Bilişsel' },
-              { value: 'physiological', label: '🫁 Fizyolojik' },
+              {
+                value: 'cognitive',
+                label: 'Bilişsel',
+                icon: <BrainCircuit size={15} color={t.iconColor} />,
+              },
+              {
+                value: 'physiological',
+                label: 'Fizyolojik',
+                icon: <HeartPulse size={15} color={t.iconColor} />,
+              },
             ]}
           />
         </View>
@@ -199,6 +210,9 @@ export default function BrainExercisesScreen({ navigation, route }: any) {
               onPress={() => navigation.navigate('ExerciseEngine', { exerciseId: exercise.id })}
             />
           ))}
+          {/* Duruş öz-kontrolü: egzersizlerin hemen yanında, Karne'deki "Duruş"
+              alanının "Ölç" düğmesi de buraya açılır (measureTests.ts). */}
+          {category.id === 'durus' ? <PostureSelfCheckCard /> : null}
         </View>
       ))}
 
@@ -466,6 +480,47 @@ function CategoryHeader({ category }: { category: ExerciseCategory }) {
         <Text className={`text-[16px] font-bold ${t.title}`}>{category.title}</Text>
         <Text className={`text-[11px] mt-1 leading-5 ${t.muted}`}>{category.description}</Text>
       </View>
+    </View>
+  );
+}
+
+/** Duruş öz-kontrolü — işaretlenen madde sayısı ölçümün kendisi (bkz. `DiaphragmIsolationMeasure`). */
+const POSTURE_SELF_CHECK_ITEMS = [
+  'Kulaklarım omuz hizasında, öne doğru sarkmıyor.',
+  'Omuzlarım öne kapanmış değil, geride ve gevşek duruyor.',
+  'Sırtım sandalyenin arkasına yaslı, kambur oturmuyorum.',
+  'Ekranın üst kenarı göz hizamda ya da altında.',
+  'Ayaklarım yere tam basıyor, kalçam dizlerimden yukarıda değil.',
+];
+
+function PostureSelfCheckCard() {
+  const { progress, logTest } = useDailyProgress();
+  const history = testHistory(progress, TEST_POSTURE_SELF_CHECK);
+  const [checked, setChecked] = React.useState<boolean[]>(() =>
+    POSTURE_SELF_CHECK_ITEMS.map(() => false),
+  );
+  // Hiçbir maddeye dokunulmadıysa ölçüm henüz yapılmamış demektir; 0 işaretli
+  // olsa bile kullanıcı bir kez dokunduysa bu geçerli bir sonuçtur.
+  const [touched, setTouched] = React.useState(false);
+  const checkedCount = checked.filter(Boolean).length;
+
+  const toggle = (index: number) => {
+    setTouched(true);
+    setChecked((prev) => prev.map((value, i) => (i === index ? !value : value)));
+  };
+
+  return (
+    <View className="mt-1">
+      <MeasureCard
+        test={findMeasureTest(TEST_POSTURE_SELF_CHECK)!}
+        history={history}
+        value={touched ? checkedCount : null}
+        onSave={(value) => logTest(TEST_POSTURE_SELF_CHECK, value)}
+        startLabel="Öz-kontrole başla"
+        startHint="Aynada ya da telefon kamerasında otururken kendini gör, sonra maddeleri dürüstçe işaretle."
+      >
+        <SelfCheckList items={POSTURE_SELF_CHECK_ITEMS} checked={checked} onToggle={toggle} />
+      </MeasureCard>
     </View>
   );
 }

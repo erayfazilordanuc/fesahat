@@ -1,4 +1,5 @@
 import { appSettingsStore, useAppSettings } from './appSettings';
+import { hasApiKey, useApiKey } from './aiCredentials';
 
 /**
  * Yapay zekânın o an kullanılabilir olup olmadığı — tek kaynak.
@@ -10,20 +11,29 @@ import { appSettingsStore, useAppSettings } from './appSettings';
  * Eskiden böyle değildi: ekranlar çağrıyı yapıyor, `GeminiError` yakalayıp
  * mesajını olduğu gibi basıyordu. Sunucu tanımsızken kullanıcı şunu görüyordu:
  * "Sunucu adresi tanımlı değil. Ayarlar → Backend API Adresi alanını doldurun."
- * Bu bir son kullanıcı cümlesi değil, geliştirici talimatı — üstelik yeni kuran
- * herkes bunu görüyordu.
+ * Bu bir son kullanıcı cümlesi değil, geliştirici talimatı.
+ *
+ * İKİ YOL (bkz. `geminiClient.ts`): kullanıcının kendi anahtarı (varsayılan)
+ * ya da sunucu adresi. Biri yeterli.
  */
 export function aiAvailable(): boolean {
-  return appSettingsStore.get().apiBaseUrl.trim().length > 0;
+  return hasApiKey() || appSettingsStore.get().apiBaseUrl.trim().length > 0;
 }
 
-/** Bileşen içinde canlı okuma; adres Ayarlar'dan değişince yeniden render eder. */
+/** Bileşen içinde canlı okuma; anahtar girilince ya da adres değişince yeniden render eder. */
 export function useAiAvailable(): boolean {
   const { apiBaseUrl } = useAppSettings();
-  return apiBaseUrl.trim().length > 0;
+  const apiKey = useApiKey();
+  return Boolean(apiKey) || apiBaseUrl.trim().length > 0;
 }
 
-/** Yapay zekâ kapalıyken gösterilecek ortak, teknik olmayan açıklama. */
+/**
+ * Yapay zekâ kapalıyken gösterilecek ortak, teknik olmayan açıklama.
+ *
+ * Yanında her zaman kuruluma götüren bir düğme bulunur (`AiInsightCard`,
+ * `AnalysisScreen`) — eskiden yalnızca bu cümle vardı ve kullanıcı nereden
+ * açacağını bulamıyordu.
+ */
 export const AI_UNAVAILABLE_HINT =
-  'Yapay zekâ değerlendirmesi şu an kullanılamıyor. Kayıtların yerinde duruyor; ' +
-  'değerlendirme açıldığında buradan görebilirsin.';
+  'Yapay zekâ değerlendirmesi henüz açık değil. Kayıtların yerinde duruyor; ' +
+  'ücretsiz bir Google anahtarı ekleyerek birkaç adımda açabilirsin.';

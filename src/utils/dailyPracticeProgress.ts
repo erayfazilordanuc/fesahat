@@ -1,11 +1,21 @@
 import React from 'react';
-import { readJson, writeJson } from './storage';
 import { dayKey } from './dateUtils';
+import { createPersistentStore } from './store';
+import {
+  TEST_EXHALE_CONTROL,
+  TEST_BREATHING_RATE,
+  TEST_READING_WPM,
+} from '../data/testIds';
 
 // Günlük pratik ilerlemesi: modül serileri (streak) ve belagat sanatı istatistikleri.
 // Profil ekranı ve ana ekran kartları bu veriyi okur.
+//
+// Ortak bir `createPersistentStore` üzerinden tutulur (bkz. store.ts): Bugün,
+// İlerleme ve Profil sekmeleri hep monte kaldığı için önceden her ekranın kendi
+// yerel `useState`'i vardı ve bir modül başka ekranda tamamlanınca ✓ ve seriler
+// uygulama yeniden başlayana kadar güncellenmiyordu.
 
-export type PracticeModule = 'diaphragm' | 'speech' | 'belagat' | 'dailyText';
+export type PracticeModule = 'diaphragm' | 'speech' | 'belagat' | 'dailyText' | 'lugat';
 
 export type ModuleProgress = {
   /** En son tamamlandığı gün ("2026-07-30"). */
@@ -39,22 +49,11 @@ export type TestResult = {
   value: number;
 };
 
-/** Kontrollü veriş süresi (saniye) — tek nefeste sabit "sss". */
-export const TEST_EXHALE_CONTROL = 'exhaleControl';
-
-/**
- * Dinlenik solunum hızı (nefes/dakika) — 60 saniye boyunca her nefes alışta dokunma.
- * Yetişkinde dinlenik aralık kabaca 12-20; burada amaç normale sokmak değil,
- * kişinin kendi eğilimini zaman içinde görmesi.
- */
-export const TEST_BREATHING_RATE = 'breathingRate';
-
-/**
- * Sesli okuma hızı (kelime/dakika) — kelime sayısı bilinen bir metni okuma süresi.
- * Sunum ve mülakat için tipik hedef aralık 120-150; hızlı konuşmak akıcılık değil,
- * çoğu zaman gerginlik göstergesi.
- */
-export const TEST_READING_WPM = 'readingWpm';
+// Ölçüm kimlikleri tek kaynakta: `src/data/testIds.ts` (açıklamaları da orada).
+// Burada yeniden dışa aktarılıyorlar, çünkü ekranlar bu kimlikleri hâlâ
+// `dailyPracticeProgress`'ten alıyor — kimlikler taşınırken alış yolları
+// bozulmasın diye.
+export { TEST_EXHALE_CONTROL, TEST_BREATHING_RATE, TEST_READING_WPM };
 
 /**
  * Test başına saklanan azami sonuç sayısı. storage.ts tüm durumu tek JSON
@@ -89,6 +88,7 @@ const EMPTY_PROGRESS: ProgressState = {
     speech: emptyModule(),
     belagat: emptyModule(),
     dailyText: emptyModule(),
+    lugat: emptyModule(),
   },
   belagatArts: {},
   tests: {},
@@ -110,12 +110,14 @@ function normalize(stored: Partial<ProgressState> | null): ProgressState {
   };
 }
 
-export function loadProgress(): ProgressState {
-  return normalize(readJson<Partial<ProgressState> | null>(STORAGE_KEY, null));
-}
+/** Ekranlar arasında paylaşılan tek depo — bkz. store.ts. */
+export const progressStore = createPersistentStore<ProgressState>(STORAGE_KEY, EMPTY_PROGRESS, (stored) =>
+  normalize(stored as Partial<ProgressState> | null),
+);
 
-function persist(state: ProgressState): void {
-  writeJson(STORAGE_KEY, state);
+/** Geriye dönük uyumluluk için: canlı depo tercih edilmeli (progressStore / useDailyProgress). */
+export function loadProgress(): ProgressState {
+  return progressStore.get();
 }
 
 /** Dünün gün anahtarı — seri hesabında kullanılır. */
@@ -153,7 +155,6 @@ export function completeModule(
       },
     },
   };
-  persist(next);
   return next;
 }
 
@@ -175,7 +176,6 @@ export function recordBelagatAnswer(
       },
     },
   };
-  persist(next);
   return next;
 }
 
@@ -186,7 +186,6 @@ export function markBelagatProduced(state: ProgressState, artId: string): Progre
     ...state,
     belagatArts: { ...state.belagatArts, [artId]: { ...prev, produced: true } },
   };
-  persist(next);
   return next;
 }
 
@@ -209,7 +208,6 @@ export function recordTest(
     ...state,
     tests: { ...state.tests, [testId]: trimmed },
   };
-  persist(next);
   return next;
 }
 
@@ -235,7 +233,6 @@ export function recordExhaleRecord(state: ProgressState, seconds: number): Progr
   if (rounded <= state.longestExhaleSeconds) return withHistory;
 
   const next: ProgressState = { ...withHistory, longestExhaleSeconds: Math.round(rounded) };
-  persist(next);
   return next;
 }
 
@@ -252,32 +249,36 @@ export function masteredArtCount(state: ProgressState): number {
   return Object.values(state.belagatArts).filter((s) => s.correct > 0).length;
 }
 
-/** Ekranların paylaştığı canlı ilerleme durumu. */
+/**
+ * Ekranların paylaştığı canlı ilerleme durumu.
+ *
+ * `progressStore.use()` ile abone olunur: Bugün, İlerleme ve Profil sekmeleri
+ * hep monte kaldığı için bir modül başka ekranda tamamlanınca hepsi aynı anda
+ * güncellenir (önceden her ekranın kendi kopyası vardı, senkron değildi).
+ */
 export function useDailyProgress() {
-  const [progress, setProgress] = React.useState<ProgressState>(() => loadProgress());
+  const progress = progressStore.use();
 
   const complete = React.useCallback((module: PracticeModule) => {
-    setProgress((prev) => completeModule(prev, module));
+    progressStore.set((prev) => completeModule(prev, module));
   }, []);
 
   const answerBelagat = React.useCallback((artId: string, correct: boolean) => {
-    setProgress((prev) => recordBelagatAnswer(prev, artId, correct));
+    progressStore.set((prev) => recordBelagatAnswer(prev, artId, correct));
   }, []);
 
   const produceBelagat = React.useCallback((artId: string) => {
-    setProgress((prev) => markBelagatProduced(prev, artId));
+    progressStore.set((prev) => markBelagatProduced(prev, artId));
   }, []);
 
   /** Genel test kaydı — yeni testler bunu kullanır, kendi fonksiyonunu yazmaz. */
   const logTest = React.useCallback((testId: string, value: number) => {
-    setProgress((prev) => recordTest(prev, testId, value));
+    progressStore.set((prev) => recordTest(prev, testId, value));
   }, []);
 
   const recordExhale = React.useCallback((seconds: number) => {
-    setProgress((prev) => recordExhaleRecord(prev, seconds));
+    progressStore.set((prev) => recordExhaleRecord(prev, seconds));
   }, []);
 
-  const reload = React.useCallback(() => setProgress(loadProgress()), []);
-
-  return { progress, complete, answerBelagat, produceBelagat, recordExhale, logTest, reload };
+  return { progress, complete, answerBelagat, produceBelagat, recordExhale, logTest };
 }

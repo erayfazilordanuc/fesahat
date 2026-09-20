@@ -1,8 +1,16 @@
-import { createPersistentStore } from './store';
+import { createCollectionStore } from './collectionStore';
+import { clearAllAudio, removeAudio } from './audioStore';
 import type { CompanyId } from '../data/companies';
 
 // Tamamlanan mülakat oturumları ve yapay zeka analizleri.
 // Alan adları server/server.ts'in Gemini şemasıyla birebir aynı (test-schema.js).
+//
+// Kalıcılık (YAPILACAKLAR Bölüm 0.4, aşama 2): native'de SQLite açılıp geçmiş
+// tabloları hazırsa `interview_sessions` tablosunda (her satır `data`
+// sütununda kaydın tamamı JSON, `rating` ayrı sütun); değilse (web ya da
+// SQLite/göç kullanılamıyorsa) bugünkü gibi tek `kv`/dosya anahtarı
+// (`interview-history`) altında `{ sessions: [...] }` JSON bloğu — o zaman bu
+// anahtar aynı zamanda göç sonrası da SİLİNMEYEN bir yedek olarak kalır.
 
 export type InterviewMode = 'camera' | 'typing';
 
@@ -33,47 +41,74 @@ export type RecordedSession = {
   transcript?: string;
   /** Sessiz kalınan toplam süre (saniye) — kamera modunda ses seviyesinden hesaplanır. */
   silentSeconds?: number;
+  /**
+   * Kamera modunda saklanan ses kaydının dosya adı (`audioStore.ts`).
+   * Tam yol değil: iOS'ta uygulama klasörü güncellemede değişiyor, bkz. audioStore.
+   */
+  audioFile?: string;
+  /**
+   * Oturum süre dolmadan, kullanıcı çıkarak bitti mi. Kayıt yine tutuluyor
+   * (kullanıcı kararı 2026-09-20: "yarıda bile bitse kaydı tutulsun"); bu alan
+   * yalnızca geçmişte "yarıda kaldı" etiketini göstermek için.
+   */
+  aborted?: boolean;
   analysis?: InterviewAnalysis;
 };
 
-type HistoryState = { sessions: RecordedSession[] };
+function isRecordedSession(v: unknown): v is RecordedSession {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return typeof o.id === 'string' && typeof o.timestamp === 'string';
+}
 
-const store = createPersistentStore<HistoryState>('interview-history', { sessions: [] }, (stored) => {
-  const sessions = (stored as HistoryState | null)?.sessions;
-  return { sessions: Array.isArray(sessions) ? sessions : [] };
+const store = createCollectionStore<RecordedSession>({
+  legacyKey: 'interview-history',
+  legacyField: 'sessions',
+  table: 'interview_sessions',
+  isValid: isRecordedSession,
+  idOf: (session) => session.id,
+  createdAt: (session) => session.timestamp,
+  columns: (session) => ({ rating: session.analysis?.rating ?? null }),
 });
 
 export function useInterviewSessions(): RecordedSession[] {
-  return store.use().sessions;
+  return store.use();
 }
 
 export function getInterviewSessions(): RecordedSession[] {
-  return store.get().sessions;
+  return store.get();
 }
 
 export function getSession(id: string): RecordedSession | undefined {
-  return store.get().sessions.find((session) => session.id === id);
+  return store.get().find((session) => session.id === id);
 }
 
 /** Yeni oturumu listenin başına ekler (en yeni en üstte). */
 export function addSession(session: RecordedSession): void {
-  store.set((prev) => ({ sessions: [session, ...prev.sessions] }));
+  store.add(session);
 }
 
 export function attachAnalysis(id: string, analysis: InterviewAnalysis): void {
-  store.set((prev) => ({
-    sessions: prev.sessions.map((session) =>
-      session.id === id ? { ...session, analysis } : session,
-    ),
-  }));
+  store.update(id, (session) => ({ ...session, analysis }));
 }
 
 export function removeSession(id: string): void {
-  store.set((prev) => ({ sessions: prev.sessions.filter((session) => session.id !== id) }));
+  // Ses dosyası kayıtla birlikte gider; aksi hâlde sahipsiz dosyalar birikirdi.
+  removeAudio(store.get().find((session) => session.id === id)?.audioFile);
+  store.remove(id);
 }
 
 export function clearSessions(): void {
-  store.set({ sessions: [] });
+  clearAllAudio();
+  store.clear();
+}
+
+/** Kaydın sesini siler, oturumun kendisini bırakır — yer açmak için. */
+export function dropSessionAudio(id: string): void {
+  const session = store.get().find((item) => item.id === id);
+  if (!session?.audioFile) return;
+  removeAudio(session.audioFile);
+  store.update(id, ({ audioFile: _dropped, ...rest }) => rest);
 }
 
 /** Profil ekranındaki özet kutuları. */

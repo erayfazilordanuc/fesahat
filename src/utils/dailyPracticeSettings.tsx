@@ -28,6 +28,9 @@ export type ModuleSettings = {
   time: TimeOfDay;
 };
 
+/** Modül ayarları / hatırlatma kontrollerinin ortak anahtar kümesi. */
+export type DailyModuleKey = 'diaphragm' | 'speech' | 'belagat' | 'dailyText' | 'lugat';
+
 export type DailyPracticeSettings = {
   /** Ana bildirim şalteri. Kapalıysa hiçbir modül bildirim kurmaz. */
   notificationsEnabled: boolean;
@@ -38,6 +41,7 @@ export type DailyPracticeSettings = {
   speech: ModuleSettings & { includeTongueTwisters: boolean; includeFillerHunt: boolean };
   belagat: ModuleSettings & { branch: BelagatBranchFilter };
   dailyText: ModuleSettings & { source: DailyTextSource; showOnHome: boolean };
+  lugat: ModuleSettings & { showOnHome: boolean };
 };
 
 export const DEFAULT_SETTINGS: DailyPracticeSettings = {
@@ -65,6 +69,12 @@ export const DEFAULT_SETTINGS: DailyPracticeSettings = {
     source: 'karisik',
     showOnHome: true,
   },
+  lugat: {
+    enabled: true,
+    reminder: false,
+    time: { hour: 12, minute: 30 },
+    showOnHome: true,
+  },
 };
 
 const STORAGE_KEY = 'daily-practice-settings';
@@ -84,6 +94,7 @@ function mergeSettings(stored: Partial<DailyPracticeSettings> | null): DailyPrac
     speech: mergeModule(DEFAULT_SETTINGS.speech, stored.speech),
     belagat: mergeModule(DEFAULT_SETTINGS.belagat, stored.belagat),
     dailyText: mergeModule(DEFAULT_SETTINGS.dailyText, stored.dailyText),
+    lugat: mergeModule(DEFAULT_SETTINGS.lugat, stored.lugat),
   };
 }
 
@@ -96,10 +107,7 @@ export function saveSettings(settings: DailyPracticeSettings): void {
 }
 
 /** Bir modülün bildirimi gerçekten kurulacak mı — ana şalter + modül + hatırlatma. */
-export function reminderActive(
-  settings: DailyPracticeSettings,
-  module: keyof Pick<DailyPracticeSettings, 'diaphragm' | 'speech' | 'belagat' | 'dailyText'>,
-): boolean {
+export function reminderActive(settings: DailyPracticeSettings, module: DailyModuleKey): boolean {
   const m = settings[module];
   return settings.notificationsEnabled && m.enabled && m.reminder;
 }
@@ -112,10 +120,7 @@ type SettingsContextValue = {
     value: DailyPracticeSettings[K],
   ) => void;
   /** Bir modülün alanlarını kısmi olarak günceller. */
-  updateModule: <K extends 'diaphragm' | 'speech' | 'belagat' | 'dailyText'>(
-    key: K,
-    patch: Partial<DailyPracticeSettings[K]>,
-  ) => void;
+  updateModule: <K extends DailyModuleKey>(key: K, patch: Partial<DailyPracticeSettings[K]>) => void;
   resetSettings: () => void;
 };
 

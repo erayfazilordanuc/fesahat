@@ -11,6 +11,8 @@ import Animated, {
 import { ChevronLeft, ChevronRight, Check, X } from 'lucide-react-native';
 
 import { useThemeTokens } from './themeTokens';
+import { tabBarContentPadding } from './tabBar';
+import { trUpper } from '../utils/text';
 export { useThemeTokens };
 
 // Mülakat / egzersiz / profil ekranlarının paylaştığı arayüz parçaları.
@@ -218,10 +220,18 @@ export function AppScreen({
         className="flex-1"
         contentContainerStyle={{
           paddingHorizontal: padding,
-          // 68px çubuk + 28px boşluk + nefes payı
-          paddingBottom: tabBar ? 124 : Math.max(insets.bottom, 16) + 16,
+          // Sekme çubuğu olan ekranlarda boşluk çubuğun gerçek ölçülerinden
+          // hesaplanıyor (yükseklik + alt boşluk + güvenli alan + nefes payı);
+          // eskiden sabit 124'tü ve jest çubuğu olan cihazlarda son kart
+          // çubuğun altında kalıyordu. Ölçüler: `src/components/tabBar.ts`.
+          paddingBottom: tabBar
+            ? tabBarContentPadding(insets.bottom)
+            : Math.max(insets.bottom, 16) + 16,
         }}
-        showsVerticalScrollIndicator={false}
+        // Kaydırma çubuğu açık: "aşağıda devamı var"ı anlatan platform standardı
+        // işaret bu. Kapalıyken uzun sekmelerde (ör. İlerleme) kullanıcı sayfanın
+        // devam ettiğini hiçbir şeyden anlamıyordu.
+        showsVerticalScrollIndicator
       >
         {children}
       </ScrollView>
@@ -275,11 +285,18 @@ export function Surface({
 // ——— Açma/kapama anahtarı ———
 // Platformun yerel Switch'i yerine kendi anahtarımız: uygulamanın renk paleti,
 // köşe yarıçapı ve geçiş süreleriyle uyumlu, iki temada da aynı görünüyor.
+//
+// Ölçüler kenarlığı da hesaba katıyor. Eskiden katmıyordu: tutamak 2px büyük
+// çıkıyor, solda 4px sağda 2px boşluk kalıyor ve dikeyde izden taşıyordu.
 const TOGGLE_WIDTH = 46;
 const TOGGLE_HEIGHT = 28;
-const TOGGLE_PAD = 3;
-const TOGGLE_THUMB = TOGGLE_HEIGHT - TOGGLE_PAD * 2;
-const TOGGLE_TRAVEL = TOGGLE_WIDTH - TOGGLE_THUMB - TOGGLE_PAD * 2;
+const TOGGLE_BORDER = 1;
+/** Tutamak ile izin iç kenarı arası — dört yönde de aynı. */
+const TOGGLE_GAP = 3;
+const TOGGLE_THUMB = TOGGLE_HEIGHT - 2 * (TOGGLE_BORDER + TOGGLE_GAP);
+const TOGGLE_TRAVEL = TOGGLE_WIDTH - TOGGLE_THUMB - 2 * (TOGGLE_BORDER + TOGGLE_GAP);
+/** Basılıyken tutamağın yatayda uzama oranı. */
+const TOGGLE_STRETCH = 0.2;
 const TOGGLE_EASING = Easing.out(Easing.cubic);
 
 export function Toggle({
@@ -339,10 +356,21 @@ export function Toggle({
   }));
 
   // Basılıyken tutamak hafifçe uzar — dokunma geri bildirimi.
-  const thumbStyle = useAnimatedStyle(() => ({
-    width: TOGGLE_THUMB + pressed.value * 4,
-    transform: [{ translateX: progress.value * (TOGGLE_TRAVEL - pressed.value * 4) }],
-  }));
+  //
+  // Uzama `width` ile değil `scaleX` ile yapılıyor: width bir yerleşim özelliği,
+  // her karede yeniden yerleşim hesaplatıyordu ve anahtar takılıyordu. Transform
+  // yalnızca çizimi etkiler. Ölçek merkezden büyüdüğü için kaydırma, tutamağın
+  // solda sol kenarı, sağda sağ kenarı sabit kalacak şekilde düzeltiliyor.
+  const thumbStyle = useAnimatedStyle(() => {
+    const scaleX = 1 + pressed.value * TOGGLE_STRETCH;
+    const extra = TOGGLE_THUMB * (scaleX - 1);
+    return {
+      transform: [
+        { translateX: progress.value * (TOGGLE_TRAVEL - extra) + extra / 2 },
+        { scaleX },
+      ],
+    };
+  });
 
   return (
     <Pressable
@@ -368,9 +396,9 @@ export function Toggle({
             width: TOGGLE_WIDTH,
             height: TOGGLE_HEIGHT,
             borderRadius: TOGGLE_HEIGHT / 2,
-            borderWidth: 1,
-            padding: TOGGLE_PAD,
+            borderWidth: TOGGLE_BORDER,
             justifyContent: 'center',
+            alignItems: 'flex-start',
           },
           trackStyle,
         ]}
@@ -378,6 +406,8 @@ export function Toggle({
         <Animated.View
           style={[
             {
+              marginLeft: TOGGLE_GAP,
+              width: TOGGLE_THUMB,
               height: TOGGLE_THUMB,
               borderRadius: TOGGLE_THUMB / 2,
               backgroundColor: '#ffffff',
@@ -434,7 +464,7 @@ export function Segmented<T extends string>({
             onPress={() => onChange(option.value)}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl border ${
+            className={`flex-1 flex-row items-center justify-center py-2.5 px-1.5 rounded-xl border ${
               selected
                 ? t.isLight
                   ? 'bg-white border-white shadow-sm'
@@ -445,10 +475,15 @@ export function Segmented<T extends string>({
             {option.icon ? <View className="mr-1.5">{option.icon}</View> : null}
             {/* Seçili etiket iki temada da aynı tonu kullanır; renk yalnızca
                 temanın açık/koyu tonuna göre değişir. */}
+            {/* flexShrink olmadan satır içindeki metin kendi genişliğini alıp
+                seçili zeminin dışına taşıyordu ("Günün Sanatı"). Sığmayan etiket
+                önce küçülür, yine sığmazsa kısaltılır. */}
             <Text
-              style={{ fontSize: labelSize }}
+              style={{ fontSize: labelSize, flexShrink: 1 }}
               className={`font-bold ${selected ? toneText(tone, t.isLight) : t.muted}`}
               numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
             >
               {option.label}
             </Text>
@@ -467,6 +502,7 @@ export function StatTile({
   unit,
   hint,
   tone = 'blue',
+  compact = false,
 }: {
   label: string;
   icon?: React.ReactNode;
@@ -474,27 +510,39 @@ export function StatTile({
   unit?: string;
   hint?: string;
   tone?: Tone;
+  /**
+   * Alçaltılmış kutu — tasarım aynı, ölçüler küçük. İlerleme sekmesi için
+   * eklendi; varsayılan boyut değişmedi ki Egzersiz Geçmişi ve Egzersiz Detayı
+   * ekranları etkilenmesin.
+   */
+  compact?: boolean;
 }) {
   const t = useThemeTokens();
   return (
-    <Surface className="flex-1">
-      <View className="flex-row items-center mb-2">
+    <Surface className={`flex-1 ${compact ? 'p-3' : ''}`}>
+      <View className={`flex-row items-center ${compact ? 'mb-1.5' : 'mb-2'}`}>
         {icon ? (
           <View
-            className={`w-7 h-7 rounded-lg items-center justify-center mr-2 ${toneSoft(tone, t.isLight)}`}
+            className={`${compact ? 'w-6 h-6' : 'w-7 h-7'} rounded-lg items-center justify-center mr-2 ${toneSoft(tone, t.isLight)}`}
           >
             {icon}
           </View>
         ) : null}
-        <Text className={`text-[10px] font-bold uppercase tracking-widest ${t.muted}`} numberOfLines={1}>
-          {label}
+        {/* Etiket `uppercase` sınıfıyla değil `trUpper` ile büyütülüyor: CSS
+            büyütmesi Türkçede 'i'yi 'I' yapıyordu ("EGZERSIZ"). */}
+        <Text className={`text-[10px] font-bold tracking-widest ${t.muted}`} numberOfLines={1}>
+          {trUpper(label)}
         </Text>
       </View>
       <View className="flex-row items-baseline">
-        <Text className={`text-[21px] font-black ${t.title}`}>{value}</Text>
+        <Text className={`${compact ? 'text-[18px]' : 'text-[21px]'} font-black ${t.title}`}>
+          {value}
+        </Text>
         {unit ? <Text className={`text-[11px] font-bold ml-1 ${t.muted}`}>{unit}</Text> : null}
       </View>
-      {hint ? <Text className={`text-[11px] mt-1 ${t.muted}`}>{hint}</Text> : null}
+      {hint ? (
+        <Text className={`text-[11px] ${compact ? 'mt-0.5' : 'mt-1'} ${t.muted}`}>{hint}</Text>
+      ) : null}
     </Surface>
   );
 }

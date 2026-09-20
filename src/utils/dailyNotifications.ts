@@ -8,11 +8,21 @@ import { pickDailyBelagatArt } from '../data/belagat';
 import { pickDailyDrill } from '../data/dictionDrills';
 import { pickDailyText } from '../data/dailyTexts';
 import { getBreathingProgram } from '../data/breathingPrograms';
+import { lugatProgressStore } from './lugatProgress';
 
 // Bildirim planlaması tek yönlü: ayarlar kaynak, planlanmış bildirimler türev.
 // syncReminders() her ayar değişikliğinde çağrılır; kendi bildirimlerimizi silip yeniden kurar.
 
 export const ANDROID_CHANNEL_ID = 'daily-practice';
+
+/**
+ * iOS'ta bekleyen bildirim sınırı 64 (Bölüm 4 → Teknik kısıt 2). Sınır aşılırsa
+ * iOS **en eski bildirimleri sessizce düşürür** — bazı hatırlatmalar hiç gelmez.
+ * 64 değil 56 seçildi: "Test bildirimi gönder" düğmesi ve ileride eklenecek
+ * modüller/alarmlar için kenar payı bırakıyoruz. Bu bütçe günlük pratik ve
+ * aralıklı hatırlatıcılar (`habitNotifications.ts`) arasında paylaşılıyor.
+ */
+export const NOTIFICATION_BUDGET = 56;
 
 /** Kendi bildirimlerimizi ayırt etmek için sabit kimlikler. */
 const IDENTIFIERS = {
@@ -20,6 +30,7 @@ const IDENTIFIERS = {
   speech: 'terakki.daily.speech',
   belagat: 'terakki.daily.belagat',
   dailyText: 'terakki.daily.text',
+  lugat: 'terakki.daily.lugat',
 } as const;
 
 export type ReminderModule = keyof typeof IDENTIFIERS;
@@ -28,7 +39,7 @@ export type ReminderModule = keyof typeof IDENTIFIERS;
 export type ReminderPayload = {
   kind: 'daily-practice';
   module: ReminderModule;
-  screen: 'DiaphragmExercise' | 'SpeechExercise' | 'BelagatExercise' | 'DailyText';
+  screen: 'DiaphragmExercise' | 'SpeechExercise' | 'BelagatExercise' | 'DailyText' | 'Language';
 };
 
 const SCREEN_FOR_MODULE: Record<ReminderModule, ReminderPayload['screen']> = {
@@ -36,6 +47,7 @@ const SCREEN_FOR_MODULE: Record<ReminderModule, ReminderPayload['screen']> = {
   speech: 'SpeechExercise',
   belagat: 'BelagatExercise',
   dailyText: 'DailyText',
+  lugat: 'Language',
 };
 
 export async function ensureAndroidChannel(): Promise<void> {
@@ -43,7 +55,7 @@ export async function ensureAndroidChannel(): Promise<void> {
   await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
     name: 'Günlük Pratik',
     importance: Notifications.AndroidImportance.DEFAULT,
-    description: 'Diyafram, konuşma, belagat ve günün metni hatırlatmaları',
+    description: 'Diyafram, konuşma, belagat, günün metni ve günün kelimeleri hatırlatmaları',
     lightColor: '#3DB1FF',
     enableVibrate: true,
     vibrationPattern: [0, 180, 120, 180],
@@ -129,6 +141,17 @@ function buildContent(
         body: `${text.title} · ${text.source}. Sesli oku, nefesini cümleye göre böl.`,
       };
     }
+    case 'lugat': {
+      // Gövde kasıtlı olarak belirli bir kelime içermiyor: DAILY tekrarlayan
+      // tetikleyicide içerik kurulduğu günde sabitleniyor. Uygulama birkaç gün
+      // açılmazsa bugünün bildirimi eski günün kelimesini göstermiş olurdu.
+      const dailyCount = lugatProgressStore.get().prefs.dailyCount;
+      return {
+        ...shared,
+        title: 'Günün kelimeleri',
+        body: `Bugün ${dailyCount} yeni kelime seni bekliyor. İki dakikanı ayır.`,
+      };
+    }
   }
 }
 
@@ -153,8 +176,15 @@ export async function cancelAllReminders(): Promise<void> {
   );
 }
 
-/** Gün aşırı modda kaç tekrar planlanacağı — uygulama her açılışta yeniden planladığı için pencere kayar. */
+/** Gün aşırı modda modül başına kurulabilecek **en fazla** tekrar — uygulama her açılışta yeniden planladığı için pencere kayar. */
 const ALTERNATING_OCCURRENCES = 14;
+
+/**
+ * Günlük pratiğe ayrılan pay: bütçenin yarısı. Kalanı aralıklı hatırlatıcılara
+ * kalır (`useReminderSync`), ama aralıklı hatırlatıcı yoksa bu pay boşa gider —
+ * kabul edilebilir, çünkü günlük pratik zaten bu payı aşmıyor (bkz. altta).
+ */
+const DAILY_PRACTICE_RESERVE = Math.floor(NOTIFICATION_BUDGET / 2);
 
 /** Verilen saatteki bir sonraki oluşumu döndürür (bugün geçtiyse yarın). */
 function nextOccurrence(hour: number, minute: number): Date {
@@ -164,28 +194,48 @@ function nextOccurrence(hour: number, minute: number): Date {
   return date;
 }
 
+export type SyncRemindersResult = {
+  /** Bildirimi kurulan modüllerin listesi. */
+  modules: ReminderModule[];
+  /** Toplam kurulan bildirim sayısı (gün aşırı modda modül başına birden çok). */
+  scheduledCount: number;
+};
+
 /**
  * Ayarları planlanmış bildirimlere uygular.
  * @param everyOtherDay Hatırlatmalar her gün yerine gün aşırı gönderilir.
- * @returns Kurulan modüllerin listesi. İzin yoksa boş döner.
+ * @returns Kurulan modüller ve toplam bildirim sayısı. İzin yoksa boş/0 döner.
  */
 export async function syncReminders(
   settings: DailyPracticeSettings,
   { everyOtherDay = false }: { everyOtherDay?: boolean } = {},
-): Promise<ReminderModule[]> {
+): Promise<SyncRemindersResult> {
   await cancelAllReminders();
 
-  if (!settings.notificationsEnabled) return [];
-  if (!(await hasNotificationPermission())) return [];
+  if (!settings.notificationsEnabled) return { modules: [], scheduledCount: 0 };
+  if (!(await hasNotificationPermission())) return { modules: [], scheduledCount: 0 };
 
   await ensureAndroidChannel();
 
-  const modules: ReminderModule[] = ['dailyText', 'diaphragm', 'speech', 'belagat'];
+  const modules: ReminderModule[] = ['dailyText', 'lugat', 'diaphragm', 'speech', 'belagat'];
+  const activeModules = modules.filter((module) => reminderActive(settings, module));
   const scheduled: ReminderModule[] = [];
+  let scheduledCount = 0;
   const channel = Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {};
 
-  for (const module of modules) {
-    if (!reminderActive(settings, module)) continue;
+  // ⚠️ Düzeltilen hata: eskiden gün aşırı modda modül başına sabit
+  // ALTERNATING_OCCURRENCES (14) bildirim kuruluyordu — 5 modül açıkken 70 bekleyen
+  // bildirim demekti ve iOS'un 64 sınırını (Teknik kısıt 2) şimdiden aşıyordu. Artık
+  // modül başına düşen oluşum sayısı açık modül sayısına bölünerek hesaplanıyor,
+  // böylece toplam gün aşırı planı `DAILY_PRACTICE_RESERVE`'i aşmıyor.
+  const perModuleOccurrences = everyOtherDay
+    ? Math.max(
+        2,
+        Math.min(ALTERNATING_OCCURRENCES, Math.floor(DAILY_PRACTICE_RESERVE / Math.max(1, activeModules.length))),
+      )
+    : 1;
+
+  for (const module of activeModules) {
     const { time } = settings[module];
     const content = buildContent(module, settings);
 
@@ -194,7 +244,7 @@ export async function syncReminders(
         // Tekrarlayan tetikleyici yalnızca günlük çalıştığı için gün aşırı planı
         // tek seferlik tarihlerle kuruyoruz.
         const first = nextOccurrence(time.hour, time.minute);
-        for (let i = 0; i < ALTERNATING_OCCURRENCES; i += 1) {
+        for (let i = 0; i < perModuleOccurrences; i += 1) {
           const date = new Date(first);
           date.setDate(date.getDate() + i * 2);
           await Notifications.scheduleNotificationAsync({
@@ -206,6 +256,7 @@ export async function syncReminders(
               ...channel,
             },
           });
+          scheduledCount += 1;
         }
       } else {
         await Notifications.scheduleNotificationAsync({
@@ -218,6 +269,7 @@ export async function syncReminders(
             ...channel,
           },
         });
+        scheduledCount += 1;
       }
       scheduled.push(module);
     } catch (e) {
@@ -225,7 +277,7 @@ export async function syncReminders(
     }
   }
 
-  return scheduled;
+  return { modules: scheduled, scheduledCount };
 }
 
 /** Ayar ekranındaki "Test bildirimi gönder" düğmesi için. */

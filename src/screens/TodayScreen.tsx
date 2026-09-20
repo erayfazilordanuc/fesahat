@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import { Sunrise } from 'lucide-react-native';
+import { View, Text, Pressable } from 'react-native';
+import { Sunrise, BrainCircuit, TrendingUp, User } from 'lucide-react-native';
 
 import { AppScreen, TabHeader, Surface, toneColor, toneSoft, toneText } from '../components/AppUI';
 import { useThemeTokens } from '../components/practice/PracticeUI';
-import { DailyPracticeCard, DailyPrayerCard } from '../components/practice/DailyPracticeCard';
+import { DailyPracticeCard, DailyFaithCard } from '../components/practice/DailyPracticeCard';
+import { DailyWordCard } from '../components/practice/DailyWordCard';
+import { HabitCard } from '../components/practice/HabitCard';
 import { firstName, useProfile } from '../utils/profile';
-import { useDailyProgress } from '../utils/dailyPracticeProgress';
+import { useOnboarding, dismissTour } from '../utils/onboarding';
 
 // Bugün sekmesi — uygulamanın giriş ekranı.
 //
@@ -21,9 +23,7 @@ import { useDailyProgress } from '../utils/dailyPracticeProgress';
 export default function TodayScreen({ navigation }: any) {
   const t = useThemeTokens();
   const profile = useProfile();
-  const { progress } = useDailyProgress();
-
-  const bestStreak = Math.max(0, ...Object.values(progress.modules).map((m) => m.streak));
+  const { completed, tourDismissed } = useOnboarding();
 
   return (
     <AppScreen
@@ -36,36 +36,77 @@ export default function TodayScreen({ navigation }: any) {
         />
       }
     >
-      {/* Günün duası — yalnızca ayarlarda dinî içerik açıkken görünür. */}
-      <DailyPrayerCard navigation={navigation} />
+      {/* Hızlı tur — yalnızca oryantasyon bittiyse ve kart kapatılmadıysa görünür. */}
+      {completed && !tourDismissed ? <QuickTourCard /> : null}
+
+      {/* Günün duası + vecizesi tek kartta — yalnızca dinî içerik açıkken. */}
+      <DailyFaithCard navigation={navigation} />
+
+      {/* Günün kelimesi — lugat kapalıysa ya da ana ekranda gösterilmiyorsa çıkmaz. */}
+      <DailyWordCard navigation={navigation} />
+
+      {/* Aralıklı hatırlatıcı sayaçları — hiçbiri açık değilse çıkmaz. */}
+      <HabitCard />
 
       {/* Günlük pratik modülleri — hepsi kapalıysa hiç render edilmez. */}
       <DailyPracticeCard navigation={navigation} />
 
-      {bestStreak > 0 ? (
-        <Surface className="mt-3">
-          <View className="flex-row items-center">
-            <View
-              className={`w-9 h-9 rounded-xl items-center justify-center mr-3 ${toneSoft('emerald', t.isLight)}`}
-            >
-              <Text className="text-[15px]">🔥</Text>
-            </View>
-            <View className="flex-1">
-              <Text className={`text-[13px] font-bold ${t.title}`}>
-                {bestStreak} günlük seri
-              </Text>
-              <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
-                En uzun güncel serin. Bugünü de tamamlarsan uzuyor.
-              </Text>
-            </View>
-          </View>
-        </Surface>
-      ) : null}
-
-      <Text className={`text-[11px] leading-5 mt-4 text-center ${t.muted}`}>
-        Çalışacak yeni bir alan mı arıyorsun?{' '}
-        <Text className={toneText('violet', t.isLight)}>Gelişim</Text> sekmesine bak.
-      </Text>
+      {/* Seri kartı ve "Gelişim sekmesine bak" yönlendirmesi 2026-09-18'de
+          kaldırıldı: seri bilgisi İlerleme sekmesinde zaten var, sekme çubuğu da
+          hep ekranda. Bugün sekmesi tek soruya odaklı kalsın — "bugün ne
+          yapmalıyım". */}
     </AppScreen>
+  );
+}
+
+/**
+ * Bugün sekmesindeki kapatılabilir "hızlı tur" kartı. Oryantasyon bittikten
+ * sonra dört sekmeyi tek cümleyle özetler; ilk günler için — sekmelere işaret
+ * eden konumlu balonlar sonraki sürüme ertelendi (KARARLAR.md → "İlk açılış
+ * oryantasyonu"). "Anladım" ile kalıcı olarak kapanır.
+ */
+const TOUR_ROWS: { icon: React.ComponentType<{ size?: number; color?: string }>; tone: 'emerald' | 'violet' | 'blue' | 'slate'; label: string; text: string }[] = [
+  { icon: Sunrise, tone: 'emerald', label: 'Bugün', text: 'günün işi burada; bitirdiklerin serine sayılır.' },
+  { icon: BrainCircuit, tone: 'violet', label: 'Gelişim', text: 'bütün alanlar; seçtiğin hedefler en üstte.' },
+  { icon: TrendingUp, tone: 'blue', label: 'İlerleme', text: 'seriler, ölçümler ve geçmiş.' },
+  { icon: User, tone: 'slate', label: 'Profil', text: 'hedeflerin, hatırlatıcılar ve ayarlar.' },
+];
+
+function QuickTourCard() {
+  const t = useThemeTokens();
+
+  return (
+    <Surface className="mt-1">
+      <Text className={`text-[13px] font-bold ${t.title}`}>Kısa tur</Text>
+      <View className="mt-3">
+        {TOUR_ROWS.map((row, index) => {
+          const Icon = row.icon;
+          return (
+            <View
+              key={row.label}
+              className={`flex-row items-center ${index > 0 ? 'mt-2.5' : ''}`}
+            >
+              <View
+                className={`w-7 h-7 rounded-lg items-center justify-center mr-2.5 ${toneSoft(row.tone, t.isLight)}`}
+              >
+                <Icon size={14} color={toneColor(row.tone, t.isLight)} />
+              </View>
+              <Text className={`flex-1 text-[12px] leading-4 ${t.body}`}>
+                <Text className={`font-bold ${t.title}`}>{row.label}</Text> — {row.text}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+
+      <Pressable
+        onPress={dismissTour}
+        accessibilityRole="button"
+        accessibilityLabel="Kısa turu kapat"
+        className={`mt-4 rounded-2xl py-3 items-center justify-center ${toneSoft('emerald', t.isLight)}`}
+      >
+        <Text className={`text-[13px] font-bold ${toneText('emerald', t.isLight)}`}>Anladım</Text>
+      </Pressable>
+    </Surface>
   );
 }

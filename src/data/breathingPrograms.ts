@@ -21,6 +21,8 @@ export type BreathingSegment = {
   phases: BreathPhase[];
   /** Segment başında gösterilen kısa hatırlatma. */
   tip?: string;
+  /** Verilmişse `tip`, çalışan ekranda her N döngüde bir tekrar gösterilir. */
+  reminderEvery?: number;
 };
 
 export type BreathingProgram = {
@@ -29,10 +31,12 @@ export type BreathingProgram = {
   level?: BreathingLevel;
   title: string;
   subtitle: string;
-  /** Neden yapıyoruz — mülakat performansına bağlanmış faydalar. */
+  /** Neden yapıyoruz — mülakat performansına bağlanmış faydalar. Boşsa "Ne Kazandırır" kartı hiç gösterilmez. */
   benefits: string[];
   segments: BreathingSegment[];
   safetyNote: string;
+  /** Bitişte "Program tamamlandı." yerine toplam döngü sayısını bildir. */
+  announceCycleCount?: boolean;
 };
 
 export const PHASE_LABELS: Record<BreathPhaseKind, string> = {
@@ -266,6 +270,56 @@ const DAILY: BreathingProgram = {
   ],
 };
 
+/**
+ * Sade 5 dakikalık 4-6 seansı — tek düğmeyle başlayan, baştan sona sabit
+ * ritimli, süslemesiz rehberli seans. Mod/seviye sisteminin dışında: ayarlarda
+ * seçilmez, ekranda ayrı bir "tek dokunuşla başlat" girişinden çalıştırılır.
+ * Motivasyon cümlesi yok (benefits boş) ve bitişte döngü sayısı bildirilir.
+ */
+const SIMPLE_46: BreathingProgram = {
+  mode: 'daily',
+  title: 'Sade 5 Dakika · 4-6',
+  subtitle: 'Sabit ritim, süslemesiz nefes',
+  benefits: [],
+  announceCycleCount: true,
+  safetyNote:
+    'Baş dönmesi, karıncalanma veya göğüste sıkışma olursa durup normal nefesinize dönün. Ayakta, araç kullanırken veya suda yapmayın.',
+  segments: [
+    {
+      id: 'simple46-session',
+      title: 'Sade 4-6',
+      description: 'Tutma yok: 4 saniye burundan al, 6 saniye ağızdan ver. 30 döngü boyunca aynı ritim.',
+      tip: 'Karnın şişsin, göğsün sabit kalsın.',
+      reminderEvery: 5,
+      cycles: 30,
+      phases: [
+        { kind: 'inhale', seconds: 4, cue: 'Burnundan al' },
+        { kind: 'exhale', seconds: 6, cue: 'Ağzından ver' },
+      ],
+    },
+  ],
+};
+
+function decorateProgram(program: BreathingProgram): BreathingProgram & {
+  durationLabel: string;
+  totalSeconds: number;
+} {
+  const totalSeconds = programSeconds(program);
+  return {
+    ...program,
+    totalSeconds,
+    durationLabel: `${Math.round(totalSeconds / 60)} dk`,
+  };
+}
+
+/** Sade 5 dk · 4-6 seansını süresiyle birlikte döner. */
+export function getSimple46Program(): BreathingProgram & {
+  durationLabel: string;
+  totalSeconds: number;
+} {
+  return decorateProgram(SIMPLE_46);
+}
+
 const PROGRAMS: Record<BreathingLevel, BreathingProgram> = {
   1: LEVEL_1,
   2: LEVEL_2,
@@ -306,12 +360,7 @@ export function getBreathingProgram(
   totalSeconds: number;
 } {
   const program = mode === 'daily' ? DAILY : (PROGRAMS[level] ?? LEVEL_1);
-  const totalSeconds = programSeconds(program);
-  return {
-    ...program,
-    totalSeconds,
-    durationLabel: `${Math.round(totalSeconds / 60)} dk`,
-  };
+  return decorateProgram(program);
 }
 
 export const BREATHING_LEVELS: BreathingLevel[] = [1, 2, 3];
@@ -325,6 +374,9 @@ export type BreathStep = BreathPhase & {
   segmentTitle: string;
   cycleIndex: number;
   cycleCount: number;
+  /** Segmentin hatırlatması — `reminderEvery` doluysa her N döngüde bir gösterilir. */
+  tip?: string;
+  reminderEvery?: number;
 };
 
 export function flattenProgram(program: BreathingProgram): BreathStep[] {
@@ -338,9 +390,16 @@ export function flattenProgram(program: BreathingProgram): BreathStep[] {
           segmentTitle: segment.title,
           cycleIndex: cycle + 1,
           cycleCount: segment.cycles,
+          tip: segment.tip,
+          reminderEvery: segment.reminderEvery,
         });
       }
     }
   }
   return steps;
+}
+
+/** Programın toplam döngü sayısı — bitişte `announceCycleCount` ile bildirilir. */
+export function programCycleCount(program: BreathingProgram): number {
+  return program.segments.reduce((sum, s) => sum + s.cycles, 0);
 }

@@ -5,11 +5,6 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#059669"
-    },
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
@@ -18,7 +13,7 @@
     "android": {
       "package": "com.terakki.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0A8D65",
+        "backgroundColor": "#029568",
         "backgroundImage": "./assets/android-icon-background.png",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -61,7 +56,19 @@
             "usesCleartextTraffic": true
           }
         }
-      ]
+      ],
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 170,
+          "resizeMode": "contain",
+          "backgroundColor": "#029568"
+        }
+      ],
+      "expo-sqlite",
+      "expo-secure-store"
     ]
   }
 }

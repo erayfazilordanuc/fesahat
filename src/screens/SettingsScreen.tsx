@@ -1,7 +1,19 @@
 import React from 'react';
-import { View, Text, Alert, Platform } from 'react-native';
+import { View, Text, Pressable, Alert, Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { Globe, Bell, Send, HeartHandshake, Monitor, Sun, Moon, Save, Plug } from 'lucide-react-native';
+import {
+  Bell,
+  Send,
+  HeartHandshake,
+  Monitor,
+  Sun,
+  Moon,
+  Sparkles,
+  AlarmClock,
+  ChevronRight,
+  Compass,
+  Clock,
+} from 'lucide-react-native';
 
 import {
   AppScreen,
@@ -9,61 +21,41 @@ import {
   Surface,
   SectionLabel,
   Segmented,
-  TextField,
   ActionButton,
   Toggle,
+  Badge,
   toneColor,
   toneSoft,
   useThemeTokens,
 } from '../components/AppUI';
+import { Chip } from '../components/practice/PracticeUI';
 import { useDailyPracticeSettings } from '../utils/dailyPracticeSettings';
 import { useAppTheme, type ThemeMode } from '../utils/ThemeContext';
-import {
-  API_BASE_URL_PLACEHOLDER,
-  normalizeBaseUrl,
-  updateAppSettings,
-  useAppSettings,
-  type ReminderFrequency,
-} from '../utils/appSettings';
-import { testConnection } from '../utils/geminiClient';
+import { updateAppSettings, useAppSettings, type ReminderFrequency } from '../utils/appSettings';
+import { useApiKey, maskApiKey } from '../utils/aiCredentials';
+import { useAiAvailable } from '../utils/aiAvailability';
 import { requestNotificationPermission, sendTestReminder } from '../utils/dailyNotifications';
+import { resetOnboarding, updateOnboarding, useOnboarding, type DailyMinutes } from '../utils/onboarding';
+import { storageBackend } from '../utils/db';
 
-// Ayarlar ekranı: sunucu adresi, hatırlatıcılar, dinî içerik, tema ve günlük pratik modülleri.
+const STORAGE_BACKEND_LABEL: Record<ReturnType<typeof storageBackend>, string> = {
+  sqlite: 'SQLite',
+  file: 'Dosya (yedek yol)',
+  web: 'Tarayıcı',
+};
+
+// Ayarlar ekranı: yapay zekâ durumu, hatırlatıcılar, dinî içerik, tema ve günlük pratik modülleri.
+// Yapay zekâ kurulumunun kendisi `AiSetupScreen`'de.
 
 export default function SettingsScreen({ navigation }: any) {
   const t = useThemeTokens();
   const appSettings = useAppSettings();
   const { settings, setSetting } = useDailyPracticeSettings();
   const { mode, setMode } = useAppTheme();
+  const onboarding = useOnboarding();
 
-  const [urlDraft, setUrlDraft] = React.useState(appSettings.apiBaseUrl);
-  const [tokenDraft, setTokenDraft] = React.useState(appSettings.appToken);
-  const [testing, setTesting] = React.useState(false);
-
-  const saveUrl = () => {
-    const normalized = normalizeBaseUrl(urlDraft);
-    if (!normalized) {
-      Alert.alert('Adres boş olamaz', 'Örnek: 192.168.1.53:3000');
-      return;
-    }
-    updateAppSettings({ apiBaseUrl: normalized, appToken: tokenDraft.trim() });
-    setUrlDraft(normalized);
-    Alert.alert('Kaydedildi', `Sunucu adresi güncellendi:\n${normalized}`);
-  };
-
-  const runConnectionTest = async () => {
-    // Test her zaman kayıtlı adrese gider; kutudaki düzenleme henüz kaydedilmemiş olabilir.
-    const normalized = normalizeBaseUrl(urlDraft);
-    if (normalized && normalized !== appSettings.apiBaseUrl) {
-      updateAppSettings({ apiBaseUrl: normalized });
-      setUrlDraft(normalized);
-    }
-
-    setTesting(true);
-    const result = await testConnection();
-    setTesting(false);
-    Alert.alert(result.ok ? 'Bağlantı başarılı' : 'Bağlantı sorunu', result.message);
-  };
+  const apiKey = useApiKey();
+  const aiOn = useAiAvailable();
 
   /** Sıklık değişimi hem uygulama ayarını hem ana bildirim şalterini günceller. */
   const changeFrequency = async (next: ReminderFrequency) => {
@@ -98,58 +90,37 @@ export default function SettingsScreen({ navigation }: any) {
 
   return (
     <AppScreen header={<AppHeader title="Ayarlar" onBack={() => navigation.goBack()} />}>
-      {/* ——— Geliştirici seçenekleri ——— */}
-      <SectionLabel>Geliştirici Seçenekleri</SectionLabel>
+      {/* ——— Yapay zekâ ———
+          Eskiden burada doğrudan "Backend API Adresi" alanları duruyordu ve
+          yapay zekâ yalnızca kendi sunucusunu çalıştıranlarda açılıyordu.
+          Kurulum artık kendi ekranında (KARARLAR → BYOK); burası yalnızca
+          durumu gösterip oraya götürüyor. */}
+      <SectionLabel>Yapay Zekâ</SectionLabel>
       <Surface>
-        <View className="flex-row items-center mb-2">
-          <Globe size={16} color={toneColor('blue', t.isLight)} />
-          <Text className={`text-[13px] font-bold ml-2 ${t.title}`}>Backend API Adresi</Text>
-        </View>
-        <Text className={`text-[11px] leading-5 mb-3 ${t.muted}`}>
-          Mülakat analizlerinin yapılması için yerel bilgisayarınızda çalışan Express sunucusunun
-          adresini girin. Telefon ve bilgisayar aynı ağda olmalı.
-        </Text>
-
-        <TextField
-          value={urlDraft}
-          onChangeText={setUrlDraft}
-          placeholder={API_BASE_URL_PLACEHOLDER}
-          autoCapitalize="none"
-          keyboardType="url"
-        />
-
-        {/* Sunucuda APP_TOKEN tanımlıysa doldurulur; boşsa istek başlıksız gider. */}
-        <Text className={`text-[11px] leading-5 mb-2 mt-1 ${t.muted}`}>
-          Sunucunuz bir erişim jetonuyla korunuyorsa (.env → APP_TOKEN) aynı değeri buraya girin.
-        </Text>
-        <TextField
-          value={tokenDraft}
-          onChangeText={setTokenDraft}
-          placeholder="Erişim jetonu (isteğe bağlı)"
-          autoCapitalize="none"
-        />
-
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <ActionButton
-              label="Kaydet"
-              tone="emerald"
-              labelSize={12}
-              icon={<Save size={15} color="#ffffff" />}
-              onPress={saveUrl}
-            />
+        <Pressable
+          onPress={() => navigation.navigate('AiSetup')}
+          accessibilityRole="button"
+          accessibilityLabel={`Yapay zekâ değerlendirmesi, ${aiOn ? 'açık' : 'kapalı'}. Kurulumu açmak için dokun.`}
+          className="flex-row items-center"
+        >
+          <View
+            className={`w-9 h-9 rounded-2xl items-center justify-center ${toneSoft(aiOn ? 'emerald' : 'slate', t.isLight)}`}
+          >
+            <Sparkles size={16} color={toneColor(aiOn ? 'emerald' : 'slate', t.isLight)} />
           </View>
-          <View className="flex-1">
-            <ActionButton
-              label={testing ? 'Deneniyor…' : 'Bağlantıyı Test Et'}
-              variant="outline"
-              disabled={testing}
-              labelSize={12}
-              icon={<Plug size={15} color={t.iconColor} />}
-              onPress={runConnectionTest}
-            />
+          <View className="flex-1 ml-3 pr-2">
+            <Text className={`text-[13px] font-bold ${t.title}`}>Yapay Zekâ Değerlendirmesi</Text>
+            <Text className={`text-[11px] mt-0.5 leading-4 ${t.muted}`}>
+              {aiOn
+                ? 'Kendi anahtarınla çalışıyor. Değiştirmek için dokun.'
+                : 'Ücretsiz bir Google anahtarıyla birkaç adımda aç.'}
+            </Text>
           </View>
-        </View>
+          <Badge label={aiOn ? 'Açık' : 'Kapalı'} tone={aiOn ? 'emerald' : 'slate'} />
+          <View className="ml-1">
+            <ChevronRight size={16} color={t.iconColor} />
+          </View>
+        </Pressable>
       </Surface>
 
       {/* ——— Uygulama tercihleri ——— */}
@@ -207,6 +178,31 @@ export default function SettingsScreen({ navigation }: any) {
           />
         </View>
 
+        {/* Günlük hedef süresi — Bugün sekmesindeki pratik listesinin uzunluğunu
+            belirler. Aynı ayar Profil → "Hedef ve tercihler"nde de değiştirilebiliyor;
+            ikisi de aynı depoyu (onboarding) kullanıyor. */}
+        <View className={`pt-3 mt-3 border-t ${t.dividerColor}`}>
+          <View className="flex-row items-center mb-2">
+            <Clock size={16} color={t.iconColor} />
+            <Text className={`text-[13px] font-bold ml-2 ${t.title}`}>Günlük Hedef Süresi</Text>
+          </View>
+          <View className="flex-row flex-wrap">
+            {([3, 5, 10] as DailyMinutes[]).map((minutes) => (
+              <Chip
+                key={minutes}
+                label={`${minutes} dk`}
+                selected={onboarding.dailyMinutes === minutes}
+                tone="emerald"
+                onPress={() => updateOnboarding({ dailyMinutes: minutes })}
+              />
+            ))}
+          </View>
+          <Text className={`text-[11px] leading-5 mt-1 ${t.muted}`}>
+            Bugün sekmesindeki günlük pratik listesinin uzunluğunu belirler; egzersizlerin
+            kendisi kısalmaz.
+          </Text>
+        </View>
+
         {/* Tema */}
         <View className={`pt-3 border-t ${t.dividerColor}`}>
           <View className="flex-row items-center mb-3">
@@ -235,6 +231,51 @@ export default function SettingsScreen({ navigation }: any) {
             ]}
           />
         </View>
+
+        {/* Hatırlatıcılar ve alarmlar */}
+        <Pressable
+          onPress={() => navigation.navigate('Reminders')}
+          accessibilityRole="button"
+          accessibilityLabel="Hatırlatıcılar ve alarmlar"
+          className={`flex-row items-center py-3 mt-3 border-t ${t.dividerColor}`}
+        >
+          <View
+            className={`w-9 h-9 rounded-xl items-center justify-center mr-3 ${toneSoft('blue', t.isLight)}`}
+          >
+            <AlarmClock size={17} color={toneColor('blue', t.isLight)} />
+          </View>
+          <View className="flex-1 pr-3">
+            <Text className={`text-[13px] font-bold ${t.title}`}>Hatırlatıcılar ve alarmlar</Text>
+            <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
+              Günlük pratik hatırlatmalarını tek yerden yönet.
+            </Text>
+          </View>
+          <ChevronRight size={18} color={t.iconColor} />
+        </Pressable>
+
+        {/* Oryantasyonu yeniden göster */}
+        <Pressable
+          onPress={() => {
+            resetOnboarding();
+            navigation.navigate('Onboarding');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Oryantasyonu yeniden göster"
+          className={`flex-row items-center py-3 mt-3 border-t ${t.dividerColor}`}
+        >
+          <View
+            className={`w-9 h-9 rounded-xl items-center justify-center mr-3 ${toneSoft('violet', t.isLight)}`}
+          >
+            <Compass size={17} color={toneColor('violet', t.isLight)} />
+          </View>
+          <View className="flex-1 pr-3">
+            <Text className={`text-[13px] font-bold ${t.title}`}>Oryantasyonu yeniden göster</Text>
+            <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
+              Hedef, süre ve hatırlatma seçimlerini baştan yap.
+            </Text>
+          </View>
+          <ChevronRight size={18} color={t.iconColor} />
+        </Pressable>
       </Surface>
 
       {/* ——— Sistem bilgileri ——— */}
@@ -243,7 +284,16 @@ export default function SettingsScreen({ navigation }: any) {
         <InfoRow label="Uygulama" value={Constants.expoConfig?.name ?? 'Terakki'} />
         <InfoRow label="Sürüm" value={Constants.expoConfig?.version ?? '1.0.0'} divider />
         <InfoRow label="Platform" value={`${Platform.OS} ${Platform.Version}`} divider />
-        <InfoRow label="Sunucu" value={appSettings.apiBaseUrl || 'Tanımsız'} divider />
+        <InfoRow
+          label="Yapay zekâ"
+          value={
+            apiKey
+              ? `Kendi anahtarın (${maskApiKey(apiKey)})`
+              : appSettings.apiBaseUrl || 'Kurulmadı'
+          }
+          divider
+        />
+        <InfoRow label="Depolama" value={STORAGE_BACKEND_LABEL[storageBackend()]} divider />
       </Surface>
     </AppScreen>
   );

@@ -7,7 +7,7 @@ import Animated, {
   cancelAnimation,
   Easing,
 } from 'react-native-reanimated';
-import { Wind, Timer, Award, AlertTriangle } from 'lucide-react-native';
+import { Wind, Timer, Award, AlertTriangle, ChartColumn, BookOpen } from 'lucide-react-native';
 
 import {
   ScreenShell,
@@ -17,19 +17,25 @@ import {
   GhostButton,
   Chip,
   ProgressBar,
+  SettingsButton,
+  SettingRow,
   useThemeTokens,
 } from '../components/practice/PracticeUI';
-import { Segmented } from '../components/AppUI';
+import { ModuleSettingsSheet } from '../components/practice/ModuleSettingsSheet';
+import { Segmented, toneSoft, toneText } from '../components/AppUI';
 import {
   BREATHING_LEVELS,
   BREATHING_MODES,
   PHASE_LABELS,
   flattenProgram,
   getBreathingProgram,
+  getSimple46Program,
+  programCycleCount,
   type BreathStep,
 } from '../data/breathingPrograms';
 import {
   useDailyPracticeSettings,
+  type BreathingLevel,
   type BreathingMode,
 } from '../utils/dailyPracticeSettings';
 import {
@@ -40,6 +46,14 @@ import {
   type TestResult,
 } from '../utils/dailyPracticeProgress';
 import { TestTrend } from '../components/practice/TestTrend';
+import { MeasureCard, HoldTimer, CountStepper, SelfCheckList } from '../components/practice/MeasureTests';
+import {
+  findMeasureTest,
+  TEST_BREATH_HOLD,
+  TEST_CONTROL_PAUSE,
+  TEST_SINGLE_BREATH_COUNT,
+  TEST_DIAPHRAGM_ISOLATION,
+} from '../data/measureTests';
 import { formatDuration } from '../utils/dateUtils';
 
 // Günlük diyafram egzersizi.
@@ -49,17 +63,31 @@ import { formatDuration } from '../utils/dateUtils';
 const CIRCLE_SIZE = Math.min(Dimensions.get('window').width * 0.62, 280);
 const MIN_SCALE = 0.55;
 
-export default function DiaphragmExerciseScreen({ navigation }: any) {
+export default function DiaphragmExerciseScreen({ navigation, route }: any) {
   const t = useThemeTokens();
   const { settings, updateModule } = useDailyPracticeSettings();
   const { progress, complete, recordExhale, logTest } = useDailyProgress();
 
-  const [activeTab, setActiveTab] = React.useState<'pratik' | 'olcum' | 'rehber'>('pratik');
+  // Karnedeki "Ölç" düğmesi `{ tab: 'olcum' }` ile açar; parametre yoksa eskisi gibi Pratik açılır.
+  const [activeTab, setActiveTab] = React.useState<'pratik' | 'olcum' | 'rehber'>(
+    route?.params?.tab === 'olcum' ? 'olcum' : 'pratik',
+  );
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
 
   const mode = settings.diaphragm.mode;
   const level = settings.diaphragm.level;
-  const program = React.useMemo(() => getBreathingProgram(mode, level), [mode, level]);
+  // Sade 5 dk · 4-6: ayarlardaki mod/seviyeden bağımsız, tek düğmeyle başlayan
+  // ayrı bir preset. Aktifken mod/seviye seçimi devre dışı kalır.
+  const [simpleActive, setSimpleActive] = React.useState(false);
+  const simple46Program = React.useMemo(() => getSimple46Program(), []);
+  const program = React.useMemo(
+    () => (simpleActive ? simple46Program : getBreathingProgram(mode, level)),
+    [simpleActive, simple46Program, mode, level],
+  );
   const steps = React.useMemo<BreathStep[]>(() => flattenProgram(program), [program]);
+  // Preset başlatıldığında, program/step sıfırlama efekti çalıştıktan hemen
+  // sonra otomatik "Başla" tetiklenir — kullanıcı ikinci kez dokunmasın.
+  const pendingAutoStartRef = React.useRef(false);
 
   const [running, setRunning] = React.useState(false);
   const [stepIndex, setStepIndex] = React.useState(0);
@@ -97,15 +125,21 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
     [scale],
   );
 
-  // Seviye değişince programı baştan kur.
+  // Seviye/preset değişince programı baştan kur.
   React.useEffect(() => {
-    setRunning(false);
     setFinished(false);
     setStepIndex(0);
     setRemaining(steps[0]?.seconds ?? 0);
     deadlineRef.current = null;
     cancelAnimation(scale);
     scale.value = MIN_SCALE;
+    if (pendingAutoStartRef.current) {
+      // Sade 5 dk kartından "Başlat" ile geldiysek tek dokunuşla seans başlasın.
+      pendingAutoStartRef.current = false;
+      setRunning(true);
+    } else {
+      setRunning(false);
+    }
   }, [steps, scale]);
 
   // Sayaç. Sapmayı önlemek için kalan süre bitiş anına göre hesaplanıyor.
@@ -175,17 +209,36 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
     scale.value = MIN_SCALE;
   };
 
+  /** Sade 5 dk · 4-6 kartındaki "Başlat" — tek dokunuşla preset'e geçer ve seansı başlatır. */
+  const startSimple46 = () => {
+    pendingAutoStartRef.current = true;
+    setSimpleActive(true);
+  };
+
+  /** Sade 5 dk · 4-6'dan çıkıp ayarlardaki mod/seviyeye döner. */
+  const exitSimple46 = () => {
+    pendingAutoStartRef.current = false;
+    setSimpleActive(false);
+  };
+
   const circleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   const moduleProgress = progress.modules.diaphragm;
+  // Bu preset'te bitiş metni "Program tamamlandı." yerine döngü sayısı bildirir.
+  const finishedText = program.announceCycleCount
+    ? `${programCycleCount(program)} döngü tamamlandı.`
+    : 'Program tamamlandı. Nefesini normale bırak.';
+  const showReminder =
+    !finished && !!step?.reminderEvery && !!step.tip && step.cycleIndex % step.reminderEvery === 0;
 
   return (
     <ScreenShell
       title="Diyafram Egzersizi"
       subtitle={`${program.title} · ${program.durationLabel}`}
       onClose={() => navigation?.goBack?.()}
+      right={<SettingsButton onPress={() => setSettingsOpen(true)} />}
       footer={
         activeTab === 'pratik' ? (
           <View className="gap-2">
@@ -204,10 +257,12 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
         <Segmented<'pratik' | 'olcum' | 'rehber'>
           value={activeTab}
           onChange={setActiveTab}
+          // İkonlar nötr tonda: seçili sekmeyi zaten beyaz kapsül ve yazı rengi
+          // gösteriyor, ikonu da renklendirmek sekmeyi gürültülü yapıyordu.
           options={[
-            { value: 'pratik', label: '🏋️ Pratik' },
-            { value: 'olcum', label: '📊 Ölçüm' },
-            { value: 'rehber', label: '📘 Rehber' },
+            { value: 'pratik', label: 'Pratik', icon: <Wind size={14} color={t.iconColor} /> },
+            { value: 'olcum', label: 'Ölçüm', icon: <ChartColumn size={14} color={t.iconColor} /> },
+            { value: 'rehber', label: 'Rehber', icon: <BookOpen size={14} color={t.iconColor} /> },
           ]}
         />
       </View>
@@ -215,29 +270,70 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
       {/* 🏋️ PRATİK SEKMESİ (Varsayılan) */}
       {activeTab === 'pratik' ? (
         <>
-          {/* Mod ve seviye seçimi */}
-          <View className="mt-1">
-            <Segmented<BreathingMode>
-              value={mode}
-              onChange={(next) => updateModule('diaphragm', { mode: next })}
-              options={BREATHING_MODES.map((m) => ({ value: m.value, label: m.label }))}
-            />
-            <Text className={`text-[11px] leading-4 mt-2 ${t.muted}`}>
-              {BREATHING_MODES.find((m) => m.value === mode)?.description}
-            </Text>
-          </View>
+          {/* Sade 5 dk · 4-6: tek düğmeyle başlayan, süslemesiz seans */}
+          {!simpleActive ? (
+            <Card className="mt-1 mb-3 flex-row items-center justify-between">
+              <View className="flex-1 pr-2">
+                <Text className={`text-[13px] font-bold ${t.title}`}>Sade 5 dk · 4-6</Text>
+                <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
+                  Tek dokunuşla başlar · 30 döngü, sabit ritim
+                </Text>
+              </View>
+              <Pressable
+                onPress={startSimple46}
+                className={`px-3 py-1.5 rounded-xl ${toneSoft('emerald', t.isLight)}`}
+                accessibilityRole="button"
+                accessibilityLabel="Sade 5 dakikalık 4-6 nefes seansını başlat"
+              >
+                <Text className={`text-[12px] font-bold ${toneText('emerald', t.isLight)}`}>
+                  Başlat
+                </Text>
+              </Pressable>
+            </Card>
+          ) : (
+            <Card className="mt-1 mb-3 flex-row items-center justify-between">
+              <View className="flex-1 pr-2">
+                <Text className={`text-[13px] font-bold ${t.title}`}>Sade 5 dk · 4-6 aktif</Text>
+                <Text className={`text-[11px] mt-0.5 ${t.muted}`}>30 döngü · 4 sn al · 6 sn ver</Text>
+              </View>
+              <Pressable
+                onPress={exitSimple46}
+                className={`px-3 py-1.5 rounded-xl border ${t.cardBorder}`}
+                accessibilityRole="button"
+                accessibilityLabel="Sade seanstan çık, ayarlı programa dön"
+              >
+                <Text className={`text-[12px] font-bold ${t.muted}`}>Çık</Text>
+              </Pressable>
+            </Card>
+          )}
 
-          {mode === 'progressive' ? (
-            <View className="flex-row flex-wrap mt-3">
-              {BREATHING_LEVELS.map((lvl) => (
-                <Chip
-                  key={lvl}
-                  label={`Seviye ${lvl}`}
-                  selected={lvl === level}
-                  onPress={() => updateModule('diaphragm', { level: lvl })}
+          {/* Mod ve seviye seçimi — Sade 5 dk aktifken gizli */}
+          {!simpleActive ? (
+            <>
+              <View className="mt-1">
+                <Segmented<BreathingMode>
+                  value={mode}
+                  onChange={(next) => updateModule('diaphragm', { mode: next })}
+                  options={BREATHING_MODES.map((m) => ({ value: m.value, label: m.label }))}
                 />
-              ))}
-            </View>
+                <Text className={`text-[11px] leading-4 mt-2 ${t.muted}`}>
+                  {BREATHING_MODES.find((m) => m.value === mode)?.description}
+                </Text>
+              </View>
+
+              {mode === 'progressive' ? (
+                <View className="flex-row flex-wrap mt-3">
+                  {BREATHING_LEVELS.map((lvl) => (
+                    <Chip
+                      key={lvl}
+                      label={`Seviye ${lvl}`}
+                      selected={lvl === level}
+                      onPress={() => updateModule('diaphragm', { level: lvl })}
+                    />
+                  ))}
+                </View>
+              ) : null}
+            </>
           ) : null}
 
           {/* Nefes dairesi */}
@@ -277,8 +373,11 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
               </Text>
             </View>
             <Text className={`text-[15px] font-bold leading-6 ${t.title}`}>
-              {finished ? 'Program tamamlandı. Nefesini normale bırak.' : step.cue}
+              {finished ? finishedText : step.cue}
             </Text>
+            {showReminder ? (
+              <Text className={`text-[12px] mt-2 italic ${t.accent}`}>{step.tip}</Text>
+            ) : null}
             <View className="mt-4">
               <ProgressBar value={totalSeconds === 0 ? 0 : elapsedSeconds / totalSeconds} />
               <Text className={`text-[11px] mt-2 ${t.muted}`}>
@@ -307,6 +406,26 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
           <BreathingRateTest
             history={testHistory(progress, TEST_BREATHING_RATE)}
             onResult={(breaths) => logTest(TEST_BREATHING_RATE, breaths)}
+          />
+
+          <BreathHoldMeasure
+            history={testHistory(progress, TEST_BREATH_HOLD)}
+            onSave={(seconds) => logTest(TEST_BREATH_HOLD, seconds)}
+          />
+
+          <ControlPauseMeasure
+            history={testHistory(progress, TEST_CONTROL_PAUSE)}
+            onSave={(seconds) => logTest(TEST_CONTROL_PAUSE, seconds)}
+          />
+
+          <SingleBreathCountMeasure
+            history={testHistory(progress, TEST_SINGLE_BREATH_COUNT)}
+            onSave={(count) => logTest(TEST_SINGLE_BREATH_COUNT, count)}
+          />
+
+          <DiaphragmIsolationMeasure
+            history={testHistory(progress, TEST_DIAPHRAGM_ISOLATION)}
+            onSave={(count) => logTest(TEST_DIAPHRAGM_ISOLATION, count)}
           />
         </>
       ) : null}
@@ -350,16 +469,20 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
             </Card>
           ))}
 
-          {/* Neden yapıyoruz */}
-          <SectionTitle>Ne Kazandırır</SectionTitle>
-          <Card>
-            {program.benefits.map((benefit) => (
-              <View key={benefit} className="flex-row mb-2">
-                <Text className={`text-[12px] mr-2 ${t.accent}`}>•</Text>
-                <Text className={`text-[12px] flex-1 leading-5 ${t.body}`}>{benefit}</Text>
-              </View>
-            ))}
-          </Card>
+          {/* Neden yapıyoruz — sade preset'te motivasyon cümlesi yok, benefits boş */}
+          {program.benefits.length > 0 ? (
+            <>
+              <SectionTitle>Ne Kazandırır</SectionTitle>
+              <Card>
+                {program.benefits.map((benefit) => (
+                  <View key={benefit} className="flex-row mb-2">
+                    <Text className={`text-[12px] mr-2 ${t.accent}`}>•</Text>
+                    <Text className={`text-[12px] flex-1 leading-5 ${t.body}`}>{benefit}</Text>
+                  </View>
+                ))}
+              </Card>
+            </>
+          ) : null}
 
           {/* Güvenlik uyarısı */}
           <Card className="mt-3">
@@ -385,6 +508,44 @@ export default function DiaphragmExerciseScreen({ navigation }: any) {
           </Card>
         </>
       ) : null}
+
+      <ModuleSettingsSheet module="diaphragm" visible={settingsOpen} onClose={() => setSettingsOpen(false)}>
+        <SettingRow
+          title="Çalışma Biçimi"
+          description="Günlük: kısa bakım programı · Gelişim: seviyeli uzun program"
+          right={<View />}
+        />
+        <View className="flex-row flex-wrap">
+          {BREATHING_MODES.map((m) => (
+            <Chip
+              key={m.value}
+              label={m.label}
+              selected={mode === m.value}
+              onPress={() => updateModule('diaphragm', { mode: m.value })}
+            />
+          ))}
+        </View>
+
+        {mode === 'progressive' ? (
+          <>
+            <SettingRow
+              title="Seviye"
+              description="1: farkındalık · 2: kontrollü nefes · 3: mülakat baskısı"
+              right={<View />}
+            />
+            <View className="flex-row flex-wrap">
+              {BREATHING_LEVELS.map((lvl: BreathingLevel) => (
+                <Chip
+                  key={lvl}
+                  label={`Seviye ${lvl}`}
+                  selected={lvl === level}
+                  onPress={() => updateModule('diaphragm', { level: lvl })}
+                />
+              ))}
+            </View>
+          </>
+        ) : null}
+      </ModuleSettingsSheet>
     </ScreenShell>
   );
 }
@@ -591,5 +752,126 @@ function BreathingRateTest({
         değil. Anlamlı olan tek şey kendi ölçümlerinin zaman içindeki seyri.
       </Text>
     </Card>
+  );
+}
+
+/** Tam nefes al, rahatça tutabildiğin kadar tut. `HoldTimer` süreyi ölçer, kayıt `MeasureCard`'a bırakılır. */
+function BreathHoldMeasure({
+  history,
+  onSave,
+}: {
+  history: TestResult[];
+  onSave: (seconds: number) => void;
+}) {
+  const [value, setValue] = React.useState<number | null>(null);
+
+  return (
+    <MeasureCard
+      test={findMeasureTest(TEST_BREATH_HOLD)!}
+      history={history}
+      value={value}
+      onSave={onSave}
+    >
+      <HoldTimer
+        onResult={setValue}
+        startLabel="Tam al ve tut"
+        stopLabel="Bıraktım"
+        running="Rahatsızlık başlayınca bırak."
+      />
+    </MeasureCard>
+  );
+}
+
+/** Normal verişten sonra ilk nefes ihtiyacına kadar geçen süre. */
+function ControlPauseMeasure({
+  history,
+  onSave,
+}: {
+  history: TestResult[];
+  onSave: (seconds: number) => void;
+}) {
+  const [value, setValue] = React.useState<number | null>(null);
+
+  return (
+    <MeasureCard
+      test={findMeasureTest(TEST_CONTROL_PAUSE)!}
+      history={history}
+      value={value}
+      onSave={onSave}
+    >
+      <HoldTimer
+        onResult={setValue}
+        startLabel="Normal verişten sonra başlat"
+        stopLabel="İlk nefes ihtiyacı"
+        running="Dayanma; ilk gerçek nefes ihtiyacında bitir."
+      />
+    </MeasureCard>
+  );
+}
+
+/** Tek nefeste sabit tempoda kaça kadar sayıldığı. Sayaç 0'dayken kayıt kirlenmesin diye değer null kalır. */
+function SingleBreathCountMeasure({
+  history,
+  onSave,
+}: {
+  history: TestResult[];
+  onSave: (count: number) => void;
+}) {
+  const [count, setCount] = React.useState(0);
+
+  return (
+    <MeasureCard
+      test={findMeasureTest(TEST_SINGLE_BREATH_COUNT)!}
+      history={history}
+      value={count > 0 ? count : null}
+      onSave={onSave}
+      startLabel="Ölçüme başla"
+      startHint="Tam bir nefes al, sabit tempoda saymaya başla; nefesin bitince kaçta kaldığını gir."
+    >
+      <CountStepper value={count} onChange={setCount} unit="sayı" min={0} max={200} />
+    </MeasureCard>
+  );
+}
+
+/** Diyafram izolasyonu öz-kontrolü — işaretlenen madde sayısı ölçümün kendisi. */
+const DIAPHRAGM_ISOLATION_ITEMS = [
+  'Nefes alırken karnım göğsümden önce ve daha çok hareket ediyor.',
+  'Omuzlarım nefes alırken yukarı kalkmıyor.',
+  'Verirken karnım yavaşça içeri giriyor, göğsüm çökmüyor.',
+  'Sırtüstü uzanırken karnımdaki el göğsümdekinden fazla hareket ediyor.',
+  'Konuşurken cümle sonuna doğru nefesim yetiyor, son kelimeler cılızlaşmıyor.',
+];
+
+function DiaphragmIsolationMeasure({
+  history,
+  onSave,
+}: {
+  history: TestResult[];
+  onSave: (count: number) => void;
+}) {
+  const [checked, setChecked] = React.useState<boolean[]>(() =>
+    DIAPHRAGM_ISOLATION_ITEMS.map(() => false),
+  );
+  // Hiçbir maddeye dokunulmadıysa ölçüm henüz yapılmamış demektir; 0 işaretli
+  // olsa bile kullanıcı bir kez dokunduysa bu geçerli bir sonuçtur.
+  const [touched, setTouched] = React.useState(false);
+  const checkedCount = checked.filter(Boolean).length;
+
+  const toggle = (index: number) => {
+    setTouched(true);
+    setChecked((prev) => prev.map((value, i) => (i === index ? !value : value)));
+  };
+
+  return (
+    <MeasureCard
+      test={findMeasureTest(TEST_DIAPHRAGM_ISOLATION)!}
+      history={history}
+      value={touched ? checkedCount : null}
+      onSave={onSave}
+      startLabel="Öz-kontrole başla"
+      startHint="Bir elini göğsüne, birini karnına koy; sonra maddeleri dürüstçe işaretle."
+    >
+      <SelfCheckList items={DIAPHRAGM_ISOLATION_ITEMS} checked={checked} onToggle={toggle} />
+    </MeasureCard>
   );
 }

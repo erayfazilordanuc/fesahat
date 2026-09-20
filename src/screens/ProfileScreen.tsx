@@ -17,6 +17,8 @@ import {
   Sparkles,
   ShieldCheck,
   Camera,
+  Check,
+  Target,
 } from 'lucide-react-native';
 
 import {
@@ -35,7 +37,7 @@ import {
   toneFill,
   type Tone,
 } from '../components/AppUI';
-import { useThemeTokens } from '../components/practice/PracticeUI';
+import { BottomSheet, Chip, SectionTitle, useThemeTokens } from '../components/practice/PracticeUI';
 import {
   PROFILE_ICON_GROUPS,
   profileIconComponent,
@@ -46,7 +48,9 @@ import {
 } from '../utils/profile';
 import { masteredArtCount, useDailyProgress } from '../utils/dailyPracticeProgress';
 import { useDailyPracticeSettings } from '../utils/dailyPracticeSettings';
-import { aiAvailable } from '../utils/aiAvailability';
+import { useAiAvailable } from '../utils/aiAvailability';
+import { trUpper } from '../utils/text';
+import { useOnboarding, updateOnboarding, GOAL_ORDER, GOAL_META, type DailyMinutes, type OnboardingGoal } from '../utils/onboarding';
 
 // Profil sekmesi — kimlik, hedefler, kazanım rozetleri ve ayarlar.
 
@@ -59,18 +63,89 @@ const TONES: { id: Tone; label: string }[] = [
   { id: 'slate', label: 'Gri' },
 ];
 
+/**
+ * "Hedef ve tercihler" kartının bir satırı.
+ *
+ * Dokunma geri bildirimi: basılıyken **yazı rengi** başlık tonundan soluk tona
+ * düşüyor, rozet ve ok da hafifliyor. Basılı durum `onPressIn`/`onPressOut` ile
+ * tutuluyor — `Pressable`'ın çocuk fonksiyonu yerine bu yol seçildi, çünkü
+ * NativeWind sarmalayıcısıyla her koşulda çalışıyor.
+ */
+function PrefRow({
+  icon,
+  label,
+  right,
+  onPress,
+  accessibilityLabel,
+  divider,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  right: React.ReactNode;
+  onPress: () => void;
+  accessibilityLabel: string;
+  /** İlk satır hariç hepsinde üstte ayırıcı çizgi var. */
+  divider?: boolean;
+}) {
+  const t = useThemeTokens();
+  const [pressed, setPressed] = React.useState(false);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      className={`flex-row items-center justify-between ${
+        divider ? `pt-3 mt-3 border-t ${t.dividerColor}` : 'py-1'
+      }`}
+    >
+      <View className="flex-row items-center" style={{ opacity: pressed ? 0.6 : 1 }}>
+        {icon}
+        <Text className={`text-[13px] font-bold ml-2 ${pressed ? t.muted : t.title}`}>{label}</Text>
+      </View>
+      <View
+        className="flex-row items-center"
+        style={{ flexShrink: 1, marginLeft: 8, opacity: pressed ? 0.6 : 1 }}
+      >
+        {right}
+        <ChevronRight size={16} color={t.iconColor} style={{ marginLeft: 4 }} />
+      </View>
+    </Pressable>
+  );
+}
+
 export default function ProfileScreen({ navigation }: any) {
   const t = useThemeTokens();
   const profile = useProfile();
   const { progress } = useDailyProgress();
   const { settings } = useDailyPracticeSettings();
+  const onboarding = useOnboarding();
 
   const [editing, setEditing] = React.useState(false);
+  const [prefsOpen, setPrefsOpen] = React.useState(false);
+
+  const focusAreasLabel =
+    onboarding.goals.length > 0
+      ? onboarding.goals.map((g) => GOAL_META[g].title).join(' · ')
+      : 'Seçilmedi';
+
+  const toggleGoal = (goal: OnboardingGoal) => {
+    const { goals } = onboarding;
+    if (goals.includes(goal)) {
+      updateOnboarding({ goals: goals.filter((g) => g !== goal) });
+    } else if (goals.length < 3) {
+      updateOnboarding({ goals: [...goals, goal] });
+    }
+  };
 
   // Günlük pratik modüllerindeki en uzun güncel seri — kimlik kartındaki rozet.
   const bestStreak = Math.max(0, ...Object.values(progress.modules).map((m) => m.streak));
   const totalMasteredArts = masteredArtCount(progress);
-  const isAiReady = aiAvailable();
+  // Anahtar kasadan eşzamansız okunuyor; ilk karede henüz gelmemiş olabilir.
+  // Hook aboneliği sayesinde anahtar okununca ekran kendiliğinden tazelenir.
+  const isAiReady = useAiAvailable();
 
   const badges = [
     {
@@ -139,36 +214,107 @@ export default function ProfileScreen({ navigation }: any) {
         <SectionLabel>HEDEF VE TERCİHLER</SectionLabel>
       </View>
       <Surface>
-        <View className="flex-row items-center justify-between py-1">
-          <View className="flex-row items-center">
-            <Sparkles size={16} color={toneColor('emerald', t.isLight)} />
-            <Text className={`text-[13px] font-bold ml-2 ${t.title}`}>Günlük Taahhüt</Text>
-          </View>
-          <Badge label="5 Dakika / Gün" tone="emerald" />
-        </View>
+        <PrefRow
+          icon={<Sparkles size={16} color={toneColor('emerald', t.isLight)} />}
+          label="Günlük Hedef"
+          right={<Badge label={`${onboarding.dailyMinutes} dk / gün`} tone="emerald" />}
+          onPress={() => setPrefsOpen(true)}
+          accessibilityLabel={`Günlük hedef, ${onboarding.dailyMinutes} dakika. Değiştirmek için aç.`}
+        />
 
-        <View className={`flex-row items-center justify-between pt-3 mt-3 border-t ${t.dividerColor}`}>
-          <View className="flex-row items-center">
-            <Bell size={16} color={toneColor('blue', t.isLight)} />
-            <Text className={`text-[13px] font-bold ml-2 ${t.title}`}>Hatırlatıcılar</Text>
-          </View>
-          <Badge
-            label={settings.notificationsEnabled ? 'Aktif' : 'Kapalı'}
-            tone={settings.notificationsEnabled ? 'blue' : 'slate'}
-          />
-        </View>
+        <PrefRow
+          icon={<Target size={16} color={toneColor('violet', t.isLight)} />}
+          label="Odak Alanları"
+          right={
+            <Text
+              className={`text-[11px] text-right ${t.muted}`}
+              style={{ flexShrink: 1 }}
+              numberOfLines={1}
+            >
+              {focusAreasLabel}
+            </Text>
+          }
+          onPress={() => setPrefsOpen(true)}
+          accessibilityLabel={`Odak alanları, ${focusAreasLabel}. Değiştirmek için aç.`}
+          divider
+        />
 
-        <View className={`flex-row items-center justify-between pt-3 mt-3 border-t ${t.dividerColor}`}>
-          <View className="flex-row items-center">
-            <ShieldCheck size={16} color={toneColor('amber', t.isLight)} />
-            <Text className={`text-[13px] font-bold ml-2 ${t.title}`}>Dinî İçerik Modu</Text>
-          </View>
-          <Badge
-            label={settings.religiousMode ? 'Açık' : 'Kapalı'}
-            tone={settings.religiousMode ? 'amber' : 'slate'}
-          />
-        </View>
+        <PrefRow
+          icon={<Bell size={16} color={toneColor('blue', t.isLight)} />}
+          label="Hatırlatıcılar"
+          right={
+            <Badge
+              label={settings.notificationsEnabled ? 'Aktif' : 'Kapalı'}
+              tone={settings.notificationsEnabled ? 'blue' : 'slate'}
+            />
+          }
+          onPress={() => navigation.navigate('Reminders')}
+          accessibilityLabel={`Hatırlatıcılar, ${settings.notificationsEnabled ? 'aktif' : 'kapalı'}. Yönetmek için aç.`}
+          divider
+        />
+
+        {/* Şalterin kendisi Ayarlar → Uygulama Tercihleri'nde ("Dini Mod");
+            buradaki satır yalnızca durumu gösterip oraya götürüyor. */}
+        <PrefRow
+          icon={<ShieldCheck size={16} color={toneColor('amber', t.isLight)} />}
+          label="Dinî İçerik Modu"
+          right={
+            <Badge
+              label={settings.religiousMode ? 'Açık' : 'Kapalı'}
+              tone={settings.religiousMode ? 'amber' : 'slate'}
+            />
+          }
+          onPress={() => navigation.navigate('Settings')}
+          accessibilityLabel={`Dinî içerik modu, ${settings.religiousMode ? 'açık' : 'kapalı'}. Ayarlarda değiştirmek için aç.`}
+          divider
+        />
       </Surface>
+
+      <BottomSheet
+        visible={prefsOpen}
+        title="Hedef ve tercihler"
+        onClose={() => setPrefsOpen(false)}
+      >
+        <SectionTitle>GÜNLÜK HEDEF</SectionTitle>
+        <View className="flex-row flex-wrap">
+          {([3, 5, 10] as DailyMinutes[]).map((minutes) => (
+            <Chip
+              key={minutes}
+              label={`${minutes} dk`}
+              selected={onboarding.dailyMinutes === minutes}
+              tone="emerald"
+              onPress={() => updateOnboarding({ dailyMinutes: minutes })}
+            />
+          ))}
+        </View>
+        <Text className={`text-[11px] leading-4 mt-1 ${t.muted}`}>
+          Bugün sekmesindeki günlük pratik listesinin uzunluğunu belirler; egzersizlerin
+          kendisi kısalmaz.
+        </Text>
+
+        <SectionTitle>ODAK ALANLARI</SectionTitle>
+        <View className="flex-row flex-wrap">
+          {GOAL_ORDER.map((goal) => {
+            const selected = onboarding.goals.includes(goal);
+            const atLimit = !selected && onboarding.goals.length >= 3;
+            return (
+              <View key={goal} style={atLimit ? { opacity: 0.4 } : undefined}>
+                <Chip
+                  label={GOAL_META[goal].title}
+                  selected={selected}
+                  tone="violet"
+                  onPress={atLimit ? undefined : () => toggleGoal(goal)}
+                />
+              </View>
+            );
+          })}
+        </View>
+        {onboarding.goals.length >= 3 ? (
+          <Text className={`text-[11px] leading-4 mt-1 ${t.muted}`}>
+            En fazla 3 hedef seçebilirsin.
+          </Text>
+        ) : null}
+      </BottomSheet>
 
       {/* Kazanımlar ve Rozetler */}
       <View className="mt-4">
@@ -222,9 +368,11 @@ function ProfileCard({
     <Surface className="mt-1">
       <View className="flex-row items-center">
         {profile.avatarUri ? (
+          // Fotoğraf varken profil rengi çerçevede görünür.
           <Image
             source={{ uri: profile.avatarUri }}
-            className="w-16 h-16 rounded-full border border-slate-200/80"
+            className="w-16 h-16 rounded-full"
+            style={{ borderWidth: 2, borderColor: toneColor(tone, t.isLight) }}
           />
         ) : (
           <View
@@ -249,8 +397,8 @@ function ProfileCard({
               className={`flex-row items-center self-start mt-2 px-2.5 py-1 rounded-full ${toneSoft('emerald', t.isLight)}`}
             >
               <Activity size={12} color={toneColor('emerald', t.isLight)} />
-              <Text className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${toneText('emerald', t.isLight)}`}>
-                {bestStreak} günlük seri
+              <Text className={`text-[10px] font-bold tracking-widest ml-1 ${toneText('emerald', t.isLight)}`}>
+                {trUpper(`${bestStreak} günlük seri`)}
               </Text>
             </View>
           ) : null}
@@ -314,8 +462,8 @@ function ProfileEditor({
 
   return (
     <Surface className="mt-1">
-      <Text className={`text-[11px] font-bold uppercase tracking-widest mb-3 ${t.muted}`}>
-        Profili Düzenle
+      <Text className={`text-[11px] font-bold tracking-widest mb-3 ${t.muted}`}>
+        PROFİLİ DÜZENLE
       </Text>
 
       <TextField
@@ -355,14 +503,18 @@ function ProfileEditor({
         </View>
       </View>
 
-      {/* Profil Fotoğrafı veya İkon Rengi */}
-      <Text className={`text-[10px] font-bold uppercase tracking-widest mt-2 mb-2 ${t.muted}`}>
-        Fotoğraf & Renk
+      {/* Profil fotoğrafı */}
+      <Text className={`text-[10px] font-bold tracking-widest mt-2 mb-2 ${t.muted}`}>
+        FOTOĞRAF
       </Text>
       <View className="flex-row items-center gap-3 mb-3">
         {draft.avatarUri ? (
           <View className="flex-row items-center gap-3">
-            <Image source={{ uri: draft.avatarUri }} className="w-12 h-12 rounded-full" />
+            <Image
+              source={{ uri: draft.avatarUri }}
+              className="w-12 h-12 rounded-full"
+              style={{ borderWidth: 2, borderColor: toneColor(draftTone, t.isLight) }}
+            />
             <Pressable
               onPress={() => setDraft((prev) => ({ ...prev, avatarUri: '' }))}
               className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30"
@@ -385,31 +537,50 @@ function ProfileEditor({
         )}
       </View>
 
-      {!draft.avatarUri ? (
-        <View className="flex-row flex-wrap gap-2 mb-3">
-          {TONES.map((toneItem) => (
+      {/* Profil rengi. Eskiden yalnızca fotoğraf yokken görünüyordu ve seçili
+          renk belli olmuyordu. Artık her zaman seçilebilir: fotoğraf yoksa ikon
+          zeminini, varsa fotoğrafın çerçevesini boyar. */}
+      <Text className={`text-[10px] font-bold tracking-widest mb-2 ${t.muted}`}>
+        PROFİL RENGİ
+      </Text>
+      <View className="flex-row flex-wrap gap-3 mb-4">
+        {TONES.map((toneItem) => {
+          const active = draftTone === toneItem.id;
+          return (
             <Pressable
               key={toneItem.id}
-              onPress={() => setDraft((prev) => ({ ...prev, avatarTone: toneItem.id }))}
-              className={`px-3 py-1.5 rounded-xl border flex-row items-center ${
-                draftTone === toneItem.id
-                  ? toneSoft(toneItem.id, t.isLight)
-                  : t.isLight
-                    ? 'bg-slate-100 border-transparent'
-                    : 'bg-slate-800 border-transparent'
-              }`}
+              onPress={() => set('avatarTone', toneItem.id)}
+              hitSlop={4}
+              accessibilityRole="radio"
+              accessibilityLabel={`${toneItem.label} profil rengi`}
+              accessibilityState={{ checked: active }}
+              className="items-center"
             >
-              <View className={`w-3 h-3 rounded-full mr-1.5 ${toneFill(toneItem.id, t.isLight)}`} />
-              <Text className={`text-[11px] font-bold ${toneText(toneItem.id, t.isLight)}`}>
+              <View
+                className="w-11 h-11 rounded-full items-center justify-center"
+                style={{
+                  borderWidth: 2,
+                  borderColor: active ? toneColor(toneItem.id, t.isLight) : 'transparent',
+                }}
+              >
+                <View
+                  className={`w-9 h-9 rounded-full items-center justify-center ${toneFill(toneItem.id, t.isLight)}`}
+                >
+                  {active ? <Check size={17} color="#ffffff" /> : null}
+                </View>
+              </View>
+              <Text
+                className={`text-[10px] mt-1 font-semibold ${active ? toneText(toneItem.id, t.isLight) : t.muted}`}
+              >
                 {toneItem.label}
               </Text>
             </Pressable>
-          ))}
-        </View>
-      ) : null}
+          );
+        })}
+      </View>
 
-      <Text className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${t.muted}`}>
-        İkon
+      <Text className={`text-[10px] font-bold tracking-widest mb-2 ${t.muted}`}>
+        İKON
       </Text>
       <Pressable
         onPress={() => setPickerOpen(true)}
@@ -553,8 +724,8 @@ const IconGroupRow = React.memo(function IconGroupRow({
 
   return (
     <View className="mb-5">
-      <Text className={`text-[10px] font-bold uppercase tracking-widest mb-2.5 ${t.muted}`}>
-        {group.title}
+      <Text className={`text-[10px] font-bold tracking-widest mb-2.5 ${t.muted}`}>
+        {trUpper(group.title)}
       </Text>
       <View className="flex-row flex-wrap">
         {group.icons.map((id) => {

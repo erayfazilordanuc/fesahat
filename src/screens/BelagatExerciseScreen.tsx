@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
-import { Feather, Check, X as XIcon, Award, Lightbulb, GraduationCap } from 'lucide-react-native';
+import { Feather, Check, X as XIcon, Award, Lightbulb, GraduationCap, CheckCircle2 } from 'lucide-react-native';
 
 import { Segmented } from '../components/AppUI';
 import {
@@ -11,8 +11,12 @@ import {
   GhostButton,
   Chip,
   ProgressBar,
+  SettingsButton,
+  SettingRow,
   useThemeTokens,
 } from '../components/practice/PracticeUI';
+import { ModuleSettingsSheet } from '../components/practice/ModuleSettingsSheet';
+import { useDayKey } from '../utils/today';
 import {
   BELAGAT_ARTS,
   BRANCH_DESCRIPTIONS,
@@ -27,6 +31,7 @@ import {
 } from '../data/belagat';
 import { useDailyPracticeSettings, type BelagatBranchFilter } from '../utils/dailyPracticeSettings';
 import { masteredArtCount, useDailyProgress } from '../utils/dailyPracticeProgress';
+import { addResponse } from '../utils/responseHistory';
 
 // Belagat egzersizi.
 // Üç aşama: günün sanatını öğrenme → tanıma alıştırması → üretim alıştırması.
@@ -50,13 +55,16 @@ const BRANCH_FILTERS: { value: BelagatBranchFilter; label: string }[] = [
 
 export default function BelagatExerciseScreen({ navigation }: any) {
   const t = useThemeTokens();
-  const { settings } = useDailyPracticeSettings();
+  const { settings, updateModule } = useDailyPracticeSettings();
   const { progress, complete, answerBelagat, produceBelagat } = useDailyProgress();
 
   const [tab, setTab] = React.useState<Tab>('ogren');
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
   const filter = settings.belagat.branch;
 
-  const dailyArt = React.useMemo(() => pickDailyBelagatArt(filter), [filter]);
+  // `day`: gün dönümünde günün sanatı tazelensin (Bölüm 7).
+  const day = useDayKey();
+  const dailyArt = React.useMemo(() => pickDailyBelagatArt(filter), [filter, day]);
   const quiz = React.useMemo(() => buildRecognitionQuiz(filter, 5), [filter]);
 
   const mastered = masteredArtCount(progress);
@@ -67,6 +75,7 @@ export default function BelagatExerciseScreen({ navigation }: any) {
       title="Belagat"
       subtitle={`${mastered}/${BELAGAT_ARTS.length} sanat öğrenildi · ${moduleProgress.streak} günlük seri`}
       onClose={() => navigation?.goBack?.()}
+      right={<SettingsButton onPress={() => setSettingsOpen(true)} />}
     >
       {/* Tek sıra temiz sekme kontrolü */}
       <View className="mt-1 mb-2">
@@ -111,10 +120,26 @@ export default function BelagatExerciseScreen({ navigation }: any) {
             produceBelagat(dailyArt.id);
             complete('belagat');
           }}
+          navigation={navigation}
         />
       ) : null}
 
       {tab === 'mufredat' ? <CurriculumTab filter={filter} progress={progress} /> : null}
+
+      <ModuleSettingsSheet module="belagat" visible={settingsOpen} onClose={() => setSettingsOpen(false)}>
+        <SettingRow title="Çalışılacak kol" description="Günün sanatı bu havuzdan seçilir." right={<View />} />
+        <View className="flex-row flex-wrap">
+          {BRANCH_FILTERS.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              tone="emerald"
+              selected={filter === option.value}
+              onPress={() => updateModule('belagat', { branch: option.value })}
+            />
+          ))}
+        </View>
+      </ModuleSettingsSheet>
     </ScreenShell>
   );
 }
@@ -197,6 +222,20 @@ function RecognitionTab({
     const correct = optionId === question.correctId;
     if (correct) setScore((s) => s + 1);
     onAnswer(question.correctId, correct);
+
+    // Her deneme deftere düşer — tekrar çalışmanın izi budur (Yeniden dene'de de).
+    const chosenOption = question.options.find((o) => o.id === optionId);
+    const correctOption = question.options.find((o) => o.id === question.correctId);
+    addResponse({
+      module: 'belagat',
+      refId: question.correctId,
+      title: correctOption?.name ?? '',
+      prompt: question.example.text,
+      answer: chosenOption?.name ?? '',
+      kind: 'choice',
+      correct,
+      expected: correctOption?.name,
+    });
   };
 
   const next = () => {
@@ -251,7 +290,7 @@ function RecognitionTab({
 
       <Card>
         <Text className={`text-[11px] font-bold uppercase tracking-widest mb-2 ${t.muted}`}>
-          Bu örnekte hangi sanat var?
+          BU ÖRNEKTE HANGİ SANAT VAR?
         </Text>
         <Text className={`text-[16px] font-bold leading-7 ${t.title}`}>{question.example.text}</Text>
         {question.example.source ? (
@@ -325,16 +364,45 @@ function ProductionTab({
   art,
   produced,
   onProduced,
+  navigation,
 }: {
   art: BelagatArt;
   produced: boolean;
   onProduced: () => void;
+  navigation: any;
 }) {
   const t = useThemeTokens();
   const [answer, setAnswer] = React.useState('');
   const [revealed, setRevealed] = React.useState(false);
+  // Deftere en son kaydedilen metin. Kullanıcı cümleyi değiştirirse bu, güncel
+  // metinle uyuşmaz hale gelir ve "Tamamladım" düğmesi yeniden belirir —
+  // aynı cümle iki kez deftere yazılmaz, ama yeni bir cümle yeniden kaydedilebilir.
+  const [savedAnswer, setSavedAnswer] = React.useState<string | null>(null);
 
-  const wordCount = answer.trim() ? answer.trim().split(/\s+/).length : 0;
+  const trimmedAnswer = answer.trim();
+  const wordCount = trimmedAnswer ? trimmedAnswer.split(/\s+/).length : 0;
+  const isSaved = savedAnswer !== null && savedAnswer.length > 0 && savedAnswer === trimmedAnswer;
+
+  const handleComplete = () => {
+    // Örnek cevap görüldükten sonra metin silinmiş olabilir; boş cümleyle
+    // "Kaydedildi" demek yanlış olur (defterde karşılığı olmaz).
+    if (trimmedAnswer.length === 0) return;
+    // Çift dokunuş koruması: `isSaved` ancak bir sonraki render'da düğmeyi
+    // kaldırıyor, arada gelen ikinci dokunuş aynı cümleyi deftere iki kez
+    // yazardı.
+    if (savedAnswer === trimmedAnswer) return;
+    addResponse({
+      module: 'belagat',
+      refId: art.id,
+      title: art.name,
+      prompt: art.exercise.prompt,
+      answer: trimmedAnswer,
+      kind: 'text',
+      expected: art.exercise.sampleAnswer,
+    });
+    onProduced();
+    setSavedAnswer(trimmedAnswer);
+  };
 
   return (
     <View className="mt-2">
@@ -400,13 +468,39 @@ function ProductionTab({
           <PrimaryButton
             label="Örnek cevabı gör"
             onPress={() => setRevealed(true)}
-            disabled={answer.trim().length === 0}
+            disabled={trimmedAnswer.length === 0}
             tone="emerald"
           />
+        ) : isSaved ? (
+          <Card className={t.isLight ? 'bg-emerald-50 border-emerald-300' : 'bg-emerald-950 border-emerald-700'}>
+            <View className="flex-row items-center mb-1">
+              <CheckCircle2 size={18} color={t.isLight ? '#059669' : '#34d399'} />
+              <Text
+                className={`text-[14px] font-bold ml-2 ${t.isLight ? 'text-emerald-700' : 'text-emerald-300'}`}
+              >
+                Kaydedildi
+              </Text>
+            </View>
+            <Text className={`text-[12px] leading-5 ${t.isLight ? 'text-emerald-700' : 'text-emerald-300'}`}>
+              Cümlen yanıt defterine eklendi. {art.name} sanatında üretim yapıldı.
+            </Text>
+            <View className="mt-3">
+              <PrimaryButton
+                label="Yanıt Defterini Aç"
+                onPress={() => navigation?.navigate?.('ResponseJournal', { module: 'belagat' })}
+                tone="emerald"
+              />
+            </View>
+          </Card>
         ) : (
-          <PrimaryButton label="Tamamladım" onPress={onProduced} tone="emerald" />
+          <PrimaryButton
+            label="Tamamladım"
+            onPress={handleComplete}
+            disabled={trimmedAnswer.length === 0}
+            tone="emerald"
+          />
         )}
-        {!revealed && answer.trim().length === 0 ? (
+        {!revealed && trimmedAnswer.length === 0 ? (
           <Text className={`text-[11px] text-center ${t.muted}`}>
             Önce kendi cümlenizi yazın; örneği önce görmek alıştırmayı boşa çıkarır.
           </Text>

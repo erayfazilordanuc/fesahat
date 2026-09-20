@@ -25,6 +25,23 @@ export function pickForDay<T>(pool: readonly T[], date: Date = new Date(), salt 
   return pool[idx];
 }
 
+/**
+ * Bir sonraki yerel gece yarısına kalan süre (ms) — gün dönümünde içeriği
+ * tazelemek için (`utils/today.ts`).
+ *
+ * `setHours(24, 0, 0, 0)` yaz saati geçişlerinde de doğru sonucu verir: hedef
+ * her hâlükârda yerel saatle 00:00 olur, aradaki fark 23 ya da 25 saat olabilir.
+ * En az 1 sn döndürülür ki sıfır gecikmeli sonsuz zamanlayıcı kurulmasın.
+ *
+ * Burada duruyor çünkü saf: `today.ts` react-native'e bağlı olduğu için Node
+ * altında sınanamıyor, bu hesap ise sınanabilmeli.
+ */
+export function msUntilNextMidnight(now: Date = new Date()): number {
+  const next = new Date(now);
+  next.setHours(24, 0, 0, 0);
+  return Math.max(1000, next.getTime() - now.getTime());
+}
+
 export function formatTime(hour: number, minute: number): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(hour)}:${pad(minute)}`;

@@ -48,6 +48,8 @@
     <string>Mülakat kaydı için kameranıza erişim izni gereklidir.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Mülakat kaydı için mikrofonunuza erişim izni gereklidir.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your photos</string>
     <key>RCTNewArchEnabled</key>
     <true/>
     <key>UILaunchStoryboardName</key>
@@ -73,7 +75,7 @@
       <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>UIUserInterfaceStyle</key>
-    <string>Light</string>
+    <string>Automatic</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
   </dict>

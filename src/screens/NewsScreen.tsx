@@ -392,7 +392,7 @@ function ArchiveCard({ entry }: { entry: ArchiveEntry }) {
             <Text
               className={`text-[11px] font-bold uppercase tracking-widest ml-2 ${toneText('emerald', t.isLight)}`}
             >
-              Tarihi Dönüm Noktası
+              TARİHİ DÖNÜM NOKTASI
             </Text>
           </View>
         ) : (

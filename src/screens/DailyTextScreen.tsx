@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { BookOpen, Minus, Plus, Timer, Award, Feather } from 'lucide-react-native';
 
-import { Segmented } from '../components/AppUI';
+import { Segmented, Toggle } from '../components/AppUI';
 import {
   ScreenShell,
   Card,
@@ -10,12 +10,14 @@ import {
   PrimaryButton,
   GhostButton,
   Chip,
+  SettingsButton,
+  SettingRow,
   useThemeTokens,
 } from '../components/practice/PracticeUI';
+import { ModuleSettingsSheet } from '../components/practice/ModuleSettingsSheet';
 import {
   CATEGORY_LABELS,
   availableTexts,
-  pickDailyPrayer,
   pickDailyText,
   countWords,
   textSegments,
@@ -27,8 +29,13 @@ import {
   TEST_READING_WPM,
   testHistory,
   useDailyProgress,
+  type TestResult,
 } from '../utils/dailyPracticeProgress';
 import { TestTrend } from '../components/practice/TestTrend';
+import { MeasureCard, MeasureScale, CountStepper } from '../components/practice/MeasureTests';
+import { DailyFaithCard } from '../components/practice/DailyPracticeCard';
+import { useDayKey } from '../utils/today';
+import { findMeasureTest, TEST_BREATHS_PER_TEXT } from '../data/measureTests';
 import { formatDuration } from '../utils/dateUtils';
 
 // Günün okunacak metni.
@@ -37,16 +44,21 @@ import { formatDuration } from '../utils/dateUtils';
 
 const FONT_SIZES = [16, 19, 22, 26] as const;
 
-export default function DailyTextScreen({ navigation }: any) {
+export default function DailyTextScreen({ navigation, route }: any) {
   const t = useThemeTokens();
   const { settings, updateModule } = useDailyPracticeSettings();
   const { progress, complete, logTest } = useDailyProgress();
 
-  const [activeTab, setActiveTab] = React.useState<'okuma' | 'tahlil'>('okuma');
+  // Karnedeki "Ölç" düğmesi Hız & Tahlil sekmesini doğrudan açabilsin diye.
+  const [activeTab, setActiveTab] = React.useState<'okuma' | 'tahlil'>(
+    route?.params?.tab === 'hiz' ? 'tahlil' : 'okuma',
+  );
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
 
-  const dailyText = React.useMemo(() => pickDailyText(settings), [settings]);
+  // `day`: gün dönümünde günün metni tazelensin (Bölüm 7).
+  const day = useDayKey();
+  const dailyText = React.useMemo(() => pickDailyText(settings), [settings, day]);
   const pool = React.useMemo(() => availableTexts(settings), [settings]);
-  const prayer = React.useMemo(() => pickDailyPrayer(), []);
 
   const [selected, setSelected] = React.useState<DailyText | null>(null);
   const [fontIndex, setFontIndex] = React.useState(1);
@@ -85,6 +97,7 @@ export default function DailyTextScreen({ navigation }: any) {
       title="Günün Metni"
       subtitle={`${CATEGORY_LABELS[text.category]} · yaklaşık ${text.approxSeconds} saniye`}
       onClose={() => navigation?.goBack?.()}
+      right={<SettingsButton onPress={() => setSettingsOpen(true)} />}
       footer={
         activeTab === 'okuma' || reading ? (
           <View className="gap-2">
@@ -114,8 +127,12 @@ export default function DailyTextScreen({ navigation }: any) {
           value={activeTab}
           onChange={setActiveTab}
           options={[
-            { value: 'okuma', label: '📖 Okuma' },
-            { value: 'tahlil', label: '📊 Hız & Tahlil' },
+            { value: 'okuma', label: 'Okuma', icon: <BookOpen size={14} color={t.iconColor} /> },
+            {
+              value: 'tahlil',
+              label: 'Hız & Tahlil',
+              icon: <Timer size={14} color={t.iconColor} />,
+            },
           ]}
         />
       </View>
@@ -123,19 +140,10 @@ export default function DailyTextScreen({ navigation }: any) {
       {/* 📖 OKUMA SEKMESİ (Varsayılan) */}
       {activeTab === 'okuma' ? (
         <>
-          {/* Günün duası — yalnızca dini içerik açıkken */}
-          {settings.religiousMode ? (
-            <Card className="mt-1">
-              <View className="flex-row items-center mb-2">
-                <BookOpen size={14} color={t.isLight ? '#059669' : '#34d399'} />
-                <Text className={`text-[10px] font-bold uppercase tracking-widest ml-2 ${t.muted}`}>
-                  Günün Duası
-                </Text>
-              </View>
-              <Text className={`text-[13px] font-bold leading-6 ${t.title}`}>“{prayer.text}”</Text>
-              <Text className={`text-[11px] mt-1.5 leading-5 ${t.muted}`}>{prayer.meaning}</Text>
-            </Card>
-          ) : null}
+          {/* Günün duası + vecizesi tek kartta; kendi içinde dinî içerik
+              şalterine bakıyor. Bugün sekmesiyle aynı bileşen — iki ekranda iki
+              ayrı dua kutusu bakımı zorlaştırıyordu. */}
+          <DailyFaithCard />
 
           {/* Yazı boyutu */}
           <View className="flex-row items-center justify-between mt-4">
@@ -219,6 +227,12 @@ export default function DailyTextScreen({ navigation }: any) {
                   {wordCount} kelime · {formatDuration(elapsed)}
                 </Text>
 
+                <MeasureScale
+                  test={findMeasureTest(TEST_READING_WPM)!}
+                  value={wpm}
+                  history={testHistory(progress, TEST_READING_WPM)}
+                />
+
                 <View className="mt-3">
                   {savedWpm === wpm ? (
                     <Text className={`text-[12px] font-bold ${t.accent}`}>Kaydedildi.</Text>
@@ -247,6 +261,15 @@ export default function DailyTextScreen({ navigation }: any) {
               değil; çoğu zaman gerginlik göstergesi. Amaç yükseltmek değil, kendi aralığını bilmek.
             </Text>
           </Card>
+
+          {/* Nefes / metin oranı — `key={text.id}` metin değişince sayacı sıfırlar,
+              çünkü aynı metinle karşılaştırmak dışında sayı anlamsızlaşır. */}
+          <BreathsPerTextMeasure
+            key={text.id}
+            history={testHistory(progress, TEST_BREATHS_PER_TEXT)}
+            onSave={(value) => logTest(TEST_BREATHS_PER_TEXT, value)}
+            hint={`${text.title} · ${wordCount} kelime`}
+          />
 
           {/* Anlam */}
           {text.meaning ? (
@@ -364,7 +387,80 @@ export default function DailyTextScreen({ navigation }: any) {
           </Card>
         </>
       )}
+
+      <ModuleSettingsSheet module="dailyText" visible={settingsOpen} onClose={() => setSettingsOpen(false)}>
+        <SettingRow
+          title="Metin kaynağı"
+          description={
+            settings.religiousMode
+              ? 'Dinî, edebî ve hitabet metinleri.'
+              : 'Dinî içerik kapalı olduğu için dinî metinler listelenmez.'
+          }
+          right={<View />}
+        />
+        <View className="flex-row flex-wrap">
+          {(
+            [
+              { value: 'karisik', label: 'Karışık' },
+              { value: 'dini', label: 'Dinî' },
+              { value: 'edebi', label: 'Edebî' },
+              { value: 'hitabet', label: 'Hitabet' },
+            ] as const
+          ).map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              tone="emerald"
+              selected={settings.dailyText.source === option.value}
+              onPress={() => updateModule('dailyText', { source: option.value })}
+            />
+          ))}
+        </View>
+        <View className={`border-t ${t.dividerColor}`}>
+          <SettingRow
+            title="Ana ekranda göster"
+            description="Bugün sekmesinde günün metni kartı görünsün."
+            right={
+              <Toggle
+                value={settings.dailyText.showOnHome}
+                onValueChange={(v) => updateModule('dailyText', { showOnHome: v })}
+              />
+            }
+          />
+        </View>
+      </ModuleSettingsSheet>
     </ScreenShell>
+  );
+}
+
+/**
+ * Nefes / metin oranı ölçümü — günün metnini kaç nefeste okuduğunu sayar
+ * (Bölüm 5). Metin değişince (bkz. yukarıdaki `key={text.id}`) yeniden monte
+ * olur ve sayaç sıfırlanır; aksi hâlde bir metnin sayısı başka metne taşınır.
+ */
+function BreathsPerTextMeasure({
+  history,
+  onSave,
+  hint,
+}: {
+  history: TestResult[];
+  onSave: (breaths: number) => void;
+  hint: string;
+}) {
+  const [breaths, setBreaths] = React.useState(0);
+
+  return (
+    <MeasureCard
+      test={findMeasureTest(TEST_BREATHS_PER_TEXT)!}
+      history={history}
+      value={breaths > 0 ? breaths : null}
+      onSave={onSave}
+      hint={hint}
+      startLabel="Ölçüme başla"
+      startHint="Metni sesli okumaya başla; her nefes alışında sayacı bir artır."
+    >
+      <CountStepper value={breaths} onChange={setBreaths} unit="nefes" min={0} max={100} />
+    </MeasureCard>
   );
 }
 

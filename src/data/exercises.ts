@@ -61,6 +61,14 @@ export const EXERCISE_CATEGORIES: ExerciseCategory[] = [
     accent: 'emerald',
   },
   {
+    id: 'durus',
+    track: 'physiological',
+    title: 'Duruş & Sırt',
+    description:
+      'Masa başında çöken duruşu fark edip toparlamak için kısa pratikler. Duruş bozukluğunu tedavi etmez, gerginliği fark ettirip gevşetir.',
+    accent: 'blue',
+  },
+  {
     id: 'fizyolojik',
     track: 'physiological',
     title: 'Fizyolojik & Genel Hazırlık',
@@ -75,7 +83,17 @@ export type PromptEngine = {
   kind: 'prompt';
   instruction: string;
   secondsPerPrompt: number;
-  prompts: { text: string; answer?: string }[];
+  prompts: {
+    text: string;
+    answer?: string;
+    /**
+     * Otomatik kontrol için kabul edilen yanıtlar (normalize edilip tam
+     * eşitlikle karşılaştırılır — `answersMatch`). Yoksa kullanıcı kendini
+     * değerlendirir: serbest ifadeli, tek doğru yazımı olmayan cevaplarda
+     * bilerek boş bırakılır.
+     */
+    accept?: string[];
+  }[];
 };
 
 export type BreathPhaseKind = 'inhale' | 'hold' | 'exhale' | 'wait';
@@ -104,6 +122,127 @@ export type Exercise = {
 };
 
 export const EXERCISES: Exercise[] = [
+  // ——— Duruş & Sırt ———
+  //
+  // ⚠️ Abartılı vaat yok (KARARLAR "Modüller abartılı vaat vermez"): bunlar
+  // duruş bozukluğunu düzeltmez, ağrı tedavi etmez. Yaptıkları şey, uzun
+  // oturmada çöken duruşu fark ettirmek ve gerilen bölgeyi gevşetmek.
+  // "Duruş kontrolü" aralıklı hatırlatıcısı (habitTemplates.ts) buraya bağlı.
+  {
+    id: 'durus-sifirlama',
+    categoryId: 'durus',
+    title: 'Duruş Sıfırlama',
+    description:
+      'Masa başında çöken duruşu tek tek adımlarla toparlama. Hatırlatıcıdaki "sırtını dikleştir, omuzlarını geri al, çeneni içeri çek" cümlesinin uzun hâli.',
+    difficulty: 'kolay',
+    minutes: 2,
+    categoryLabel: 'Duruş',
+    benefits: [
+      'Çöken duruşu fark ettirir',
+      'Omuz ve boyun çevresindeki gerginliği azaltır',
+      'Çökük otururken daralan göğüs kafesine yer açar',
+    ],
+    engine: {
+      kind: 'prompt',
+      instruction:
+        'Sandalyede otururken yapılır. Zorlama yok; keskin bir ağrı hissedersen dur. Her adımda sakin nefes al.',
+      secondsPerPrompt: 20,
+      prompts: [
+        { text: '1. Adım: Ayaklarını yere tam bas, dizlerin kalça hizasında olsun. Kalçanı sandalyenin arkasına kaydır.' },
+        { text: '2. Adım: Omuzlarını kulaklara doğru kaldır, sonra geriye ve aşağıya bırak. Kürek kemiklerin birbirine yaklaşsın.' },
+        { text: '3. Adım: Çeneni hafifçe içeri çek — başını geriye atma. Kulakların omuz hizasına gelsin.' },
+        { text: '4. Adım: Sırtını dikleştir ama kasma. Göğsünü öne itme; omurga uzasın, karın gevşek kalsın.' },
+        { text: '5. Adım: Bu duruşta üç sakin nefes al. Sonra doğal duruşuna dön ve aradaki farkı hisset.' },
+      ],
+    },
+  },
+  {
+    id: 'omuz-gogus-acma',
+    categoryId: 'durus',
+    title: 'Omuz ve Göğüs Açma',
+    description:
+      'Klavye başında öne kapanan omuzları geriye açan, aletsiz yapılan yavaş esnetme dizisi.',
+    difficulty: 'orta',
+    minutes: 3,
+    categoryLabel: 'Duruş',
+    benefits: [
+      'Öne kapanan omuzları geriye açar',
+      'Uzun klavye kullanımının verdiği sertliği azaltır',
+      'Derin nefes için göğüs kafesine yer açar',
+    ],
+    engine: {
+      kind: 'prompt',
+      instruction:
+        'Ayakta ya da sandalyenin ucunda yapılır. Hareketleri yavaş yap; omuzda keskin ağrı olursa bırak. Nefesini tutma.',
+      secondsPerPrompt: 30,
+      prompts: [
+        { text: '1. Adım: Ellerini arkada birleştir, kollarını düz tut ve göğsünü yavaşça aç. Omuzları kulaklardan uzaklaştır.' },
+        { text: '2. Adım: Kollarını iki yana aç, avuç içlerin yukarı baksın. Kürek kemiklerini birbirine yaklaştır, 5 saniye tut.' },
+        { text: '3. Adım: Sağ kolunu göğsünün önünden karşıya uzat, sol kolunla hafifçe kendine çek. 15 saniye bekle.' },
+        { text: '4. Adım: Aynısını sol kolla yap. Omuz yukarı kalkmasın, boynun gevşek kalsın.' },
+        { text: '5. Adım: Omuzlarını yavaşça 5 kez geriye doğru çevir, sonra 5 kez öne.' },
+        { text: '6. Adım: Kollarını serbest bırak, iki derin nefes al. Omuzların şimdi nerede durduğunu fark et.' },
+      ],
+    },
+  },
+  {
+    id: 'boyun-ust-sirt-molasi',
+    categoryId: 'durus',
+    title: 'Boyun ve Üst Sırt Molası',
+    description:
+      'Ekrana eğilmekten gerilen boyun ve üst sırt için kısa gevşeme molası. Göz molasıyla birlikte yapılabilir.',
+    difficulty: 'kolay',
+    minutes: 2,
+    categoryLabel: 'Duruş',
+    benefits: [
+      'Ekrana eğilmekten gerilen boyun kaslarını gevşetir',
+      'Üst sırttaki tutukluğu azaltır',
+      'Kısa molayı düzenli hâle getirir',
+    ],
+    engine: {
+      kind: 'prompt',
+      instruction:
+        'Otururken yapılır. Baş hareketlerini yavaş yap, asla zorlamayla itme. Baş dönmesi olursa dur.',
+      secondsPerPrompt: 20,
+      prompts: [
+        { text: '1. Adım: Başını yavaşça sağa yatır, sağ kulağın sağ omzuna yaklaşsın. Omuz yukarı kalkmasın. 15 saniye bekle.' },
+        { text: '2. Adım: Aynısını sola yap. Nefesini tutma, sakin al ver.' },
+        { text: '3. Adım: Çeneni göğsüne doğru indir, ensenin uzadığını hisset. Başını elinle bastırma.' },
+        { text: '4. Adım: Başını nötr konuma getir, çeneni hafifçe içeri çek ve 5 saniye tut.' },
+        { text: '5. Adım: Ellerini üst sırtına destek yapıp göğsünü hafifçe yukarı aç, omurganı uzat. Sonra gevşe.' },
+      ],
+    },
+  },
+
+  {
+    id: 'torasik-ekstansiyon',
+    categoryId: 'durus',
+    title: 'Üst Sırt Açma (Torasik Ekstansiyon)',
+    description:
+      'Sandalyede otururken üst sırtı (torasik bölge) nazikçe açan kısa bir pratik. Duruş bozukluğunu düzeltmez, ağrı tedavi etmez; uzun oturmadan sertleşen üst sırta hareket hissini geri getirir.',
+    difficulty: 'orta',
+    minutes: 2,
+    categoryLabel: 'Duruş',
+    benefits: [
+      'Uzun oturmadan sertleşen üst sırta hareket getirir',
+      'Göğüs kafesini nefes için açar',
+      'Omuz ve boyun gerginliğini tamamlayan bir hareket ekler',
+    ],
+    engine: {
+      kind: 'prompt',
+      instruction:
+        'Sandalyede otururken yapılır. Hareketi yavaş ve küçük tut; ağrı ya da uyuşma hissedersen dur, zorlama.',
+      secondsPerPrompt: 20,
+      prompts: [
+        { text: '1. Adım: Sandalyenin ucuna otur, ayaklarını yere bas. Ellerini ensende birleştir, dirseklerin yanlara açık kalsın.' },
+        { text: '2. Adım: Bel boşluğunu artırmadan göğüs kemiğini yavaşça tavana doğru kaldır, üst sırtın hafifçe arkaya kıvrılsın.' },
+        { text: '3. Adım: Bu pozisyonda derin bir nefes al, ver. Boynunu geriye atma, çeneni nötr tut.' },
+        { text: '4. Adım: Yavaşça başlangıç pozisyonuna dön. 3 kez tekrar et, her tekrarda hareketi biraz büyüt ama zorlama.' },
+        { text: '5. Adım: Ellerini bırak, omuzlarını salla ve üst sırtındaki farkı hisset.' },
+      ],
+    },
+  },
+
   // ——— Ön Lob (Frontal) ———
   {
     id: 'tersine-muhendislik',
@@ -209,18 +348,22 @@ export const EXERCISES: Exercise[] = [
         {
           text: 'Kuzeye bakıyorsunuz. Sağa 90° dönüp ardından 180° daha dönerseniz hangi yöne bakarsınız?',
           answer: 'Batı (kuzey → doğu → batı)',
+          accept: ['batı'],
         },
         {
           text: "Bir zarın karşılıklı yüzleri toplamı 7'dir. Üst yüz 2, ön yüz 3 ise alt ve arka yüz kaçtır?",
           answer: 'Alt 5, arka 4',
+          accept: ['alt 5 arka 4', '5 4'],
         },
         {
           text: 'Dış yüzeyi tamamen boyanmış bir küp 3×3×3 = 27 küçük küpe bölünüyor. Kaç küçük küpün tam olarak iki yüzü boyalıdır?',
           answer: '12 — her biri bir kenarın ortasında duran küpler',
+          accept: ['12'],
         },
         {
           text: "Saat 3'ü gösterirken akrep ile yelkovan arasındaki dar açı kaç derecedir?",
           answer: '90°',
+          accept: ['90'],
         },
         {
           text: '"L" harfini saat yönünde 90° döndürürseniz ortaya nasıl bir şekil çıkar?',
@@ -229,6 +372,7 @@ export const EXERCISES: Exercise[] = [
         {
           text: 'Bir merdivenin 20 basamağı var. Ortadaki basamaktan 5 yukarı, sonra 8 aşağı inerseniz kaçıncı basamaktasınız?',
           answer: '7. basamak (10 → 15 → 7)',
+          accept: ['7 basamak', '7'],
         },
       ],
     },
@@ -252,17 +396,22 @@ export const EXERCISES: Exercise[] = [
         'Hesap makinesi ve kâğıt yok. Süre dolunca cevap açılır, kendinizi dürüstçe puanlayın.',
       secondsPerPrompt: 30,
       prompts: [
-        { text: '48 × 25 = ?', answer: '1200 — 48 × 100 ÷ 4' },
-        { text: '17 × 18 = ?', answer: '306 — 17 × 18 = 17 × 20 − 17 × 2' },
-        { text: "%15'i 240 olan sayı kaçtır?", answer: '1600 — 240 ÷ 0,15' },
-        { text: "1'den 100'e kadar tam sayıların toplamı?", answer: '5050 — 100 × 101 ÷ 2' },
-        { text: '384 ÷ 16 = ?', answer: '24 — 384 ÷ 8 = 48, 48 ÷ 2 = 24' },
-        { text: '7² + 8² = ?', answer: '113 — 49 + 64' },
+        { text: '48 × 25 = ?', answer: '1200 — 48 × 100 ÷ 4', accept: ['1200'] },
+        { text: '17 × 18 = ?', answer: '306 — 17 × 18 = 17 × 20 − 17 × 2', accept: ['306'] },
+        { text: "%15'i 240 olan sayı kaçtır?", answer: '1600 — 240 ÷ 0,15', accept: ['1600'] },
+        {
+          text: "1'den 100'e kadar tam sayıların toplamı?",
+          answer: '5050 — 100 × 101 ÷ 2',
+          accept: ['5050'],
+        },
+        { text: '384 ÷ 16 = ?', answer: '24 — 384 ÷ 8 = 48, 48 ÷ 2 = 24', accept: ['24'] },
+        { text: '7² + 8² = ?', answer: '113 — 49 + 64', accept: ['113'] },
         {
           text: 'Bir sunucu saniyede 250 istek karşılıyor. Bir dakikada kaç istek eder?',
           answer: '15.000 — 250 × 60',
+          accept: ['15000'],
         },
-        { text: "2¹⁰ kaçtır?", answer: '1024' },
+        { text: "2¹⁰ kaçtır?", answer: '1024', accept: ['1024'] },
       ],
     },
   },
@@ -288,10 +437,12 @@ export const EXERCISES: Exercise[] = [
         {
           text: "A, B'nin solunda. C, B'nin sağında. D, A'nın solunda. Soldan sağa sıralama nedir?",
           answer: 'D · A · B · C',
+          accept: ['d a b c', 'dabc'],
         },
         {
           text: 'Beş katlı binada: Ayşe en üstte değil. Berk, Ayşe’nin bir üstünde. Can en altta. Deniz, Berk’in üstünde. Emre kalan katta. Ayşe kaçıncı kattadır?',
           answer: '3. kat — Can 1, Emre 2, Ayşe 3, Berk 4, Deniz 5',
+          accept: ['3 kat', '3'],
         },
         {
           text: 'Bir servis A→B→C sırasıyla çağrılıyor. B çökerse hangi servisler etkilenir?',
@@ -300,10 +451,12 @@ export const EXERCISES: Exercise[] = [
         {
           text: 'Dört modül: X, Y’ye bağımlı. Y, Z’ye bağımlı. W bağımsız. Hangi sırayla başlatılmalı?',
           answer: 'Z → Y → X; W sırada bağımsız, herhangi bir anda',
+          accept: ['z y x', 'z y x w', 'w z y x', 'z w y x', 'z y w x'],
         },
         {
           text: 'Masada saat yönünde oturan 4 kişi: Ali’nin karşısında Veli var. Ayşe, Ali’nin solunda. Dördüncü kişi Zeynep. Veli’nin solunda kim oturur?',
           answer: 'Zeynep — saat yönünde Ali · Ayşe · Veli · Zeynep',
+          accept: ['zeynep'],
         },
       ],
     },
@@ -347,29 +500,38 @@ export const EXERCISES: Exercise[] = [
     benefits: ['Ters sıralama görevinde ölçülebilir gelişme sağlar', 'Uzun soruları akılda tutma pratiği verir'],
     engine: {
       kind: 'prompt',
-      instruction: 'Diziyi bir kez okuyun, kapatın ve tersten yüksek sesle tekrarlayın.',
+      instruction: 'Diziyi bir kez okuyun, kapatın ve tersten yazın.',
       secondsPerPrompt: 40,
       prompts: [
-        { text: 'radar · anten · dalga · filtre', answer: 'filtre · dalga · anten · radar' },
+        {
+          text: 'radar · anten · dalga · filtre',
+          answer: 'filtre · dalga · anten · radar',
+          accept: ['filtre dalga anten radar'],
+        },
         {
           text: 'ivme · atalet · süzgeç · kalman · sapma',
           answer: 'sapma · kalman · süzgeç · atalet · ivme',
+          accept: ['sapma kalman süzgeç atalet ivme'],
         },
         {
           text: 'menzil · irtifa · azimut · hedef · kilit',
           answer: 'kilit · hedef · azimut · irtifa · menzil',
+          accept: ['kilit hedef azimut irtifa menzil'],
         },
         {
           text: 'derleme · bağlama · yükleme · çalıştırma · kesme',
           answer: 'kesme · çalıştırma · yükleme · bağlama · derleme',
+          accept: ['kesme çalıştırma yükleme bağlama derleme'],
         },
         {
           text: 'gereksinim · tasarım · üretim · doğrulama · kabul · teslim',
           answer: 'teslim · kabul · doğrulama · üretim · tasarım · gereksinim',
+          accept: ['teslim kabul doğrulama üretim tasarım gereksinim'],
         },
         {
           text: 'sensör · füzyon · karar · eyleyici · geri besleme · kayıt',
           answer: 'kayıt · geri besleme · eyleyici · karar · füzyon · sensör',
+          accept: ['kayıt geri besleme eyleyici karar füzyon sensör'],
         },
       ],
     },
@@ -391,13 +553,13 @@ export const EXERCISES: Exercise[] = [
       instruction: 'Diziyi devam ettirin. Süre dolunca cevap açılır, kendinizi dürüstçe puanlayın.',
       secondsPerPrompt: 40,
       prompts: [
-        { text: '2 · 6 · 12 · 20 · 30 · ?', answer: '42 (artış: 4, 6, 8, 10, 12)' },
-        { text: '1 · 1 · 2 · 3 · 5 · 8 · ?', answer: '13 (Fibonacci)' },
-        { text: '81 · 27 · 9 · 3 · ?', answer: "1 (her adımda 3'e bölünüyor)" },
-        { text: '3 · 4 · 6 · 9 · 13 · ?', answer: '18 (artış: 1, 2, 3, 4, 5)' },
-        { text: '2 · 3 · 5 · 7 · 11 · ?', answer: '13 (asal sayılar)' },
-        { text: '1 · 4 · 9 · 16 · 25 · ?', answer: '36 (tam kareler)' },
-        { text: '64 · 32 · 48 · 24 · 36 · ?', answer: '18 (sırayla ÷2 ve ×1,5)' },
+        { text: '2 · 6 · 12 · 20 · 30 · ?', answer: '42 (artış: 4, 6, 8, 10, 12)', accept: ['42'] },
+        { text: '1 · 1 · 2 · 3 · 5 · 8 · ?', answer: '13 (Fibonacci)', accept: ['13'] },
+        { text: '81 · 27 · 9 · 3 · ?', answer: "1 (her adımda 3'e bölünüyor)", accept: ['1'] },
+        { text: '3 · 4 · 6 · 9 · 13 · ?', answer: '18 (artış: 1, 2, 3, 4, 5)', accept: ['18'] },
+        { text: '2 · 3 · 5 · 7 · 11 · ?', answer: '13 (asal sayılar)', accept: ['13'] },
+        { text: '1 · 4 · 9 · 16 · 25 · ?', answer: '36 (tam kareler)', accept: ['36'] },
+        { text: '64 · 32 · 48 · 24 · 36 · ?', answer: '18 (sırayla ÷2 ve ×1,5)', accept: ['18'] },
       ],
     },
   },
@@ -515,8 +677,11 @@ export const EXERCISES: Exercise[] = [
     id: 'derin-diyafram',
     categoryId: 'fizyolojik',
     title: 'Derin Diyafram Geliştirme',
+    // "Akciğer kapasitesini geliştiren" ifadesi 2026-09-19'da kaldırıldı:
+    // nefes egzersizi akciğer hacmini anlamlı biçimde artırmıyor
+    // (YAPILACAKLAR Bölüm 1 → "Ne yapar, ne yapmaz").
     description:
-      'Akciğer kapasitesini ve diyafram kullanımını geliştiren 4-7-8 nefes tekniği. Sesinizin mülakatta daha güçlü ve titremeden çıkmasını sağlar.',
+      'Diyafram kullanımını ve veriş kontrolünü geliştiren 4-7-8 nefes tekniği. Sesinizin mülakatta daha güçlü ve titremeden çıkmasını sağlar.',
     difficulty: 'orta',
     minutes: 5,
     categoryLabel: 'Nefes',
@@ -549,6 +714,67 @@ export const EXERCISES: Exercise[] = [
         { kind: 'hold', seconds: 5 },
         { kind: 'exhale', seconds: 5 },
         { kind: 'wait', seconds: 5 },
+      ],
+    },
+  },
+
+  // ——— Nefesi daha uzun tutabilmek ———
+  //
+  // Neden SABİT ve kısa tutmalar: nefesi uzun tutmayı sağlayan şey akciğer
+  // hacmi değil, büyük ölçüde CO₂ toleransı ve gevşeme. Maksimuma zorlayan
+  // "kendini sına" türü tasarım hem yanlış bilgi verir hem tehlikelidir
+  // (YAPILACAKLAR Bölüm 1 → "Yapmaz — akciğerini büyütmez").
+  //
+  // ⚠️ GÜVENLİK: `breath` motorunda ekranda yalnızca faz etiketi görünüyor,
+  // `instruction` alanı yok. Bu yüzden uyarılar `description` içinde — detay
+  // ekranı (ExerciseDetailScreen) başlamadan önce onu gösteriyor.
+  {
+    id: 'rahat-tutma-hazirlik',
+    categoryId: 'fizyolojik',
+    title: 'Rahat Tutma — Hazırlık',
+    description:
+      'Nefesi daha uzun tutabilmenin ilk basamağı: 6 saniyelik, zorlamasız tutmaların tekrarı. Amaç maksimuma dayanmak değil, tutma anında gevşek kalabilmek — süre asıl olarak böyle uzuyor. ⚠️ Oturarak ya da uzanarak yap; suda, araç kullanırken veya ayakta ASLA. Öncesinde hızlı derin nefesler alma (hiperventilasyon): bayılmaya yol açabilir. Rahatsızlık, baş dönmesi ya da karıncalanma başlarsa bırak ve normal nefesine dön. Kalp/solunum rahatsızlığın varsa veya hamileysen hekimine danışmadan yapma. Bu egzersiz akciğerini büyütmez.',
+    difficulty: 'kolay',
+    minutes: 3,
+    categoryLabel: 'Nefes',
+    benefits: [
+      'Tutma anındaki kasılmayı azaltır',
+      'Nefes ihtiyacı hissine alışmayı kolaylaştırır',
+      'Uzun verişle toparlanmayı öğretir',
+    ],
+    engine: {
+      kind: 'breath',
+      cycles: 8,
+      phases: [
+        { kind: 'inhale', seconds: 4 },
+        { kind: 'hold', seconds: 6 },
+        { kind: 'exhale', seconds: 8 },
+        { kind: 'wait', seconds: 2 },
+      ],
+    },
+  },
+  {
+    id: 'rahat-tutma-gelistirme',
+    categoryId: 'fizyolojik',
+    title: 'Rahat Tutma — Geliştirme',
+    description:
+      '12 saniyelik tutmaların tekrarı. Çalıştırdığı şey CO₂ toleransı: nefes ihtiyacı hissini erken panikle karşılamamak. Süreyi zorlayarak uzatmak bir başarı ölçüsü değildir; rahat kalabildiğin süre önemlidir. ⚠️ Oturarak ya da uzanarak yap; suda, araç kullanırken veya ayakta ASLA. Öncesinde hiperventilasyon yapma. Baş dönmesi, karıncalanma veya rahatsızlıkta bırak. Kalp/solunum rahatsızlığın varsa veya hamileysen hekimine danışmadan yapma. Bu egzersiz akciğerini büyütmez.',
+    difficulty: 'orta',
+    minutes: 4,
+    categoryLabel: 'Nefes',
+    benefits: [
+      'Nefes ihtiyacı hissine toleransı artırır',
+      'Tutarken omuz ve çeneyi gevşek tutmayı öğretir',
+      'Ölçümdeki "Nefes tutma" testine hazırlık olur',
+    ],
+    engine: {
+      kind: 'breath',
+      cycles: 8,
+      phases: [
+        { kind: 'inhale', seconds: 4 },
+        { kind: 'hold', seconds: 12 },
+        { kind: 'exhale', seconds: 8 },
+        { kind: 'wait', seconds: 4 },
       ],
     },
   },
