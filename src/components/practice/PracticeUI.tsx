@@ -1,5 +1,16 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView, ViewStyle, Modal, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  ViewStyle,
+  Modal,
+  StyleSheet,
+  Animated,
+  Easing,
+  useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Settings as SettingsIcon, X } from 'lucide-react-native';
 
@@ -76,6 +87,107 @@ export function ScreenShell({
   );
 }
 
+/**
+ * Alttan açılan panellerin ortak örtüsü ve açılış animasyonu.
+ *
+ * **Neden elle animasyon:** `Modal`'ın `animationType="slide"`'ı modalın
+ * *tamamını* kaydırıyor — yarı saydam siyah örtü de dahil. Sonuç, kararan
+ * zeminin aşağıdan yukarı süpürülmesi gibi görünüyordu (kullanıcı bildirdi,
+ * 2026-10-04). Doğru davranış: **örtü yerinde solar, yalnızca panel kayar.**
+ * O yüzden `animationType="none"` + iki ayrı animasyon: örtüde `opacity`,
+ * panelde `translateY`.
+ *
+ * Kapanış animasyonu görünebilsin diye modal, `visible` false olduktan sonra
+ * animasyon bitene kadar monte kalıyor (`mounted`).
+ *
+ * NativeWind sınıfları bilerek içteki düz `View`'de: animasyonu taşıyan
+ * `Animated.View` yalnızca stil alıyor, çünkü projede `react-native-css-interop`
+ * yamalı ve sarmalanmış bileşenlere `className` vermek gereksiz risk.
+ */
+export function SheetOverlay({
+  visible,
+  onClose,
+  children,
+  /** Panelin yükseklik kısıtı — `maxHeight` ya da sabit `height`. */
+  sheetStyle,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  sheetStyle?: ViewStyle;
+}) {
+  const t = useThemeTokens();
+  const { height } = useWindowDimensions();
+  const [mounted, setMounted] = React.useState(visible);
+  const progress = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+    Animated.timing(progress, {
+      toValue: 0,
+      duration: 180,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setMounted(false);
+    });
+  }, [visible, progress]);
+
+  if (!mounted) return null;
+
+  // Panel yüksekliği içeriğe göre değişiyor; ölçüp beklemek ilk karede sıçrama
+  // yaratacağı için ekran yüksekliği kadar ötelemek yeterli — her hâlükârda
+  // ekranın altında başlıyor.
+  const translateY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [height, 0],
+  });
+
+  return (
+    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      <View className="flex-1 justify-end">
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)', opacity: progress }]}
+        />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Paneli kapat"
+        />
+        {/* `sheetStyle` yüzde yükseklik taşıyabiliyor (`maxHeight: '88%'`), o
+            yüzden doğrudan bu düğümde duruyor: yüzde, üstteki tam ekran
+            kapsayıcıya göre çözülmek zorunda. Araya otomatik yükseklikli bir
+            sarmalayıcı girerse yüzde 0'a düşüyor ve panel görünmüyor. */}
+        <Animated.View
+          style={[
+            {
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              overflow: 'hidden',
+              backgroundColor: t.surfaceColor,
+            },
+            sheetStyle,
+            { transform: [{ translateY }] },
+          ]}
+        >
+          {children}
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
 /** Modül ekranlarının sağ üstündeki ayar düğmesi. */
 export function SettingsButton({ onPress, label = 'Modül ayarları' }: { onPress: () => void; label?: string }) {
   const t = useThemeTokens();
@@ -104,58 +216,45 @@ export function BottomSheet({
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Paneli kapat"
-        />
-        <View
-          className={`rounded-t-3xl overflow-hidden ${t.isLight ? 'bg-white' : 'bg-[#1c1c1f]'}`}
-          style={{ maxHeight: '88%' }}
-        >
-          <View
-            className={`flex-row items-center px-5 pt-5 pb-3 border-b ${
-              t.isLight ? 'border-slate-200' : 'border-[#2e2e33]'
-            }`}
-          >
-            <View className="flex-1 pr-3">
-              <Text className={`text-[17px] font-bold ${t.title}`} numberOfLines={1}>
-                {title}
-              </Text>
-              {subtitle ? (
-                <Text className={`text-[11px] mt-0.5 ${t.muted}`} numberOfLines={2}>
-                  {subtitle}
-                </Text>
-              ) : null}
-            </View>
-            <Pressable
-              onPress={onClose}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Kapat"
-              className={`w-9 h-9 rounded-full items-center justify-center ${
-                t.isLight ? 'bg-slate-100' : 'bg-slate-800'
-              }`}
-            >
-              <X size={18} color={t.iconColor} />
-            </Pressable>
-          </View>
-          <ScrollView
-            contentContainerStyle={{
-              paddingHorizontal: 20,
-              paddingTop: 4,
-              paddingBottom: Math.max(insets.bottom, 16) + 16,
-            }}
-            showsVerticalScrollIndicator
-          >
-            {children}
-          </ScrollView>
+    <SheetOverlay visible={visible} onClose={onClose} sheetStyle={{ maxHeight: '88%' }}>
+      <View
+        className={`flex-row items-center px-5 pt-5 pb-3 border-b ${
+          t.isLight ? 'border-slate-200' : 'border-[#2e2e33]'
+        }`}
+      >
+        <View className="flex-1 pr-3">
+          <Text className={`text-[17px] font-bold ${t.title}`} numberOfLines={1}>
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text className={`text-[11px] mt-0.5 ${t.muted}`} numberOfLines={2}>
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
+        <Pressable
+          onPress={onClose}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Kapat"
+          className={`w-9 h-9 rounded-full items-center justify-center ${
+            t.isLight ? 'bg-slate-100' : 'bg-slate-800'
+          }`}
+        >
+          <X size={18} color={t.iconColor} />
+        </Pressable>
       </View>
-    </Modal>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 4,
+          paddingBottom: Math.max(insets.bottom, 16) + 16,
+        }}
+        showsVerticalScrollIndicator
+      >
+        {children}
+      </ScrollView>
+    </SheetOverlay>
   );
 }
 

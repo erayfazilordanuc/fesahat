@@ -394,6 +394,42 @@ Uygulamada **"kapasite" geçmez.** Duruş egzersizleri duruşu **düzeltmez**, a
 
 ## 3. Kariyer & Mülakat
 
+### Hedef alan + Bugün'deki mülakat şeridi (2026-10-04)
+
+⏳ **Uygulandı** (kod tamam, `tsc` temiz; **cihazda doğrulanacak**).
+
+- Profil → Hedef ve tercihler'e **Hedef Alan** satırı eklendi; seçim aynı alt
+  sayfada çiplerle yapılıyor, seçili çipe tekrar dokunmak seçimi kaldırıyor.
+- `Profile` tipine `targetDepartment: DepartmentId | ''` alanı; `''` = seçilmedi.
+  Kaybolmuş departman kimliği hidrasyonda `''`'e düşürülüyor.
+- `careerContext()` hedef alanı da cümleye katıyor — yapay zekâ istemi artık
+  departmanı biliyor.
+- Yeni `pickDailyTechnical(department, date)` — hedef alanın günün teknik
+  sorusu, gün numarasına göre sabit.
+- Bugün sekmesinin en üstünde tek satırlık **mülakat şeridi**: sol günün genel
+  sorusu (kurum adıyla), sağ hedef alanın günün teknik sorusu. Alan seçilmemişse
+  sağ taraf "Alan seç" olup Profil'e götürüyor.
+- `DailyInterviewScreen` yeni `daily` route parametresini tanıyor: `type:
+  'teknik'` + `department` ile birlikte gelince soruyu rastgele değil günlük
+  deterministik seçiyor.
+
+⚠️ **Yol üstünde bulunan hata:** `pickForDay` salt'ı `salt * 7` olarak
+uyguluyor; 5 kurum varken `salt = 5` → `35 % 5 = 0`, yani teknik sorunun kurumu
+günün mülakatıyla **birebir aynı** düşüyordu. `salt = 2`'ye alındı (offset 4).
+Kurum listesi büyürse bu hesap yeniden yapılmalı — `questions.ts` içinde not var.
+
+- [ ] **Kalan:** oryantasyonda hedef alan adımı yok; yalnızca Profil'den seçiliyor.
+- [ ] **Kalan:** `CustomInterviewScreen.tsx:27` kendi geçici state'ini kullanıyor
+      (`useState<DepartmentId>('yazilim')`); varsayılanı `profile.targetDepartment` olmalı.
+- [ ] **Kalan:** şerit her zaman görünüyor; "kapatılabilir" ilkesi modüller için
+      yazılmıştı ve bu bir kısayol, ama istenirse Ayarlar'a şalter eklenebilir.
+
+**Cihazda doğrulanacak:** şerit tek satırda duruyor ve Bugün listesini
+uzatmıyor mu; iki taraf da doğru ekranı açıyor mu; teknik taraf hedef alanın
+sorusunu getiriyor ve aynı gün tekrar açınca **aynı** soru geliyor mu; iki
+tarafın kurumu farklı mı; alan seçilmemişken "Alan seç" Profil'e götürüyor mu;
+dar ekranda etiketler taşmıyor mu; iki temada da okunur mu.
+
 ### Mülakat ses kaydı (2026-09-20)
 
 ⏳ **Uygulandı:** Mülakat sırasında kaydedilen ses **kalıcı** saklanıyor ve Mülakat Geçmişi'nden dinlenebiliyor.
@@ -626,6 +662,15 @@ telefonda görülmedi. Build aldıktan sonra bakılacak.
 
 **Arayüz**
 
+- [ ] **Alttan açılan paneller (2026-10-04 düzeltmesi).** Kullanıcı bildirdi:
+      panel açılırken "bir opaklık aşağıdan yukarı geçiyor". Nedeni `Modal`'ın
+      `animationType="slide"`'ı modalın **tamamını**, yarı saydam siyah örtü
+      dahil kaydırmasıydı. Yeni `SheetOverlay` (`PracticeUI.tsx`): örtü yerinde
+      soluyor (`opacity`), yalnızca panel kayıyor (`translateY`). Doğrulanacak:
+      Profil → Günlük Hedef / Odak Alanları / Hedef Alan, Profil → ikon seçici,
+      modül ayar panelleri (`ModuleSettingsSheet`) ve Hatırlatıcılar;
+      **açılışta** süpürme kalmadı mı, **kapanışta** panel aşağı kayıp örtü
+      soluyor mu, ikon seçici paneli (sabit %82 yükseklik) tam boyda açılıyor mu.
 - [ ] Ayarlar'daki anahtarlar: tutamak iki uçta eşit boşlukta mı, açıp kapatırken takılma var mı (özellikle Android).
 - [ ] Belagat'ta "Günün Sanatı" sekmesi taşmıyor mu; diğer dört sekmeli ekranlarda etiketler okunur mu.
 - [ ] Sekme ikonları: Diyafram (Pratik/Ölçüm/Rehber), Zihin (Bilişsel/Fizyolojik), Konuşma (Alıştırma/Fesahat), Günün Metni (Okuma/Hız & Tahlil) — dar ekranda etiketler taşmıyor mu.

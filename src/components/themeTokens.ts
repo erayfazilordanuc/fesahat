@@ -29,6 +29,10 @@ export function useThemeTokens() {
       accentBg: isLight ? 'bg-blue-600' : 'bg-blue-500',
       dividerColor: isLight ? 'border-slate-200' : 'border-[#2e2e33]',
       iconColor: isLight ? '#334155' : '#a1a1aa',
+      // `cardBg`'nin ham karşılığı. Sınıf veremediğimiz yerler için:
+      // animasyonlu bileşenlerde (`Animated.View`) className kullanılmıyor,
+      // çünkü projede `react-native-css-interop` yamalı.
+      surfaceColor: isLight ? '#ffffff' : '#1c1c1f',
     }),
     [isLight],
   );

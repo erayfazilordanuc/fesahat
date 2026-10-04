@@ -1,14 +1,17 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { Sunrise, BrainCircuit, TrendingUp, User } from 'lucide-react-native';
+import { Sunrise, BrainCircuit, TrendingUp, User, Mic, Cpu, ChevronRight } from 'lucide-react-native';
 
 import { AppScreen, TabHeader, Surface, toneColor, toneSoft, toneText } from '../components/AppUI';
 import { useThemeTokens } from '../components/practice/PracticeUI';
 import { DailyPracticeCard, DailyFaithCard } from '../components/practice/DailyPracticeCard';
 import { DailyWordCard } from '../components/practice/DailyWordCard';
 import { HabitCard } from '../components/practice/HabitCard';
-import { firstName, useProfile } from '../utils/profile';
+import { firstName, targetDepartmentLabel, useProfile } from '../utils/profile';
 import { useOnboarding, dismissTour } from '../utils/onboarding';
+import { getCompany } from '../data/companies';
+import { pickDailyInterview, pickDailyTechnical } from '../data/questions';
+import { useDayKey } from '../utils/today';
 
 // Bugün sekmesi — uygulamanın giriş ekranı.
 //
@@ -19,6 +22,11 @@ import { useOnboarding, dismissTour } from '../utils/onboarding';
 // Başla" idi; günlük pratik listesi en alttaydı. Uygulama mülakat uygulaması
 // olmaktan çıkınca sıralama tersine döndü — mülakat artık Gelişim sekmesindeki
 // bir sütun (YAPILACAKLAR Bölüm 0).
+//
+// 2026-10-04: mülakat en üste **şerit** olarak geri geldi (`DailyInterviewStrip`)
+// ama kart olarak değil, tek satır olarak — ekranı aşağı doğru uzatmaması şartı
+// vardı. Kurgu ve geçmiş hâlâ Gelişim → Kariyer & Mülakat'ta; buradaki yalnızca
+// günün genel sorusu ve hedef alanın günün teknik sorusu için kısayol.
 
 export default function TodayScreen({ navigation }: any) {
   const t = useThemeTokens();
@@ -36,6 +44,9 @@ export default function TodayScreen({ navigation }: any) {
         />
       }
     >
+      {/* Günün mülakatı + günün teknik sorusu — tek satırlık şerit, en üstte. */}
+      <DailyInterviewStrip navigation={navigation} />
+
       {/* Hızlı tur — yalnızca oryantasyon bittiyse ve kart kapatılmadıysa görünür. */}
       {completed && !tourDismissed ? <QuickTourCard /> : null}
 
@@ -56,6 +67,102 @@ export default function TodayScreen({ navigation }: any) {
           hep ekranda. Bugün sekmesi tek soruya odaklı kalsın — "bugün ne
           yapmalıyım". */}
     </AppScreen>
+  );
+}
+
+/**
+ * Günün mülakatı ve günün teknik sorusu — Bugün sekmesinin en üstündeki şerit.
+ *
+ * Neden kart değil şerit: mülakat 2026-09-18'de bu ekrandan çıkarılmıştı çünkü
+ * kart olarak en büyük öğeydi ve Bugün'ü "günün işi" ekranı olmaktan çıkarıyordu.
+ * Geri gelirken **tek satır** olarak geldi — iki dokunma hedefi yan yana, ekranı
+ * aşağı doğru uzatmıyor. Asıl mülakat kurgusu (kurum/tür seçimi, geçmiş) hâlâ
+ * Gelişim → Kariyer & Mülakat'ta; burası yalnızca kısayol.
+ *
+ * Sol taraf günün genel sorusu (`pickDailyInterview`), sağ taraf hedef alanın
+ * günün teknik sorusu (`pickDailyTechnical`). Hedef alan seçilmemişse sağ taraf
+ * "Alan seç" olup Profil'e götürüyor — soru havuzu departmansız seçilemiyor.
+ */
+function DailyInterviewStrip({ navigation }: any) {
+  const t = useThemeTokens();
+  const profile = useProfile();
+  // Gün dönümünde (uygulama açıkken gece yarısı geçerse) soru tazelensin.
+  const day = useDayKey();
+
+  const daily = React.useMemo(() => pickDailyInterview(), [day]);
+  const company = getCompany(daily.companyId);
+  const department = targetDepartmentLabel(profile);
+  const technicalCompany = React.useMemo(
+    () =>
+      profile.targetDepartment
+        ? getCompany(pickDailyTechnical(profile.targetDepartment).companyId)
+        : null,
+    [day, profile.targetDepartment],
+  );
+
+  return (
+    <View
+      className={`flex-row items-stretch rounded-2xl border overflow-hidden mt-1 ${t.cardBg} ${t.cardBorder}`}
+    >
+      <Pressable
+        onPress={() => navigation.navigate('DailyInterview')}
+        accessibilityRole="button"
+        accessibilityLabel={`Günün mülakatı, ${company.name}, genel soru. Başlamak için dokun.`}
+        className="flex-1 flex-row items-center px-3 py-2.5"
+      >
+        <View
+          className={`w-8 h-8 rounded-lg items-center justify-center mr-2.5 ${toneSoft('blue', t.isLight)}`}
+        >
+          <Mic size={15} color={toneColor('blue', t.isLight)} />
+        </View>
+        <View className="flex-1">
+          <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
+            Günün mülakatı
+          </Text>
+          <Text className={`text-[11px] ${t.muted}`} numberOfLines={1}>
+            {company.name} · genel
+          </Text>
+        </View>
+      </Pressable>
+
+      <Pressable
+        onPress={() =>
+          profile.targetDepartment
+            ? navigation.navigate('DailyInterview', {
+                daily: true,
+                type: 'teknik',
+                department: profile.targetDepartment,
+              })
+            : navigation.navigate('Profil')
+        }
+        accessibilityRole="button"
+        accessibilityLabel={
+          department
+            ? `Günün teknik sorusu, ${department}${technicalCompany ? `, ${technicalCompany.name}` : ''}. Başlamak için dokun.`
+            : 'Hedef alan seçilmedi. Profilde seçmek için dokun.'
+        }
+        className={`flex-row items-center px-3 py-2.5 border-l ${t.dividerColor}`}
+        style={{ maxWidth: '44%' }}
+      >
+        <View
+          className={`w-8 h-8 rounded-lg items-center justify-center mr-2 ${toneSoft(
+            department ? 'violet' : 'slate',
+            t.isLight,
+          )}`}
+        >
+          <Cpu size={15} color={toneColor(department ? 'violet' : 'slate', t.isLight)} />
+        </View>
+        <View className="flex-1">
+          <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
+            {department ? 'Teknik' : 'Alan seç'}
+          </Text>
+          <Text className={`text-[11px] ${t.muted}`} numberOfLines={1}>
+            {department || 'Profil'}
+          </Text>
+        </View>
+        <ChevronRight size={14} color={t.iconColor} />
+      </Pressable>
+    </View>
   );
 }
 

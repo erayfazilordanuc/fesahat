@@ -308,6 +308,28 @@ export function pickDailyInterview(date: Date = new Date()): {
   return { companyId: company.id, question: pickForDay(pool, date, 3) };
 }
 
+/**
+ * Günün teknik sorusu: hedef alana göre, gün numarasına göre sabit.
+ *
+ * `pickDailyInterview` genel havuzdan seçiyor; bu ikincisi seçilen departmanın
+ * teknik havuzundan. İkisi aynı gün yan yana duruyor (Bugün sekmesindeki
+ * mülakat şeridi), o yüzden kurum ve soru için ayrı `salt` değerleri kullanılıyor
+ * — yoksa ikisi aynı kuruma düşüp aynı gün tekrar hissi veriyor.
+ *
+ * ⚠️ Kurum salt'ı seçerken dikkat: `pickForDay` salt'ı `salt * 7` olarak
+ * uyguluyor, yani 5 kurumla `salt = 5` → `35 % 5 = 0` ve sonuç günün
+ * mülakatıyla (salt 0) **birebir aynı** kuruma düşüyor. `salt = 2` offset'i 4
+ * veriyor; kurum listesi büyürse bu hesap yeniden yapılmalı.
+ */
+export function pickDailyTechnical(
+  department: DepartmentId,
+  date: Date = new Date(),
+): { companyId: CompanyId; question: Question } {
+  const company = pickForDay(COMPANIES, date, 2);
+  const pool = filterQuestions({ companyId: company.id, type: 'teknik', department });
+  return { companyId: company.id, question: pickForDay(pool, date, 11) };
+}
+
 export function getDepartment(id: DepartmentId): Department {
   const department = DEPARTMENTS.find((d) => d.id === id);
   if (!department) throw new Error(`Bilinmeyen departman: ${id}`);

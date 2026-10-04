@@ -18,6 +18,7 @@ import { useThemeTokens } from '../components/practice/PracticeUI';
 import { getCompany, companyColor, type CompanyId } from '../data/companies';
 import {
   pickDailyInterview,
+  pickDailyTechnical,
   pickRandomQuestion,
   type DepartmentId,
   type InterviewType,
@@ -53,6 +54,12 @@ type RouteParams = {
   type?: InterviewType;
   department?: DepartmentId;
   mode?: InterviewMode;
+  /**
+   * Bugün sekmesindeki şeritten gelen "günün teknik sorusu" için.
+   * `type: 'teknik'` + `department` ile birlikte gelir ve soruyu rastgele değil
+   * gün numarasına göre seçtirir — aynı gün tekrar açılınca aynı soru gelir.
+   */
+  daily?: boolean;
 };
 
 export default function DailyInterviewScreen({ navigation, route }: any) {
@@ -62,6 +69,12 @@ export default function DailyInterviewScreen({ navigation, route }: any) {
 
   // Mülakat kurgusu bir kez hesaplanır; yeniden render sorunun değişmesine yol açmamalı.
   const setup = React.useMemo(() => {
+    // Günün teknik sorusu: kurum ve soru gün numarasına bağlı, kurum parametresi
+    // gerekmiyor. Bu dal, aşağıdaki rastgele seçimden önce gelmeli.
+    if (params.daily && params.type === 'teknik' && params.department) {
+      const technical = pickDailyTechnical(params.department);
+      return { companyId: technical.companyId, question: technical.question, isDaily: true };
+    }
     if (params.companyId && params.type) {
       const question = pickRandomQuestion({
         companyId: params.companyId,
@@ -72,7 +85,7 @@ export default function DailyInterviewScreen({ navigation, route }: any) {
     }
     const daily = pickDailyInterview();
     return { companyId: daily.companyId, question: daily.question, isDaily: true };
-  }, [params.companyId, params.type, params.department]);
+  }, [params.companyId, params.type, params.department, params.daily]);
 
   const company = getCompany(setup.companyId);
   const mode: InterviewMode = params.mode ?? 'camera';
