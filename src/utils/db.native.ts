@@ -21,8 +21,8 @@ import { planHistoryRows } from './historyRowsPlan';
 // `require('expo-sqlite')` ile, `try/catch` içinde yüklenir; başarısız olursa
 // bir kez uyarıp dosya depolamasına sessizce düşülür.
 
-const STORE_DIR = 'savunma-store';
-const DB_NAME = 'terakki.db';
+const STORE_DIR = 'fesahat-store';
+const DB_NAME = 'fesahat.db';
 const SCHEMA_VERSION = 3;
 const JSON_IMPORT_META_KEY = 'json_import_v1';
 const HISTORY_MIGRATION_META_KEY = 'history_tables_v1';
@@ -46,20 +46,12 @@ const MIGRATIONS: Migration[] = [
       );
     `);
   },
-  // v1 -> v2: mülakat oturumları ve egzersiz kayıtları için kendi tabloları
-  // (YAPILACAKLAR Bölüm 0.4, aşama 2). `data` sütunu kaydın tamamını JSON
-  // olarak taşır; diğer sütunlar yalnızca (şu an var olmayan) filtre/istatistik
+  // v1 -> v2: egzersiz kayıtları için kendi tablosu (YAPILACAKLAR Bölüm 0.4,
+  // aşama 2). `data` sütunu kaydın tamamını JSON olarak taşır; diğer sütunlar yalnızca (şu an var olmayan) filtre/istatistik
   // sorguları için — bugün yalnızca `SELECT data ... ORDER BY created_at, rowid`
   // ile okunuyorlar.
   (database) => {
     database.execSync(`
-      CREATE TABLE IF NOT EXISTS interview_sessions (
-        id TEXT PRIMARY KEY NOT NULL,
-        created_at TEXT NOT NULL,
-        rating REAL,
-        data TEXT NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_interview_sessions_created ON interview_sessions(created_at);
       CREATE TABLE IF NOT EXISTS exercise_logs (
         id TEXT PRIMARY KEY NOT NULL,
         created_at TEXT NOT NULL,
@@ -127,7 +119,7 @@ function runMigrations(database: SQLiteDatabase): void {
   });
 }
 
-/** `savunma-store/` altındaki tüm `*.json` dosyalarını okur. Sabit anahtar listesi yok — bilinmeyen dosyalar da dahil. */
+/** `fesahat-store/` (`STORE_DIR`) altındaki tüm `*.json` dosyalarını okur. Sabit anahtar listesi yok — bilinmeyen dosyalar da dahil. */
 function readStoreFiles(): { fileName: string; raw: string }[] {
   const dir = new Directory(Paths.document, STORE_DIR);
   if (!dir.exists) return [];
@@ -188,7 +180,6 @@ function runOneTimeImport(database: SQLiteDatabase): void {
   // NOT: kaynak .json dosyaları SİLİNMİYOR — aktarımdan sonra da yedek olarak kalırlar.
 }
 
-type LegacyInterviewSession = { id: string; timestamp: string; analysis?: { rating?: unknown } };
 type LegacyExerciseLog = {
   id: string;
   timestamp: string;
@@ -197,12 +188,6 @@ type LegacyExerciseLog = {
   durationSeconds?: unknown;
 };
 
-function isLegacyInterviewSession(v: unknown): v is LegacyInterviewSession {
-  if (!v || typeof v !== 'object') return false;
-  const o = v as Record<string, unknown>;
-  return typeof o.id === 'string' && typeof o.timestamp === 'string';
-}
-
 function isLegacyExerciseLog(v: unknown): v is LegacyExerciseLog {
   if (!v || typeof v !== 'object') return false;
   const o = v as Record<string, unknown>;
@@ -210,9 +195,9 @@ function isLegacyExerciseLog(v: unknown): v is LegacyExerciseLog {
 }
 
 /**
- * Bu oturumda geçmiş tabloları (`interview_sessions`, `exercise_logs`,
- * `practice_responses`) okuma için hazır mı. Üçü aynı bayrağı paylaşıyor:
- * hepsi aynı göç zincirinde yaratılıyor, biri yoksa diğerleri de yok.
+ * Bu oturumda geçmiş tabloları (`exercise_logs`, `practice_responses`) okuma
+ * için hazır mı. İkisi aynı bayrağı paylaşıyor: hepsi aynı göç zincirinde
+ * yaratılıyor, biri yoksa diğeri de yok.
  */
 let historyReady = false;
 
@@ -222,14 +207,15 @@ export function historyTablesReady(): boolean {
 }
 
 /**
- * `kv` içindeki `interview-history` / `exercise-history` bloklarını
- * `interview_sessions` / `exercise_logs` tablolarına taşır — YAPILACAKLAR
- * Bölüm 0.4, aşama 2. Aşama 1'in JSON→kv aktarımından AYRI ve bölünmez bir
+ * `kv` içindeki `exercise-history` bloğunu `exercise_logs` tablosuna taşır —
+ * YAPILACAKLAR Bölüm 0.4, aşama 2. (Fesahat temiz kurulum: yeni cihazda kv
+ * bloğu yoktur ve göç boş geçer; yalnızca `historyReady` bayrağını ve meta
+ * satırını kurduğu için duruyor.) Aşama 1'in JSON→kv aktarımından AYRI ve bölünmez bir
  * göç: kendi meta anahtarı (`HISTORY_MIGRATION_META_KEY`) var, kendi
  * transaction'ında çalışır, `ensureDb()`'de aşama 1'den SONRA çağrılır ve
  * çağıranı (ensureDb) ayrı bir try/catch ile sarar — bu göç başarısız olsa
  * bile `kv` (aşama 1) tablosu ve `db` bağlantısı geçerliliğini korur; yalnızca
- * `historyReady` false kalır ve depolar (interviewHistory/exerciseHistory)
+ * `historyReady` false kalır ve depolar (exerciseHistory vb.)
  * `kv` yoluna düşer. Meta satırı zaten varsa (göç daha önce tamamlanmış)
  * yeniden çalışmaz.
  */
@@ -242,19 +228,10 @@ function runHistoryMigration(database: SQLiteDatabase): void {
     return;
   }
 
-  const interviewRow = database.getFirstSync<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
-    'interview-history',
-  ]);
   const exerciseRow = database.getFirstSync<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
     'exercise-history',
   ]);
 
-  let legacyInterviews: unknown = null;
-  try {
-    legacyInterviews = interviewRow ? JSON.parse(interviewRow.value) : null;
-  } catch (e) {
-    console.warn('[db] "interview-history" JSON ayrıştırılamadı, göç bu alan için boş sayılıyor.', e);
-  }
   let legacyExercises: unknown = null;
   try {
     legacyExercises = exerciseRow ? JSON.parse(exerciseRow.value) : null;
@@ -262,32 +239,16 @@ function runHistoryMigration(database: SQLiteDatabase): void {
     console.warn('[db] "exercise-history" JSON ayrıştırılamadı, göç bu alan için boş sayılıyor.', e);
   }
 
-  const interviewPlan = planHistoryRows(
-    legacyInterviews,
-    'sessions',
-    isLegacyInterviewSession,
-    (s) => s.id,
-  );
   const exercisePlan = planHistoryRows(legacyExercises, 'logs', isLegacyExerciseLog, (l) => l.id);
 
   const summary = {
     migratedAt: new Date().toISOString(),
-    interviewSessions: interviewPlan.rows.length,
-    interviewSkippedInvalid: interviewPlan.skippedInvalid,
-    interviewSkippedDuplicate: interviewPlan.skippedDuplicate,
     exerciseLogs: exercisePlan.rows.length,
     exerciseSkippedInvalid: exercisePlan.skippedInvalid,
     exerciseSkippedDuplicate: exercisePlan.skippedDuplicate,
   };
 
   database.withTransactionSync(() => {
-    for (const session of interviewPlan.rows) {
-      const rating = typeof session.analysis?.rating === 'number' ? session.analysis.rating : null;
-      database.runSync(
-        'INSERT OR REPLACE INTO interview_sessions (id, created_at, rating, data) VALUES (?, ?, ?, ?)',
-        [session.id, session.timestamp, rating, JSON.stringify(session)],
-      );
-    }
     for (const log of exercisePlan.rows) {
       const category = typeof log.categoryLabel === 'string' ? log.categoryLabel : null;
       const effort = typeof log.effort === 'number' ? log.effort : null;
@@ -304,7 +265,7 @@ function runHistoryMigration(database: SQLiteDatabase): void {
   });
 
   historyReady = true;
-  // NOT: kaynak kv kayıtları (interview-history, exercise-history) SİLİNMİYOR — yedek olarak kalırlar.
+  // NOT: kaynak kv kayıtları (exercise-history) SİLİNMİYOR — yedek olarak kalırlar.
 }
 
 /** Veritabanını açar, göçleri ve tek seferlik aktarımları uygular. Bu oturumda bir kez çalışır. */
@@ -334,7 +295,7 @@ function ensureDb(): SQLiteDatabase | null {
     runHistoryMigration(db);
   } catch (e) {
     console.warn(
-      '[db] Geçmiş tabloları göçü başarısız, interview/exercise geçmişi kv üzerinden çalışmaya devam ediyor.',
+      '[db] Geçmiş tabloları göçü başarısız, egzersiz geçmişi kv üzerinden çalışmaya devam ediyor.',
       e,
     );
     historyReady = false;
@@ -401,7 +362,7 @@ export function storageBackend(): 'sqlite' | 'file' | 'web' {
   return ensureDb() !== null ? 'sqlite' : 'file';
 }
 
-// --- Genel tablo erişimi (aşama 2: interview_sessions / exercise_logs) -----
+// --- Genel tablo erişimi (aşama 2: exercise_logs / practice_responses) -----
 //
 // `collectionStore.ts` bu üç genel işlevle konuşur; tablo/sütun adları hep
 // çağıran taraftaki sabitlerden gelir (bkz. collectionStore.ts), burada yalnız

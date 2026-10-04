@@ -1,11 +1,12 @@
 import { Platform } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
 
-// Mülakat ses kayıtlarının kalıcı deposu (kullanıcı kararı 2026-09-20).
+// Ses kayıtlarının kalıcı deposu.
 //
-// Eskiden ses yalnızca `captureBuffer`'da, analiz süresince bellekte duruyordu
-// ve analiz biter bitmez siliniyordu. Artık kayıt cihazda kalıyor: Mülakat
-// Geçmişi'nden dinlenebiliyor.
+// Fesahat'ta kullanım yeri: diksiyon alıştırmalarında "kayıttan dinleme" ve
+// yapay zekâ ses analizi (dolgu kelime, tempo, duraklama) — ikisi de
+// YAPILACAKLAR'da açık iş. Katman Terakki'den hazır geldi ve **kasıtlı olarak
+// duruyor**; ses mülakat için değil, konuşma ayağı için kullanılacak.
 //
 // NEDEN DOSYA ADI SAKLANIYOR, TAM YOL DEĞİL: iOS'ta uygulamanın veri klasörü
 // yolu her güncellemede değişebiliyor. Kayda tam URI yazılsaydı güncellemeden
@@ -17,7 +18,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 // tüm bloğu yeniden serileştirirdi. Dosyalar kendi klasöründe ham m4a olarak
 // duruyor.
 
-const AUDIO_DIR = 'terakki-audio';
+const AUDIO_DIR = 'fesahat-audio';
 
 // Web hedefinde dosya sistemi yok; bütün fonksiyonlar sessizce boş dönüyor.
 const isWeb = Platform.OS === 'web';
@@ -34,7 +35,7 @@ function audioDirectory(): Directory {
  * Kayıt dosyasını (expo-av'ın geçici önbellek yoluna yazdığı m4a) kalıcı
  * klasöre taşır. Dönen değer geçmiş kaydına yazılacak **dosya adı**.
  *
- * Taşıma başarısız olursa `undefined` döner ve mülakat kaydı sessiz kalır —
+ * Taşıma başarısız olursa `undefined` döner ve kayıt sessiz kalır —
  * ses yüzünden oturumun tamamı kaybolmaz.
  */
 export function keepAudio(sessionId: string, sourceUri: string): string | undefined {

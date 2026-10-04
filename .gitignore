@@ -6,7 +6,7 @@ build/
 dist/
 coverage/
 android/
-ios/build/
+ios/
 *.apk
 *.aab
 *.ipa
@@ -35,6 +35,3 @@ yarn-error.*
 # Isletim sistemi
 .DS_Store
 Thumbs.db
-notes
-YAPILACAKLAR_FESAHAT.md
-YAPILACAKLAR_İRTİFA.md

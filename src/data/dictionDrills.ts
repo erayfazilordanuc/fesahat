@@ -232,7 +232,7 @@ const PROSODY: DictionDrill[] = [
     ],
     secondsPerItem: 20,
     selfCheck:
-      'Dört okuyuşu kaydedip dinleyin. Farkı duyamıyorsanız mülakatta da tek düze konuşuyorsunuz.',
+      'Dört okuyuşu kaydedip dinleyin. Farkı duyamıyorsanız günlük konuşmanız da tek düze demektir.',
   },
   {
     id: 'vurgu-pause',
@@ -240,7 +240,7 @@ const PROSODY: DictionDrill[] = [
     title: 'Duraklama (Pause) Yerleştirme',
     focus: 'Sessizliği araç olarak kullanmak',
     instruction:
-      '| işaretinde bir tam saniye durun. Duraklamayı doldurma dürtüsüne direnin — bu mülakatın en kritik becerisi.',
+      '| işaretinde bir tam saniye durun. Duraklamayı doldurma dürtüsüne direnin — hitabetin en kritik becerilerinden biri.',
     items: [
       {
         text: 'Sorunuzu doğru anladıysam | sistemin ısıl bütçesini nasıl kapattığımızı soruyorsunuz.',
@@ -328,7 +328,7 @@ const FILLER_HUNT: DictionDrill[] = [
     ],
     secondsPerItem: 60,
     selfCheck:
-      'Kaydı dinleyip dolgu sayısını not edin. Uygulamanın mülakat analizindeki "dolgu kelime" puanı bu sayıyla birebir ilerler.',
+      'Kaydı dinleyip dolgu sayısını not edin. Dolgu kelime ölçümün bu sayıyla birebir ilerler.',
   },
 ];
 

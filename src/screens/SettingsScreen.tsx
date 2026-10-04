@@ -72,7 +72,7 @@ export default function SettingsScreen({ navigation }: any) {
         permission === 'unsupported'
           ? 'Bildirimler simülatör/emülatörde çalışmaz. Gerçek bir cihazda deneyin.'
           : Platform.OS === 'ios'
-            ? 'Ayarlar → Bildirimler üzerinden Terakki için bildirimlere izin verin.'
+            ? 'Ayarlar → Bildirimler üzerinden Fesahat için bildirimlere izin verin.'
             : 'Uygulama bilgileri → Bildirimler üzerinden izin verin.',
       );
       return;
@@ -91,9 +91,7 @@ export default function SettingsScreen({ navigation }: any) {
   return (
     <AppScreen header={<AppHeader title="Ayarlar" onBack={() => navigation.goBack()} />}>
       {/* ——— Yapay zekâ ———
-          Eskiden burada doğrudan "Backend API Adresi" alanları duruyordu ve
-          yapay zekâ yalnızca kendi sunucusunu çalıştıranlarda açılıyordu.
-          Kurulum artık kendi ekranında (KARARLAR → BYOK); burası yalnızca
+          Kurulum kendi ekranında (KARARLAR → BYOK); burası yalnızca
           durumu gösterip oraya götürüyor. */}
       <SectionLabel>Yapay Zekâ</SectionLabel>
       <Surface>
@@ -232,11 +230,11 @@ export default function SettingsScreen({ navigation }: any) {
           />
         </View>
 
-        {/* Hatırlatıcılar ve alarmlar */}
+        {/* Hatırlatıcılar */}
         <Pressable
           onPress={() => navigation.navigate('Reminders')}
           accessibilityRole="button"
-          accessibilityLabel="Hatırlatıcılar ve alarmlar"
+          accessibilityLabel="Hatırlatıcılar"
           className={`flex-row items-center py-3 mt-3 border-t ${t.dividerColor}`}
         >
           <View
@@ -245,7 +243,7 @@ export default function SettingsScreen({ navigation }: any) {
             <AlarmClock size={17} color={toneColor('blue', t.isLight)} />
           </View>
           <View className="flex-1 pr-3">
-            <Text className={`text-[13px] font-bold ${t.title}`}>Hatırlatıcılar ve alarmlar</Text>
+            <Text className={`text-[13px] font-bold ${t.title}`}>Hatırlatıcılar</Text>
             <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
               Günlük pratik hatırlatmalarını tek yerden yönet.
             </Text>
@@ -281,16 +279,12 @@ export default function SettingsScreen({ navigation }: any) {
       {/* ——— Sistem bilgileri ——— */}
       <SectionLabel>Sistem Bilgileri</SectionLabel>
       <Surface>
-        <InfoRow label="Uygulama" value={Constants.expoConfig?.name ?? 'Terakki'} />
+        <InfoRow label="Uygulama" value={Constants.expoConfig?.name ?? 'Fesahat'} />
         <InfoRow label="Sürüm" value={Constants.expoConfig?.version ?? '1.0.0'} divider />
         <InfoRow label="Platform" value={`${Platform.OS} ${Platform.Version}`} divider />
         <InfoRow
           label="Yapay zekâ"
-          value={
-            apiKey
-              ? `Kendi anahtarın (${maskApiKey(apiKey)})`
-              : appSettings.apiBaseUrl || 'Kurulmadı'
-          }
+          value={apiKey ? `Açık (${maskApiKey(apiKey)})` : 'Kapalı'}
           divider
         />
         <InfoRow label="Depolama" value={STORAGE_BACKEND_LABEL[storageBackend()]} divider />

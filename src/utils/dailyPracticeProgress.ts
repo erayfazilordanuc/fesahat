@@ -15,7 +15,14 @@ import {
 // yerel `useState`'i vardı ve bir modül başka ekranda tamamlanınca ✓ ve seriler
 // uygulama yeniden başlayana kadar güncellenmiyordu.
 
-export type PracticeModule = 'diaphragm' | 'speech' | 'belagat' | 'dailyText' | 'lugat';
+export type PracticeModule =
+  | 'diaphragm'
+  | 'speech'
+  | 'belagat'
+  | 'dailyText'
+  | 'lugat'
+  | 'comprehension'
+  | 'communication';
 
 export type ModuleProgress = {
   /** En son tamamlandığı gün ("2026-07-30"). */
@@ -37,7 +44,7 @@ export type BelagatArtStat = {
 /**
  * Kasıtlı bir ölçümün tek sonucu.
  *
- * Uygulamanın diğer istatistikleri (mülakat puanı, egzersiz süresi) kullandıkça
+ * Uygulamanın diğer istatistikleri (egzersiz süresi) kullandıkça
  * kendiliğinden birikiyor. Testler farklı: kullanıcı "şimdi ölçüyorum" deyip
  * tekrarlıyor ve asıl değeri kendi geçmişiyle karşılaştırmasında.
  */
@@ -89,6 +96,8 @@ const EMPTY_PROGRESS: ProgressState = {
     belagat: emptyModule(),
     dailyText: emptyModule(),
     lugat: emptyModule(),
+    comprehension: emptyModule(),
+    communication: emptyModule(),
   },
   belagatArts: {},
   tests: {},

@@ -12,7 +12,6 @@ import {
   Flame,
   Wind,
   BookOpen,
-  Cpu,
   Bell,
   Sparkles,
   ShieldCheck,
@@ -42,12 +41,10 @@ import {
   PROFILE_ICON_GROUPS,
   profileIconComponent,
   saveProfile,
-  targetDepartmentLabel,
   useProfile,
   type Profile,
   type ProfileIconId,
 } from '../utils/profile';
-import { DEPARTMENTS } from '../data/questions';
 import { masteredArtCount, useDailyProgress } from '../utils/dailyPracticeProgress';
 import { useDailyPracticeSettings } from '../utils/dailyPracticeSettings';
 import { useAiAvailable } from '../utils/aiAvailability';
@@ -132,8 +129,6 @@ export default function ProfileScreen({ navigation }: any) {
     onboarding.goals.length > 0
       ? onboarding.goals.map((g) => GOAL_META[g].title).join(' · ')
       : 'Seçilmedi';
-
-  const targetDepartment = targetDepartmentLabel(profile);
 
   const toggleGoal = (goal: OnboardingGoal) => {
     const { goals } = onboarding;
@@ -243,29 +238,6 @@ export default function ProfileScreen({ navigation }: any) {
           divider
         />
 
-        {/* Hedef alan — Bugün sekmesindeki mülakat şeridindeki "teknik" tarafını
-            besliyor; seçilmezse orada "Alan seç" çıkıp buraya getiriyor. */}
-        <PrefRow
-          icon={<Cpu size={16} color={toneColor('blue', t.isLight)} />}
-          label="Hedef Alan"
-          right={
-            targetDepartment ? (
-              <Text
-                className={`text-[11px] text-right ${t.muted}`}
-                style={{ flexShrink: 1 }}
-                numberOfLines={1}
-              >
-                {targetDepartment}
-              </Text>
-            ) : (
-              <Badge label="Seçilmedi" tone="slate" />
-            )
-          }
-          onPress={() => setPrefsOpen(true)}
-          accessibilityLabel={`Hedef alan, ${targetDepartment || 'seçilmedi'}. Değiştirmek için aç.`}
-          divider
-        />
-
         <PrefRow
           icon={<Bell size={16} color={toneColor('blue', t.isLight)} />}
           label="Hatırlatıcılar"
@@ -341,31 +313,6 @@ export default function ProfileScreen({ navigation }: any) {
             En fazla 3 hedef seçebilirsin.
           </Text>
         ) : null}
-
-        <SectionTitle>HEDEF ALAN</SectionTitle>
-        <View className="flex-row flex-wrap">
-          {DEPARTMENTS.map((department) => {
-            const selected = profile.targetDepartment === department.id;
-            return (
-              <Chip
-                key={department.id}
-                label={department.label}
-                selected={selected}
-                tone="blue"
-                // Seçili çipe tekrar dokunmak seçimi kaldırıyor: ayrı bir
-                // "seçimi temizle" düğmesi koymaya değmeyecek kadar küçük bir iş.
-                onPress={() =>
-                  saveProfile({ targetDepartment: selected ? '' : department.id })
-                }
-              />
-            );
-          })}
-        </View>
-        <Text className={`text-[11px] leading-4 mt-1 ${t.muted}`}>
-          {profile.targetDepartment
-            ? 'Bugün sekmesindeki günün teknik sorusu bu alandan seçilir; mülakatta da varsayılan alan olur.'
-            : 'Seçersen Bugün sekmesinde günün teknik sorusu da çıkar. Seçili alana tekrar dokunarak kaldırabilirsin.'}
-        </Text>
       </BottomSheet>
 
       {/* Kazanımlar ve Rozetler */}
@@ -395,7 +342,7 @@ export default function ProfileScreen({ navigation }: any) {
       </View>
 
       <Text className={`text-[11px] leading-5 mt-5 text-center ${t.muted}`}>
-        Terakki v1.0.0 · Serilerini ve ölçümlerini{' '}
+        Fesahat v1.0.0 · Serilerini ve ölçümlerini{' '}
         <Text className={toneText('blue', t.isLight)}>İlerleme</Text> sekmesinde görebilirsin.
       </Text>
     </AppScreen>
@@ -526,10 +473,10 @@ function ProfileEditor({
         autoCapitalize="words"
       />
       <TextField
-        label="Kariyer Hedefi"
+        label="Unvan / Rol"
         value={draft.role}
         onChangeText={(value) => set('role', value)}
-        placeholder="Örn. Ürün Yöneticisi"
+        placeholder="Örn. Öğretmen"
       />
 
       <View className="flex-row gap-3">

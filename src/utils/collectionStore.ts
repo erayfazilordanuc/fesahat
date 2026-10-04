@@ -6,26 +6,26 @@ import { dbAll, dbRun, dbTransaction, historyTablesReady } from './db';
 
 // Genel "koleksiyon" deposu — YAPILACAKLAR Bölüm 0.4, aşama 2.
 //
-// `interviewHistory.ts` / `exerciseHistory.ts` bu fabrikayla kuruluyor.
+// `exerciseHistory.ts` / `responseHistory.ts` bu fabrikayla kuruluyor.
 // Kalıcılık iki yoldan biri: `historyTablesReady()` true ise kendi SQLite
-// tablosu (`db.native.ts`'teki `interview_sessions` / `exercise_logs`),
+// tablosu (`db.native.ts`'teki `exercise_logs` / `practice_responses`),
 // değilse bugünkü gibi tek bir `kv`/dosya anahtarı altında JSON blok
 // (`storage.ts` → `readJson`/`writeJson`, aşama 1'in dosya/kv yedek yolu).
 // Hangi yol kullanıldığı depo kurulurken (modül import edilirken) bir kez
 // belirlenir ve depo ömrü boyunca sabit kalır.
 
 export type CollectionStoreConfig<T> = {
-  /** kv/dosya yedek yolundaki anahtar, ör. 'interview-history'. */
+  /** kv/dosya yedek yolundaki anahtar, ör. 'exercise-history'. */
   legacyKey: string;
-  /** O anahtarın altındaki dizi alanı, ör. 'sessions'. */
+  /** O anahtarın altındaki dizi alanı, ör. 'logs'. */
   legacyField: string;
-  /** SQLite tablo adı, ör. 'interview_sessions' — sabit, kullanıcı girdisi değil. */
+  /** SQLite tablo adı, ör. 'exercise_logs' — sabit, kullanıcı girdisi değil. */
   table: string;
   isValid: (v: unknown) => v is T;
   idOf: (item: T) => string;
   /** Tablodaki `created_at` sütunu için — kaydın ISO zaman damgası. */
   createdAt: (item: T) => string;
-  /** Tablodaki ek sütunlar (id/created_at/data dışında), ör. `{ rating }`. */
+  /** Tablodaki ek sütunlar (id/created_at/data dışında), ör. `{ module }`. */
   columns: (item: T) => Record<string, string | number | null>;
 };
 
@@ -65,7 +65,7 @@ function loadFromLegacy<T>(config: CollectionStoreConfig<T>): T[] {
 /**
  * Upsert. `INSERT OR REPLACE` kullanılmıyor: REPLACE satırı silip yeniden
  * eklediği için `rowid` değişir; aynı zaman damgalı kayıtlar `rowid` ile
- * sıralandığından `attachAnalysis` bir oturumun listedeki yerini kaydırırdı.
+ * sıralandığından `update` bir kaydın listedeki yerini kaydırırdı.
  * `ON CONFLICT ... DO UPDATE` satırı yerinde günceller, `rowid` korunur.
  */
 function buildUpsertSql(table: string, columnNames: string[]): string {

@@ -16,7 +16,7 @@ export type BreathingLevel = 1 | 2 | 3;
 export type BreathingMode = 'daily' | 'progressive';
 
 /** Günün metni havuzu. religiousMode kapalıysa "dini" seçimi otomatik olarak "edebi" gibi davranır. */
-export type DailyTextSource = 'dini' | 'edebi' | 'hitabet' | 'karisik';
+export type DailyTextSource = 'dini' | 'edebi' | 'hitabet' | 'felsefi' | 'karisik';
 
 export type BelagatBranchFilter = 'karisik' | 'meani' | 'beyan' | 'bedi';
 
@@ -29,7 +29,14 @@ export type ModuleSettings = {
 };
 
 /** Modül ayarları / hatırlatma kontrollerinin ortak anahtar kümesi. */
-export type DailyModuleKey = 'diaphragm' | 'speech' | 'belagat' | 'dailyText' | 'lugat';
+export type DailyModuleKey =
+  | 'diaphragm'
+  | 'speech'
+  | 'belagat'
+  | 'dailyText'
+  | 'lugat'
+  | 'comprehension'
+  | 'communication';
 
 export type DailyPracticeSettings = {
   /** Ana bildirim şalteri. Kapalıysa hiçbir modül bildirim kurmaz. */
@@ -42,6 +49,10 @@ export type DailyPracticeSettings = {
   belagat: ModuleSettings & { branch: BelagatBranchFilter };
   dailyText: ModuleSettings & { source: DailyTextSource; showOnHome: boolean };
   lugat: ModuleSettings & { showOnHome: boolean };
+  /** Anlayış & Kavrayış: okuduğunu/dinlediğini anlama, özetleme, sözel muhakeme. */
+  comprehension: ModuleSettings & { showOnHome: boolean };
+  /** İletişim becerileri: senaryolar, etkin dinleme, günün ipucu. */
+  communication: ModuleSettings & { showOnHome: boolean };
 };
 
 export const DEFAULT_SETTINGS: DailyPracticeSettings = {
@@ -75,6 +86,18 @@ export const DEFAULT_SETTINGS: DailyPracticeSettings = {
     time: { hour: 12, minute: 30 },
     showOnHome: true,
   },
+  comprehension: {
+    enabled: true,
+    reminder: false,
+    time: { hour: 18, minute: 0 },
+    showOnHome: true,
+  },
+  communication: {
+    enabled: true,
+    reminder: false,
+    time: { hour: 20, minute: 0 },
+    showOnHome: true,
+  },
 };
 
 const STORAGE_KEY = 'daily-practice-settings';
@@ -95,6 +118,8 @@ function mergeSettings(stored: Partial<DailyPracticeSettings> | null): DailyPrac
     belagat: mergeModule(DEFAULT_SETTINGS.belagat, stored.belagat),
     dailyText: mergeModule(DEFAULT_SETTINGS.dailyText, stored.dailyText),
     lugat: mergeModule(DEFAULT_SETTINGS.lugat, stored.lugat),
+    comprehension: mergeModule(DEFAULT_SETTINGS.comprehension, stored.comprehension),
+    communication: mergeModule(DEFAULT_SETTINGS.communication, stored.communication),
   };
 }
 

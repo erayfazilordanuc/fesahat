@@ -259,7 +259,7 @@ export const MEASURE_TESTS: MeasureTest[] = [
         { upTo: 220, label: 'Hızlı' },
       ],
       caption:
-        'Sunum ve mülakat için tipik aralık 120-150 kelime/dakika. Hızlı olmak "iyi" değil; amaç kendi aralığını bilmek.',
+        'Sesli okuma ve sunum için tipik aralık 120-150 kelime/dakika. Hızlı olmak "iyi" değil; amaç kendi aralığını bilmek.',
     },
   },
   {

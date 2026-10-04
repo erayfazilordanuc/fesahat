@@ -1,13 +1,12 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
-import { Check, X, ChevronRight, Trash2 } from 'lucide-react-native';
+import { Check, X, Trash2 } from 'lucide-react-native';
 
 import {
   AppScreen,
   AppHeader,
   Surface,
   EmptyState,
-  Badge,
   toneColor,
   toneFill,
   toneText,
@@ -23,40 +22,36 @@ import {
   type PracticeResponse,
   type ResponseModule,
 } from '../utils/responseHistory';
-import { useInterviewSessions, type RecordedSession } from '../utils/interviewHistory';
-import { findCompany, companyColor } from '../data/companies';
 import { formatShortDate } from '../utils/dateUtils';
 
 // Kullanıcının uygulamada verdiği bütün yanıtları modül modül gösteren defter
 // (kullanıcı kararı 2026-09-20 — "her yerdeki yanıtlarım kaydedilsin").
-//
-// Belagat/Egzersiz/Lugat sekmeleri `responseHistory`'den, Mülakat sekmesi
-// doğrudan `interviewHistory`'den okur — bkz. `responseHistory.ts` başlığı:
-// mülakat oturumunun kendi deposu daha zengin (kurum, süre, ses, analiz),
-// bu yüzden iki ayrı doğruluk kaynağı oluşmasın diye oraya kopyalanmıyor.
+// Sekmelerin hepsi `responseHistory`'den okur.
 
-type ModuleFilter = ResponseModule | 'all' | 'interview';
+type ModuleFilter = ResponseModule | 'all';
 
 /**
- * Sekme sırası ve rengi; belagat/egzersiz/lugat tonları satır etiketinde de
- * kullanılır. Tonlar uygulamanın başka yerlerdeki eşleşmesini izliyor, bu ekrana
- * özgü seçilmiyor: mülakat mavi (Gelişim'de "Kariyer & Mülakat", İlerleme'de
- * "Mülakat geçmişi"), egzersiz mor ("Zihin & Odak", "Egzersiz geçmişi"),
- * belagat yeşil (Belagat ekranının kendi tonu). Lugat ekranı da yeşil kullanıyor
- * ama defterde belagattan ayrılması gerektiği için ona amber kaldı.
+ * Sekme sırası ve rengi; tonlar satır etiketinde de kullanılır. Tonlar
+ * uygulamanın başka yerlerdeki eşleşmesini izliyor, bu ekrana özgü seçilmiyor:
+ * egzersiz mor ("Zihin & Odak", "Egzersiz geçmişi"), belagat yeşil (Belagat
+ * ekranının kendi tonu). Lugat ekranı da yeşil kullanıyor ama defterde
+ * belagattan ayrılması gerektiği için ona amber kaldı.
  */
 const MODULE_TABS: { value: ModuleFilter; label: string; tone: Tone }[] = [
   { value: 'all', label: 'Tümü', tone: 'slate' },
   { value: 'belagat', label: 'Belagat', tone: 'emerald' },
   { value: 'exercise', label: 'Egzersiz', tone: 'violet' },
   { value: 'lugat', label: 'Lugat', tone: 'amber' },
-  { value: 'interview', label: 'Mülakat', tone: 'blue' },
+  { value: 'summary', label: 'Özet', tone: 'blue' },
+  { value: 'communication', label: 'İletişim', tone: 'amber' },
 ];
 
 const RESPONSE_MODULE_TONE: Record<ResponseModule, Tone> = {
   belagat: 'emerald',
   exercise: 'violet',
   lugat: 'amber',
+  summary: 'blue',
+  communication: 'amber',
 };
 
 const EMPTY_MESSAGES: Record<ModuleFilter, string> = {
@@ -64,20 +59,16 @@ const EMPTY_MESSAGES: Record<ModuleFilter, string> = {
   belagat: 'Belagat üretimlerin burada birikir.',
   exercise: 'Egzersiz yanıtların burada birikir.',
   lugat: 'Lugat yanıtların burada birikir.',
-  interview: 'Tamamladığın mülakat simülasyonları burada birikir.',
+  summary: 'Yazdığın özetler burada birikir.',
+  communication: 'İletişim senaryolarına yazdığın cevaplar burada birikir.',
 };
 
 /** Bir kerede gösterilen kayıt sayısı — uzun listede "Daha fazla göster" ile açılır. */
 const PAGE_SIZE = 50;
 
-type JournalEntry =
-  | { kind: 'response'; id: string; timestamp: string; response: PracticeResponse }
-  | { kind: 'interview'; id: string; timestamp: string; session: RecordedSession };
-
 export default function ResponseJournalScreen({ navigation, route }: any) {
   const t = useThemeTokens();
   const responses = useResponses();
-  const sessions = useInterviewSessions();
 
   const [selectedModule, setSelectedModule] = React.useState<ModuleFilter>(
     route?.params?.module ?? 'all',
@@ -96,40 +87,10 @@ export default function ResponseJournalScreen({ navigation, route }: any) {
     setExpandedId(null);
   }, [selectedModule]);
 
-  const entries = React.useMemo<JournalEntry[]>(() => {
-    if (selectedModule === 'interview') {
-      return sessions.map((session) => ({
-        kind: 'interview' as const,
-        id: session.id,
-        timestamp: session.timestamp,
-        session,
-      }));
-    }
-    if (selectedModule === 'all') {
-      const responseEntries: JournalEntry[] = responses.map((response) => ({
-        kind: 'response' as const,
-        id: response.id,
-        timestamp: response.timestamp,
-        response,
-      }));
-      const sessionEntries: JournalEntry[] = sessions.map((session) => ({
-        kind: 'interview' as const,
-        id: session.id,
-        timestamp: session.timestamp,
-        session,
-      }));
-      // ISO zaman damgaları sözlük sırasıyla da doğru sıralanır.
-      return [...responseEntries, ...sessionEntries].sort((a, b) =>
-        b.timestamp.localeCompare(a.timestamp),
-      );
-    }
-    return responsesOf(responses, selectedModule).map((response) => ({
-      kind: 'response' as const,
-      id: response.id,
-      timestamp: response.timestamp,
-      response,
-    }));
-  }, [selectedModule, responses, sessions]);
+  const entries = React.useMemo<PracticeResponse[]>(
+    () => (selectedModule === 'all' ? responses : responsesOf(responses, selectedModule)),
+    [selectedModule, responses],
+  );
 
   const visibleEntries = entries.slice(0, visibleCount);
   const remaining = entries.length - visibleEntries.length;
@@ -176,29 +137,18 @@ export default function ResponseJournalScreen({ navigation, route }: any) {
           <EmptyState message={EMPTY_MESSAGES[selectedModule]} />
         ) : (
           <Surface>
-            {visibleEntries.map((entry, index) =>
-              entry.kind === 'response' ? (
-                <ResponseRow
-                  key={entry.id}
-                  response={entry.response}
-                  divider={index > 0}
-                  expanded={expandedId === entry.id}
-                  onToggle={() =>
-                    setExpandedId((current) => (current === entry.id ? null : entry.id))
-                  }
-                  onDelete={() => confirmDelete(entry.response)}
-                />
-              ) : (
-                <InterviewRow
-                  key={entry.id}
-                  session={entry.session}
-                  divider={index > 0}
-                  onPress={() =>
-                    navigation.navigate('Analysis', { sessionId: entry.session.id })
-                  }
-                />
-              ),
-            )}
+            {visibleEntries.map((response, index) => (
+              <ResponseRow
+                key={response.id}
+                response={response}
+                divider={index > 0}
+                expanded={expandedId === response.id}
+                onToggle={() =>
+                  setExpandedId((current) => (current === response.id ? null : response.id))
+                }
+                onDelete={() => confirmDelete(response)}
+              />
+            ))}
           </Surface>
         )}
 
@@ -341,58 +291,6 @@ function ResponseRow({
           </Pressable>
         </View>
       ) : null}
-    </Pressable>
-  );
-}
-
-function InterviewRow({
-  session,
-  divider,
-  onPress,
-}: {
-  session: RecordedSession;
-  divider: boolean;
-  onPress: () => void;
-}) {
-  const t = useThemeTokens();
-  // Kayıt diskten geliyor; kurum listeden kalkmış olabilir. Fırlatmak yerine
-  // satırı nötr bir etiketle çiziyoruz — geçmiş kaybolmasın (bkz. InterviewHistoryScreen).
-  const company = findCompany(session.companyId);
-  const rating = session.analysis?.rating;
-  const tone: Tone =
-    rating === undefined ? 'slate' : rating >= 75 ? 'emerald' : rating >= 50 ? 'amber' : 'rose';
-
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${session.companyName} mülakatının analizini gör`}
-      className={`flex-row items-center py-3.5 ${divider ? `border-t ${t.dividerColor}` : ''}`}
-    >
-      <View className="flex-1 pr-3">
-        <View className="flex-row items-center mb-1">
-          <Text
-            className="text-[10px] font-bold uppercase tracking-widest"
-            style={{ color: company ? companyColor(company, t.isLight) : t.iconColor }}
-          >
-            {company?.name ?? session.companyName ?? 'BİLİNMEYEN KURUM'}
-          </Text>
-          <Text className={`text-[10px] ml-2 ${t.muted}`}>
-            {formatShortDate(new Date(session.timestamp))}
-          </Text>
-        </View>
-        <Text className={`text-[13px] font-bold leading-5 ${t.title}`} numberOfLines={2}>
-          {session.questionText}
-        </Text>
-        <Text className={`text-[11px] mt-1 ${t.muted}`} numberOfLines={2}>
-          {session.mode === 'typing' ? session.transcript || 'Yazılı yanıt' : 'Sesli yanıt'}
-        </Text>
-      </View>
-
-      <Badge label={rating === undefined ? 'Analiz yok' : `${rating}`} tone={tone} />
-      <View className="ml-1">
-        <ChevronRight size={16} color={t.iconColor} />
-      </View>
     </Pressable>
   );
 }

@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "Terakki",
-    "slug": "terakki",
+    "name": "Fesahat",
+    "slug": "fesahat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.terakki.app"
+      "bundleIdentifier": "com.fesahat.app"
     },
     "android": {
-      "package": "com.terakki.app",
+      "package": "com.fesahat.app",
       "adaptiveIcon": {
         "backgroundColor": "#029568",
         "backgroundImage": "./assets/android-icon-background.png",
@@ -20,9 +20,11 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "blockedPermissions": [
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -30,16 +32,9 @@
     },
     "plugins": [
       [
-        "expo-camera",
-        {
-          "cameraPermission": "Mülakat kaydı için kameranıza erişim izni gereklidir.",
-          "microphonePermission": "Mülakat kaydı için mikrofonunuza erişim izni gereklidir."
-        }
-      ],
-      [
         "expo-av",
         {
-          "microphonePermission": "Mülakat kaydı için mikrofonunuza erişim izni gereklidir."
+          "microphonePermission": "Diksiyon alıştırmalarında sesini kaydedip geri dinleyebilmen için mikrofon erişimi gerekir."
         }
       ],
       [
@@ -47,14 +42,6 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#059669"
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "usesCleartextTraffic": true
-          }
         }
       ],
       "expo-font",

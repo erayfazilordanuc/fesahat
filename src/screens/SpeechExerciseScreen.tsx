@@ -316,7 +316,7 @@ export default function SpeechExerciseScreen({ navigation, route }: any) {
               </Text>
               <Text className={`text-[12px] leading-5 ${t.body}`}>{fesahatFlaw.goodExample}</Text>
             </View>
-            <Text className={`text-[11px] mt-3 italic ${t.accent}`}>{fesahatFlaw.interviewRisk}</Text>
+            <Text className={`text-[11px] mt-3 italic ${t.accent}`}>{fesahatFlaw.practicalRisk}</Text>
             <Text className={`text-[11px] mt-2 ${t.muted}`}>
               Toplam {FESAHAT_FLAWS.length} kusur var; her gün biri gösterilir.
             </Text>
@@ -421,7 +421,7 @@ function FillerCounter({
         </Pressable>
       </View>
       <Text className={`text-[11px] mt-3 leading-4 ${t.muted}`}>
-        Hedef: 60 saniyede sıfır. Üç ve üzeri, mülakat analizinde fark edilir düzeydedir.
+        Hedef: 60 saniyede sıfır. Üç ve üzeri, dinleyicinin fark ettiği düzeydir.
       </Text>
     </Card>
   );

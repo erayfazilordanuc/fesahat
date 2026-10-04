@@ -19,18 +19,20 @@ export const ANDROID_CHANNEL_ID = 'daily-practice';
  * iOS'ta bekleyen bildirim sınırı 64 (Bölüm 4 → Teknik kısıt 2). Sınır aşılırsa
  * iOS **en eski bildirimleri sessizce düşürür** — bazı hatırlatmalar hiç gelmez.
  * 64 değil 56 seçildi: "Test bildirimi gönder" düğmesi ve ileride eklenecek
- * modüller/alarmlar için kenar payı bırakıyoruz. Bu bütçe günlük pratik ve
+ * modüller için kenar payı bırakıyoruz. Bu bütçe günlük pratik ve
  * aralıklı hatırlatıcılar (`habitNotifications.ts`) arasında paylaşılıyor.
  */
 export const NOTIFICATION_BUDGET = 56;
 
 /** Kendi bildirimlerimizi ayırt etmek için sabit kimlikler. */
 const IDENTIFIERS = {
-  diaphragm: 'terakki.daily.diaphragm',
-  speech: 'terakki.daily.speech',
-  belagat: 'terakki.daily.belagat',
-  dailyText: 'terakki.daily.text',
-  lugat: 'terakki.daily.lugat',
+  diaphragm: 'fesahat.daily.diaphragm',
+  speech: 'fesahat.daily.speech',
+  belagat: 'fesahat.daily.belagat',
+  dailyText: 'fesahat.daily.text',
+  lugat: 'fesahat.daily.lugat',
+  comprehension: 'fesahat.daily.comprehension',
+  communication: 'fesahat.daily.communication',
 } as const;
 
 export type ReminderModule = keyof typeof IDENTIFIERS;
@@ -39,7 +41,14 @@ export type ReminderModule = keyof typeof IDENTIFIERS;
 export type ReminderPayload = {
   kind: 'daily-practice';
   module: ReminderModule;
-  screen: 'DiaphragmExercise' | 'SpeechExercise' | 'BelagatExercise' | 'DailyText' | 'Language';
+  screen:
+    | 'DiaphragmExercise'
+    | 'SpeechExercise'
+    | 'BelagatExercise'
+    | 'DailyText'
+    | 'Language'
+    | 'Comprehension'
+    | 'Communication';
 };
 
 const SCREEN_FOR_MODULE: Record<ReminderModule, ReminderPayload['screen']> = {
@@ -48,6 +57,8 @@ const SCREEN_FOR_MODULE: Record<ReminderModule, ReminderPayload['screen']> = {
   belagat: 'BelagatExercise',
   dailyText: 'DailyText',
   lugat: 'Language',
+  comprehension: 'Comprehension',
+  communication: 'Communication',
 };
 
 export async function ensureAndroidChannel(): Promise<void> {
@@ -55,7 +66,7 @@ export async function ensureAndroidChannel(): Promise<void> {
   await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
     name: 'Günlük Pratik',
     importance: Notifications.AndroidImportance.DEFAULT,
-    description: 'Diyafram, konuşma, belagat, günün metni ve günün kelimeleri hatırlatmaları',
+    description: 'Günlük dil, konuşma, anlayış ve iletişim pratiği hatırlatmaları',
     lightColor: '#3DB1FF',
     enableVibrate: true,
     vibrationPattern: [0, 180, 120, 180],
@@ -152,6 +163,22 @@ function buildContent(
         body: `Bugün ${dailyCount} yeni kelime seni bekliyor. İki dakikanı ayır.`,
       };
     }
+    case 'comprehension': {
+      // Lugat'taki gerekçeyle aynı: gövde belirli bir metne/soruya bağlanmıyor,
+      // çünkü DAILY tetikleyicide içerik kurulduğu günde sabitleniyor.
+      return {
+        ...shared,
+        title: 'Anlayış & kavrayış',
+        body: 'Bugünün okuma, dinleme ya da sözel kavrayış alıştırması hazır.',
+      };
+    }
+    case 'communication': {
+      return {
+        ...shared,
+        title: 'İletişim alıştırması',
+        body: 'Günün senaryosu ve iletişim ipucu seni bekliyor.',
+      };
+    }
   }
 }
 
@@ -217,7 +244,15 @@ export async function syncReminders(
 
   await ensureAndroidChannel();
 
-  const modules: ReminderModule[] = ['dailyText', 'lugat', 'diaphragm', 'speech', 'belagat'];
+  const modules: ReminderModule[] = [
+    'dailyText',
+    'lugat',
+    'diaphragm',
+    'speech',
+    'belagat',
+    'comprehension',
+    'communication',
+  ];
   const activeModules = modules.filter((module) => reminderActive(settings, module));
   const scheduled: ReminderModule[] = [];
   let scheduledCount = 0;

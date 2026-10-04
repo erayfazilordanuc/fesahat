@@ -3,9 +3,21 @@
 Verilmiş ve verilmemiş kararlar. Bir karar değiştiğinde burası güncellenir;
 gerekçesi de kalır ki aynı tartışma ikinci kez yapılmasın.
 
+> ℹ️ **Bu dosya Terakki'den devralındı.** Fesahat, Terakki'nin kopyasından
+> dönüştürüldü (2026-10-04); aşağıdaki kararların çoğu **teknik** olduğu için
+> aynen geçerli: SQLite'a aşamalı geçiş, `createPersistentStore` deseni,
+> bildirim planlaması, ölçüm dürüstlüğü, öz-değerlendirme ayrımı, BYOK.
+> Mülakata ve Terakki'nin yedi sütununa bağlı **ürün** kararları geçersizdir ve
+> başlıklarında ⛔ ile işaretlendi. Dönüşümde verilen yeni kararlar dosyanın
+> **sonunda**.
+
 ---
 
-## Verildi · Uygulamanın adı: **Terakki**
+## ⛔ Geçersiz (Fesahat) · Uygulamanın adı: **Terakki**
+
+> Fesahat'ta geçersiz: ad `Fesahat`, paket kimliği `com.fesahat.app`.
+> Kimlik sabitleri (`fesahat-store`, `fesahat.db`, `fesahat-audio`,
+> `fesahat.*` bildirim önekleri) dönüşümde değiştirildi.
 
 **Karar (2026-09-07):** Uygulamanın adı **Terakki**.
 
@@ -548,7 +560,9 @@ Bölüm 0.1'deki spec'ten şu noktalarda sapıldı:
 
 ---
 
-## Verildi · Dil & İfade'nin odağı lugat ve Türkçe
+## Verildi · Dil'in odağı lugat ve Türkçe
+
+> Fesahat'ta bu karar **ana eksen** oldu; alan adı "Dil & İfade" değil **Dil**.
 
 **Karar (2026-09-11):** "Dil & İfade" sütununun ana ekseni **lugat (kelime
 hazinesi) ve Türkçeyi daha iyi anlama/doğru kullanma**; söz sanatları
@@ -767,7 +781,11 @@ seçilene kadar** liste kısalmaz. Eski kayıtlarda alan yok → `false`.
 
 ---
 
-## Verildi · Mülakat ses kayıtları cihazda kalıcı saklanır (2026-09-20)
+## ⛔ Kısmen geçersiz (Fesahat) · Mülakat ses kayıtları cihazda kalıcı saklanır (2026-09-20)
+
+> Mülakat Fesahat'ta yok. **Ses katmanı (`audioStore`) kasıtlı olarak duruyor**
+> ve diksiyon "kayıttan dinleme" ile yapay zekâ ses analizi için kullanılacak;
+> aşağıdaki saklama ve dosya-adı gerekçeleri o kullanım için aynen geçerli.
 
 **Karar:** Kamera modunda kaydedilen ses, oturum kaydedildiğinde cihazda
 **kalıcı** saklanır: hem normal bitişte (süre dolması ya da "Kaydı Bitir ve
@@ -812,7 +830,11 @@ sınır politikası açık iş olarak YAPILACAKLAR'da duruyor.
 
 ---
 
-## Verildi · Yanıt defteri kapsamı; mülakat defterin dışında
+## ⛔ Kısmen geçersiz (Fesahat) · Yanıt defteri kapsamı; mülakat defterin dışında
+
+> Mülakat sekmesi kalktı. Defterin sekmeleri Fesahat'ta: Belagat · Egzersiz ·
+> Lugat · **Özet** · **İletişim**. Kapsam ilkesi (yazılan her yanıt deftere
+> düşer) aynen geçerli.
 
 **Karar (2026-09-20):** Kullanıcının verdiği yanıtlar tek bir defterde toplanır.
 Kapsam: **serbest metin + çoktan seçmeli cevaplar**. Defter ekranı modül modül
@@ -958,7 +980,11 @@ seçenek olarak açılabilir — YAPILACAKLAR Bölüm 00.
 
 ---
 
-## Verildi · Üç uygulamaya ayrılma ve kapsam paylaşımı (2026-10-04)
+## ℹ️ Devralındı · Üç uygulamaya ayrılma ve kapsam paylaşımı (2026-10-04)
+
+> **Bu depo artık o ayrımın Fesahat ayağıdır.** Aşağıdaki tablo neden bu
+> kapsamın seçildiğini anlatıyor; Terakki ve İrtifa'ya ait maddeler burada
+> yalnızca referans.
 
 **Karar:** Kod tabanı üç uygulamaya ayrılıyor. Kardeşler Terakki'nin kopyasından
 dönüştürülerek üretiliyor; her birinin dönüşüm planı kendi dosyasında.
@@ -1044,3 +1070,109 @@ değerlendirme katmanı kapalı bir uygulama kullanır.
 analoji setleri) yapay zekâya devredilecek mi? İrtifa'nın aynı sorusu
 (`YAPILACAKLAR_İRTİFA.md` Bölüm 3 — determinizm, kota, kalite denetimi) önce
 ölçülecek; iki uygulama için iki kez çözülmeyecek.
+
+---
+
+## Verildi · Fesahat'ın beş ayağı Atölye'de beş kartta toplanır (2026-10-05)
+
+**Karar:** Atölye sekmesi beş kart gösterir: **Dil · Konuşma · Anlayış &
+Kavrayış · İletişim**, altta ileri düzey **Belagat**. Birleştirilen alt alanlar
+(hitabet nefesi, duruş, günün metni, hafıza & örüntü, etkin dinleme) kartın
+altındaki **kısayol çipleriyle** açılır. Hatırlatıcılar ayaklarla aynı listede
+değil, "Araçlar" başlığı altında durur.
+
+**Neden:** Her alt başlığa ayrı kart verilseydi liste yediye çıkıyordu ve tek
+ekranda kalabalıklaşıyordu. Alternatif (yedi kart, iki satır) listeyi uzatıyor
+ve "beş ayak" anlatısını bulanıklaştırıyordu. Kısayol çipleri birleştirmenin
+bedelini ödüyor: kart sayısı beşte kalıyor ama hiçbir ekran bir dokunuş
+uzaklaşmıyor.
+
+**Bağlı değişiklik:** Sekme adları da değişti — "Gelişim" → **Atölye**,
+"İlerleme" → **Karne**. İkisi anlamca birbirine yakındı; "ne çalışacağım" ile
+"ne kadar yol aldım" ayrımı yeni adlarla daha net. `BackgroundVariant` tipi
+sekme adlarına bağlı, ikisi birlikte değişir.
+
+---
+
+## Verildi · Dinî mod içeriği kapatmaz, havuza ekler (2026-10-05)
+
+**Karar:** Uygulama **varsayılanda geneldir**. "Günün sözü" kartı herkese
+görünür ve genel havuzdan (Yunus Emre, Mevlânâ, Kutadgu Bilig, Montaigne,
+Seneca, atasözleri…) seçer. **Dinî mod açılırsa** havuza Risale-i Nur, imamlar
+ve mutasavvıflar gibi **niş dinî sözler eklenir** ve günün duası görünür.
+
+**Neden:** Terakki'de bu kart yalnızca dinî mod açıkken görünen "günün duası +
+günün Risale-i Nur vecizesi" idi ve sahibine özeldi. Fesahat genele açılıyor ve
+ekseni dil & söz; vecize göstermek bu eksene **uyuyor**, ama havuzun tek bir
+esere bağlı kalması kapsamı daraltırdı. Şalter artık içeriği *kapatan* değil,
+*genişleten* bir ayar — dinî içerik isteyen kullanıcı daha fazlasını görür,
+istemeyen eksik bir uygulama kullanmaz.
+
+**Bağlı kural — doğruluk:** Hiçbir söz asıl eserden birebir doğrulanmadı
+(`Soz.verified` hepsinde `false`). Atfı tartışmalı olanlar `author` alanında
+"…'e atfedilir" diye işaretli. **Sayıyı artırmak için kalite düşürülmez**; yeni
+söz eklerken bu kural geçerli. Doğrulanacaklar listesi `YAPILACAKLAR.md` →
+"Doğrulanacak içerik".
+
+---
+
+## Verildi · Anlayış, kavrayış ve dinleme tek soru modelini paylaşır (2026-10-05)
+
+**Karar:** Okuduğunu anlama, dinlediğini anlama ve sözel kavrayış setlerinin
+hepsi `src/data/quiz.ts`'teki tek modeli (`QuizSet` / `QuizQuestion` /
+`QuizSkill`) kullanır ve tek bir ekran (`QuizScreen`) oynatır. Fark yalnızca
+`kind` alanında: okumada metin ekranda, dinlemede cihaz sesiyle okunur ve
+sorular sırasında gizlenir, sözelde metin yoktur.
+
+**Neden:** Üç ayrı soru modeli kurmak üç ayrı oynatıcı, üç ayrı kayıt biçimi ve
+üç ayrı Karne kırılımı demekti. Tek model, beceri kırılımını (`QuizSkill`)
+türden bağımsız tutuyor: "çıkarım" becerisi hem okuma hem dinleme setinde
+ölçülebiliyor ve Karne'de tek bir eğri olarak toplanıyor.
+
+**Kasıtlı istisna — iletişim senaryoları bu modeli kullanmaz.** Orada tek doğru
+cevap iddiası yok; seçenekler doğru/yanlış değil **etki** taşır
+(`isler` / `kismen` / `islemez`) ve Karne'de doğruluk değil **tamamlanma**
+sayılır. Aynı modele zorlanması, senaryolara olmayan bir kesinlik verirdi
+(bkz. "Ölçüm skalası norm uydurmaz").
+
+---
+
+## Verildi · Dinlediğini anlama cihaz TTS'ine bağlı değildir (2026-10-05)
+
+**Karar:** Dinleme setleri `expo-speech` ile cihazın kendi sesini kullanır; ses
+dosyası paketlenmez. Cihazda Türkçe ses yoksa ya da okuma başarısız olursa
+**yedek yola** düşülür: metin ekranda gösterilir, kullanıcı kendi okur,
+sorular yine metin gizliyken sorulur.
+
+**Neden:** Hazır ses dosyası uygulama boyutunu metin başına megabaytlarla
+büyütürdü ve her yeni metin yeni kayıt demekti. Cihaz TTS'i çevrimdışı çalışıyor
+ve bedava. Ama garanti değil — Android'de ses listesi boş dönebiliyor, iOS'ta
+Türkçe ses kurulu olmayabiliyor. Çevrimdışı garantisi (bkz. aşağıdaki kural)
+özelliğin TTS'e **bağımlı olmamasını** gerektiriyor; yedek yol olmadan
+alıştırma bazı cihazlarda hiç açılmazdı.
+
+⚠️ **Cihazda doğrulanmadı** — bu, bu turun en kırılgan yeri.
+
+---
+
+## Verildi · Fesahat'ta yapay zekânın işi değerlendirmedir (2026-10-05)
+
+**Karar:** Yapay zekâ katmanı Fesahat'ta **tek doğru cevabı olmayan**
+alıştırmaları değerlendirir: özetleme, iletişim senaryolarına serbest cevap,
+belagat "üret" aşaması, diksiyon ses kaydı. Bunun için `AiFeedbackCard`
+eklendi; `AiInsightCard` birikmiş kaydı yorumlamaya devam ediyor.
+
+**Neden:** Çevrimdışı tasarım bu alıştırmaları ya öz-değerlendirmeye ya çoktan
+seçmeliye mahkûm ediyordu. Anahtar varken serbest yazılı cevap
+değerlendirilebiliyor — bu, alıştırmaların tasarımını kısıtlamaktan çıkarıyor.
+
+**Değişmeyen sınır:** Yapay zekâ **değerlendirir ve üretir, kapıda durmaz.**
+Hiçbir içeriğe erişmek, alıştırmaya başlamak ya da ilerlemeyi görmek için
+anahtar gerekmez; çoktan seçmeli taban her zaman vardır. Anahtar yokken teknik
+hata mesajı gösterilmez, yalnızca kart kapalı görünür ve yanında kuruluma
+götüren düğme durur.
+
+**Açık kalan:** İçerik üretiminin (okuma/dinleme soruları, sözel setler) yapay
+zekâya devredilip devredilmeyeceği. Çözülecek üç şey: determinizm (gün başına
+bir kez üret, yerele yaz), kota (kullanıcının kendi anahtarı), kalite denetimi.
+Yerel havuz her hâlükârde çevrimdışı taban olarak kalır.

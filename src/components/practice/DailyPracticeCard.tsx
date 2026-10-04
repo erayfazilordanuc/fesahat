@@ -6,6 +6,8 @@ import {
   Feather,
   BookOpen,
   BookOpenText,
+  BookOpenCheck,
+  MessagesSquare,
   Check,
   ChevronRight,
   ChevronDown,
@@ -23,13 +25,15 @@ import { getBreathingProgram } from '../../data/breathingPrograms';
 import { drillSeconds, pickDailyDrill } from '../../data/dictionDrills';
 import { pickDailyBelagatArt } from '../../data/belagat';
 import { pickDailyPrayer, pickDailyText } from '../../data/dailyTexts';
-import { pickDailyVecize } from '../../data/risale';
+import { pickDailySoz } from '../../data/sozler';
+import { pickDailyListeningSet } from '../../data/comprehension';
+import { pickDailyTip } from '../../data/communication';
 import { useDayKey } from '../../utils/today';
 import { lugatProgressStore, todaysWords } from '../../utils/lugatProgress';
 import { formatTime } from '../../utils/dateUtils';
 import { useOnboarding, moduleOrderForGoals } from '../../utils/onboarding';
 
-// Ana ekran (Mülakat sekmesi) kartları.
+// Bugün sekmesinin kartları.
 // Yalnızca ayarlarda açık olan modüller görünür; hepsi kapalıysa kart hiç render edilmez.
 
 type Row = {
@@ -55,6 +59,8 @@ type Row = {
  */
 const LUGAT_SECONDS_PER_WORD = 25; // kelime + anlam + örnek okuma, kaba tahmin
 const BELAGAT_ESTIMATED_MINUTES = 3; // tanım + örnek + alıştırma, süre verisi yok
+const COMPREHENSION_ESTIMATED_MINUTES = 4; // metin/dinleme + üç soru, süre verisi yok
+const COMMUNICATION_ESTIMATED_MINUTES = 3; // senaryo + seçenek açıklamaları
 
 function minutesFromSeconds(seconds: number): number {
   return Math.max(1, Math.round(seconds / 60));
@@ -123,6 +129,32 @@ export function DailyPracticeCard({ navigation }: { navigation?: any }) {
         time: formatTime(settings.speech.time.hour, settings.speech.time.minute),
         icon: <Mic size={18} color={iconColor} />,
         minutes: minutesFromSeconds(drillSeconds(drill)),
+      });
+    }
+
+    if (settings.comprehension.enabled) {
+      const listening = pickDailyListeningSet();
+      list.push({
+        module: 'comprehension',
+        screen: 'Comprehension',
+        title: 'Anlayış & kavrayış',
+        detail: `Dinleme: ${listening.title}`,
+        time: formatTime(settings.comprehension.time.hour, settings.comprehension.time.minute),
+        icon: <BookOpenCheck size={18} color={iconColor} />,
+        minutes: COMPREHENSION_ESTIMATED_MINUTES,
+      });
+    }
+
+    if (settings.communication.enabled) {
+      const tip = pickDailyTip();
+      list.push({
+        module: 'communication',
+        screen: 'Communication',
+        title: 'İletişim',
+        detail: tip.text,
+        time: formatTime(settings.communication.time.hour, settings.communication.time.minute),
+        icon: <MessagesSquare size={18} color={iconColor} />,
+        minutes: COMMUNICATION_ESTIMATED_MINUTES,
       });
     }
 
@@ -269,28 +301,32 @@ export function DailyPracticeCard({ navigation }: { navigation?: any }) {
 }
 
 /**
- * Günün duası + günün Risale-i Nur vecizesi — tek kartta.
- * Yalnızca ayarlarda dinî içerik açıkken görünür.
+ * Günün sözü — her gün bir vecize/aforizma. Dinî mod açıksa üstüne günün
+ * duası da eklenir.
  *
- * 2026-09-18'de birleştirildi: ikisi de aynı şaltere bağlı ve Bugün sekmesinde
- * arka arkaya iki ayrı kutu olarak duruyordu; ekran gereksiz uzuyordu.
+ * Terakki'de bu kart **yalnızca** dinî mod açıkken görünen "günün duası +
+ * günün Risale-i Nur vecizesi" kartıydı. Fesahat'ta eksen dil ve söz olduğu
+ * için söz havuzu genele açıldı (`src/data/sozler.ts`): varsayılanda Yunus'tan
+ * Montaigne'e geniş bir havuz gösterilir, dinî mod yalnızca havuza niş dinî
+ * sözleri **ekler** ve duayı açar. Yani kart artık bir şaltere bağlı değil.
  *
- * ⚠️ KİŞİSEL İÇERİK: bu kart Fesahat ve İrtifa'ya taşınmaz (bkz.
- * `src/data/risale.ts` başlığı ve YAPILACAKLAR Bölüm 9).
+ * ⚠️ Söz lafızları asıl eserden doğrulanmadı (`Soz.verified`); liste
+ * genişletilirken `sozler.ts` başlığındaki doğruluk kuralı geçerli.
  *
  * Başlıklar kaynakta doğrudan büyük harfle yazılı; `uppercase` sınıfı
  * kullanılmıyor, çünkü CSS/JS büyütmesi Türkçede 'i'yi 'I' yapıyor
  * (YAPILACAKLAR → "Türkçe büyük harf dönüşümü").
  */
-export function DailyFaithCard({ navigation }: { navigation?: any }) {
+export function DailySozCard({ navigation }: { navigation?: any }) {
   const t = useThemeTokens();
   const { settings } = useDailyPracticeSettings();
-  // `day`: gün dönümünde dua ve vecize tazelensin (Bölüm 7).
+  // `day`: gün dönümünde söz ve dua tazelensin (Bölüm 7).
   const day = useDayKey();
   const prayer = React.useMemo(() => pickDailyPrayer(), [day]);
-  const vecize = React.useMemo(() => pickDailyVecize(), [day]);
-
-  if (!settings.religiousMode) return null;
+  const soz = React.useMemo(
+    () => pickDailySoz(settings.religiousMode),
+    [day, settings.religiousMode],
+  );
 
   const openDailyText = settings.dailyText.enabled
     ? () => navigation?.navigate?.('DailyText')
@@ -299,30 +335,39 @@ export function DailyFaithCard({ navigation }: { navigation?: any }) {
   const Wrapper: any = openDailyText ? Pressable : View;
 
   return (
-    <Wrapper onPress={openDailyText} className="mt-4">
+    <Wrapper
+      onPress={openDailyText}
+      className="mt-4"
+      accessibilityRole={openDailyText ? 'button' : undefined}
+      accessibilityLabel={
+        openDailyText
+          ? `Günün sözü: ${soz.text} — ${soz.author}. Günün metnini açmak için dokun.`
+          : undefined
+      }
+    >
       <Card>
-        <Text className={`text-[10px] font-bold tracking-widest ${t.muted}`}>GÜNÜN DUASI</Text>
-        <Text
-          className={`text-[13px] italic leading-6 mt-2 ${
-            t.isLight ? 'text-emerald-800' : 'text-emerald-400'
-          }`}
-        >
-          “{prayer.text}”
-        </Text>
-        {prayer.meaning ? (
-          <Text className={`text-[11px] mt-1 leading-5 ${t.muted}`}>{prayer.meaning}</Text>
+        {settings.religiousMode ? (
+          <View className={`mb-3 pb-3 border-b ${t.dividerColor}`}>
+            <Text className={`text-[10px] font-bold tracking-widest ${t.muted}`}>GÜNÜN DUASI</Text>
+            <Text
+              className={`text-[13px] italic leading-6 mt-2 ${
+                t.isLight ? 'text-emerald-800' : 'text-emerald-400'
+              }`}
+            >
+              “{prayer.text}”
+            </Text>
+            {prayer.meaning ? (
+              <Text className={`text-[11px] mt-1 leading-5 ${t.muted}`}>{prayer.meaning}</Text>
+            ) : null}
+          </View>
         ) : null}
 
-        <View className={`mt-3 pt-3 border-t ${t.dividerColor}`}>
-          <Text className={`text-[10px] font-bold tracking-widest ${t.muted}`}>
-            GÜNÜN VECİZESİ
-          </Text>
-          <Text className={`text-[13px] italic leading-6 mt-2 ${t.title}`}>“{vecize.text}”</Text>
-          {vecize.plain ? (
-            <Text className={`text-[11px] mt-1.5 leading-5 ${t.muted}`}>{vecize.plain}</Text>
-          ) : null}
-          <Text className={`text-[10px] mt-2 ${t.muted}`}>{vecize.source}</Text>
-        </View>
+        <Text className={`text-[10px] font-bold tracking-widest ${t.muted}`}>GÜNÜN SÖZÜ</Text>
+        <Text className={`text-[13px] italic leading-6 mt-2 ${t.title}`}>“{soz.text}”</Text>
+        <Text className={`text-[10px] mt-2 ${t.muted}`}>
+          {soz.author}
+          {soz.work ? ` · ${soz.work}` : ''}
+        </Text>
       </Card>
     </Wrapper>
   );

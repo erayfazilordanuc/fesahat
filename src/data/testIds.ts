@@ -23,7 +23,7 @@ export const TEST_BREATHING_RATE = 'breathingRate';
 
 /**
  * Sesli okuma hızı (kelime/dakika) — kelime sayısı bilinen bir metni okuma süresi.
- * Sunum ve mülakat için tipik hedef aralık 120-150; hızlı konuşmak akıcılık değil,
+ * Sesli okuma ve sunum için tipik aralık 120-150; hızlı konuşmak akıcılık değil,
  * çoğu zaman gerginlik göstergesi.
  */
 export const TEST_READING_WPM = 'readingWpm';

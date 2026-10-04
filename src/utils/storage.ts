@@ -24,7 +24,7 @@ import { kvAvailable, kvDelete, kvGet, kvSetMany } from './db';
 // SQLite açılamaz ve dosya arka ucuna düşülürse, o oturumun yazımları bir
 // sonraki açılışta SQLite'taki (daha güncel) değerin gerisinde kalır — SQLite
 // tekrar açıldığında dosyadaki ara yazım okunmaz.
-const STORE_DIR = 'savunma-store';
+const STORE_DIR = 'fesahat-store';
 
 /** Yazma gecikmesi. Kullanıcı bir ayarla oynarken yazımları tek dosya işlemine indirir. */
 const FLUSH_DELAY_MS = 250;

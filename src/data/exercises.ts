@@ -1,5 +1,5 @@
 // Egzersizler sekmesinin kataloğu.
-// İki hat var: bilişsel (beyin bölgelerine göre gruplanmış) ve fizyolojik (nefes/ses).
+// İki hat var: bilişsel (hafıza, sözel muhakeme, örüntü) ve fizyolojik (nefes, ses, duruş).
 // Her egzersiz bir "motor" bildirir; ExerciseEngineScreen bu motora göre çalışır.
 
 export type ExerciseTrack = 'cognitive' | 'physiological';
@@ -24,41 +24,20 @@ export type ExerciseCategory = {
 
 export const EXERCISE_CATEGORIES: ExerciseCategory[] = [
   {
-    id: 'frontal',
+    id: 'hafiza-muhakeme',
     track: 'cognitive',
-    title: 'Ön Lob (Frontal) - Karar & Çözüm',
-    description: 'Stres altında mantıklı karar verme ve hızlı kriz senaryosu çözme egzersizleri.',
-    accent: 'violet',
-  },
-  {
-    id: 'parietal',
-    track: 'cognitive',
-    title: 'Yan Lob (Parietal) - Mekansal & Sayısal',
+    title: 'Hafıza & Sözel Muhakeme',
     description:
-      'Zihinde şekil döndürme, yön takibi ve baskı altında sayısal işlem yapma çalışmaları.',
-    accent: 'emerald',
-  },
-  {
-    id: 'temporal',
-    track: 'cognitive',
-    title: 'Şakak Lobu (Temporal) - Hafıza & Dil',
-    description: 'Teknik terimleri baskı altında hatırlama ve toparlayarak ifade etme çalışmaları.',
+      'Sözle verilen ilişkileri zihinde tutma, sıralama ve kelime dizilerini tersten tekrar etme çalışmaları.',
     accent: 'blue',
   },
   {
-    id: 'oksipital',
+    id: 'oruntu-analoji',
     track: 'cognitive',
-    title: 'Arka Lob (Oksipital) - Görsel Algı',
-    description: 'Örüntü yakalama, şema okuma ve görsel bilgiyi hızlı yorumlama pratikleri.',
-    accent: 'rose',
-  },
-  {
-    id: 'goz-sagligi',
-    track: 'physiological',
-    title: 'Göz Dinlendirme & Sağlık',
+    title: 'Örüntü & Analoji',
     description:
-      '20-20-20 kuralı uzağa bakma, göz kası esnetme ve palming ile dijital göz yorgunluğu önleme pratikleri.',
-    accent: 'emerald',
+      'Kelime dizilerindeki kuralı yakalama, benzerlik ilişkilerini tamamlama ve sıra dışı olanı bulma alıştırmaları.',
+    accent: 'violet',
   },
   {
     id: 'durus',
@@ -73,7 +52,7 @@ export const EXERCISE_CATEGORIES: ExerciseCategory[] = [
     track: 'physiological',
     title: 'Fizyolojik & Genel Hazırlık',
     description:
-      'Nefes kontrolü, stres yönetimi ve ses tellerinizi mülakata hazırlayacak teknikler.',
+      'Nefes kontrolü, stres yönetimi ve ses tellerinizi konuşmaya / hitabete hazırlayan teknikler.',
     accent: 'emerald',
   },
 ];
@@ -190,7 +169,7 @@ export const EXERCISES: Exercise[] = [
     categoryId: 'durus',
     title: 'Boyun ve Üst Sırt Molası',
     description:
-      'Ekrana eğilmekten gerilen boyun ve üst sırt için kısa gevşeme molası. Göz molasıyla birlikte yapılabilir.',
+      'Ekrana eğilmekten gerilen boyun ve üst sırt için kısa gevşeme molası.',
     difficulty: 'kolay',
     minutes: 2,
     categoryLabel: 'Duruş',
@@ -243,190 +222,24 @@ export const EXERCISES: Exercise[] = [
     },
   },
 
-  // ——— Ön Lob (Frontal) ———
-  {
-    id: 'tersine-muhendislik',
-    categoryId: 'frontal',
-    title: 'Tersine Mühendislik Algoritması',
-    description:
-      'Gündelik bir cihazın (örn: kahve makinesi) çalışma prensibini zihninizde en temel donanım bileşenlerine kadar ayrıştırma.',
-    difficulty: 'zor',
-    minutes: 15,
-    categoryLabel: 'Problem Çözme',
-    benefits: ['Analitik düşünmeyi keskinleştirir', 'Karar verme mekanizmasını hızlandırır'],
-    engine: {
-      kind: 'prompt',
-      instruction:
-        'Her cihazı sırayla ele alın: enerji girişi → dönüştürücü → kontrol birimi → geri besleme → çıkış. Yüksek sesle anlatın.',
-      secondsPerPrompt: 150,
-      prompts: [
-        { text: 'Kahve makinesi — suyu 93°C\'de tutan kontrol döngüsünü bileşenlerine ayırın.' },
-        { text: 'Otomatik kapı — cismi algılayan sensörden motora kadar sinyal zincirini kurun.' },
-        { text: 'Klima — istenen sıcaklığı koruyan geri besleme mekanizmasını tarif edin.' },
-        { text: 'Elektrikli süpürge — emiş gücünü belirleyen fiziksel parametreleri sıralayın.' },
-        { text: 'Asansör — kat seçiminden fren sistemine kadar güvenlik katmanlarını sayın.' },
-        { text: 'İnsansız hava aracı — irtifa sabitleme için hangi sensör füzyonu gerekir?' },
-      ],
-    },
-  },
-  {
-    id: 'hizli-senaryo',
-    categoryId: 'frontal',
-    title: 'Hızlı Senaryo Değerlendirmesi',
-    description:
-      'Size verilen kriz senaryosuna 10 saniye içerisinde en az 3 farklı alternatif çözüm üretme pratikleri.',
-    difficulty: 'orta',
-    minutes: 8,
-    categoryLabel: 'Problem Çözme',
-    benefits: ['Kriz anında donup kalmayı engeller', 'Esnek düşünme becerisini artırır'],
-    engine: {
-      kind: 'prompt',
-      instruction:
-        'Her senaryoya en az üç farklı çözüm üretin ve birini gerekçeyle seçin. Süre dolmadan karar verin.',
-      secondsPerPrompt: 60,
-      prompts: [
-        { text: 'Saha testinden 2 saat önce kritik sensör arızalandı. Yedek yok.' },
-        { text: 'Teslimden bir gün önce müşteri kapsamı değiştirmek istiyor.' },
-        { text: 'Test sonuçları doğru ama simülasyon modeliyle %15 sapıyor.' },
-        { text: 'Ekipten iki kişi aynı hafta ayrıldı, kritik modül sahipsiz kaldı.' },
-        { text: 'Gizli belge yanlış bir dağıtım listesine gönderildi.' },
-        { text: 'Tedarikçi, kritik bileşende 6 ay gecikme bildirdi.' },
-        { text: 'Entegrasyon testinde iki alt sistem aynı adresi kullanıyor.' },
-        { text: 'Sunum sırasında demo çöktü, kurul karşınızda bekliyor.' },
-      ],
-    },
-  },
-  {
-    id: 'diksiyon-artikulasyon',
-    categoryId: 'frontal',
-    title: 'Diksiyon ve Artikülasyon (Tekerleme)',
-    description:
-      'Baskı altında zorlu tekerlemeleri veya karmaşık mühendislik cümlelerini takılmadan okuma antrenmanı.',
-    difficulty: 'zor',
-    minutes: 5,
-    categoryLabel: 'Nefes',
-    benefits: [
-      'Mülakat esnasında dil sürçmelerini önler',
-      'Topluluk önünde konuşma akıcılığını artırır',
-    ],
-    engine: {
-      kind: 'prompt',
-      instruction:
-        'Her ifadeyi önce yavaş ve net, sonra normal hızda üç kez tekrarlayın. Sonu yutmadan bitirin.',
-      secondsPerPrompt: 50,
-      prompts: [
-        { text: 'Bir berber bir berbere bre berber gel beraber bir berber dükkânı açalım.' },
-        { text: 'Elektromanyetik uyumluluk testlerinde parazit bastırma katsayısı ölçülür.' },
-        { text: 'Şu köşe yaz köşesi, şu köşe kış köşesi, ortada su şişesi.' },
-        { text: 'Atalet ölçüm birimi, ivmeölçer ve dönüölçer verilerini birlikte değerlendirir.' },
-        { text: 'Kırk küp, kırkının da kulpu kırık kara küp.' },
-        { text: 'Sentetik açıklıklı radar görüntüleri, çözünürlüğü hareketle artırır.' },
-      ],
-    },
-  },
-
-  // ——— Yan Lob (Parietal) ———
-  {
-    id: 'mekansal-kurgu',
-    categoryId: 'parietal',
-    title: 'Mekansal Kurgu',
-    description:
-      'Küp, yön ve döndürme sorularını kâğıda çizmeden, yalnızca zihninizde canlandırarak çözme.',
-    difficulty: 'orta',
-    minutes: 6,
-    categoryLabel: 'Mekansal Algı',
-    benefits: [
-      'Şema ve montaj çizimlerini zihinde çevirmeyi kolaylaştırır',
-      'Bu tarz sorularda çözüm süresini kısaltır',
-    ],
-    engine: {
-      kind: 'prompt',
-      instruction:
-        'Kâğıt kullanmayın, şekli zihninizde canlandırın. Süre dolunca cevap açılır, kendinizi dürüstçe puanlayın.',
-      secondsPerPrompt: 45,
-      prompts: [
-        {
-          text: 'Kuzeye bakıyorsunuz. Sağa 90° dönüp ardından 180° daha dönerseniz hangi yöne bakarsınız?',
-          answer: 'Batı (kuzey → doğu → batı)',
-          accept: ['batı'],
-        },
-        {
-          text: "Bir zarın karşılıklı yüzleri toplamı 7'dir. Üst yüz 2, ön yüz 3 ise alt ve arka yüz kaçtır?",
-          answer: 'Alt 5, arka 4',
-          accept: ['alt 5 arka 4', '5 4'],
-        },
-        {
-          text: 'Dış yüzeyi tamamen boyanmış bir küp 3×3×3 = 27 küçük küpe bölünüyor. Kaç küçük küpün tam olarak iki yüzü boyalıdır?',
-          answer: '12 — her biri bir kenarın ortasında duran küpler',
-          accept: ['12'],
-        },
-        {
-          text: "Saat 3'ü gösterirken akrep ile yelkovan arasındaki dar açı kaç derecedir?",
-          answer: '90°',
-          accept: ['90'],
-        },
-        {
-          text: '"L" harfini saat yönünde 90° döndürürseniz ortaya nasıl bir şekil çıkar?',
-          answer: 'Üstte yatay bir kol, sol ucundan aşağı inen dikey bir kol — yani "Γ" görünümü',
-        },
-        {
-          text: 'Bir merdivenin 20 basamağı var. Ortadaki basamaktan 5 yukarı, sonra 8 aşağı inerseniz kaçıncı basamaktasınız?',
-          answer: '7. basamak (10 → 15 → 7)',
-          accept: ['7 basamak', '7'],
-        },
-      ],
-    },
-  },
-  {
-    id: 'zihinden-hesap',
-    categoryId: 'parietal',
-    title: 'Zihinden Hesap',
-    description:
-      'Teknik mülakatlarda sorulan büyüklük tahmini ve kafadan işlem sorularına süre baskısı altında hazırlık.',
-    difficulty: 'orta',
-    minutes: 5,
-    categoryLabel: 'Sayısal İşlem',
-    benefits: [
-      'Kafadan işlem hızını artırır',
-      'Sayısal soruda donup kalmayı azaltır',
-    ],
-    engine: {
-      kind: 'prompt',
-      instruction:
-        'Hesap makinesi ve kâğıt yok. Süre dolunca cevap açılır, kendinizi dürüstçe puanlayın.',
-      secondsPerPrompt: 30,
-      prompts: [
-        { text: '48 × 25 = ?', answer: '1200 — 48 × 100 ÷ 4', accept: ['1200'] },
-        { text: '17 × 18 = ?', answer: '306 — 17 × 18 = 17 × 20 − 17 × 2', accept: ['306'] },
-        { text: "%15'i 240 olan sayı kaçtır?", answer: '1600 — 240 ÷ 0,15', accept: ['1600'] },
-        {
-          text: "1'den 100'e kadar tam sayıların toplamı?",
-          answer: '5050 — 100 × 101 ÷ 2',
-          accept: ['5050'],
-        },
-        { text: '384 ÷ 16 = ?', answer: '24 — 384 ÷ 8 = 48, 48 ÷ 2 = 24', accept: ['24'] },
-        { text: '7² + 8² = ?', answer: '113 — 49 + 64', accept: ['113'] },
-        {
-          text: 'Bir sunucu saniyede 250 istek karşılıyor. Bir dakikada kaç istek eder?',
-          answer: '15.000 — 250 × 60',
-          accept: ['15000'],
-        },
-        { text: "2¹⁰ kaçtır?", answer: '1024', accept: ['1024'] },
-      ],
-    },
-  },
+  // ——— Hafıza & Sözel Muhakeme ———
+  //
+  // İçerik dil eksenine göre: günlük Türkçe kelimeler ve sözle verilen
+  // ilişkiler. `accept` yalnızca cevabı tek ve yazımı öngörülebilir olan
+  // sorulara yazıldı (KARARLAR → "Egzersizde otomatik kontrol ile
+  // öz-değerlendirmenin ayrımı"); serbest ifadeli cevaplar öz-değerlendirmede.
   {
     id: 'konum-siralama',
-    categoryId: 'parietal',
+    categoryId: 'hafiza-muhakeme',
     title: 'Konum ve Sıralama',
     description:
-      'Sözle verilen konum ilişkilerini zihninizde bir düzene oturtup sıralamayı çıkarma pratikleri.',
+      'Sözle verilen konum ve sıra ilişkilerini zihninizde bir düzene oturtup sıralamayı çıkarma pratikleri.',
     difficulty: 'zor',
     minutes: 6,
-    categoryLabel: 'Sistem Algısı',
+    categoryLabel: 'Sözel Muhakeme',
     benefits: [
-      'Karmaşık bağımlılıkları zihinde tutmayı kolaylaştırır',
-      'Sözlü anlatılan mimariyi takip etmeyi hızlandırır',
+      'Sözle verilen ilişkileri zihinde tutmayı kolaylaştırır',
+      'Dinlediğini sıraya koyarak anlama alışkanlığı verir',
     ],
     engine: {
       kind: 'prompt',
@@ -440,213 +253,167 @@ export const EXERCISES: Exercise[] = [
           accept: ['d a b c', 'dabc'],
         },
         {
-          text: 'Beş katlı binada: Ayşe en üstte değil. Berk, Ayşe’nin bir üstünde. Can en altta. Deniz, Berk’in üstünde. Emre kalan katta. Ayşe kaçıncı kattadır?',
+          text: 'Beş katlı binada Ayşe, Berk, Can, Deniz ve Emre farklı katlarda oturuyor. Can en altta, Deniz en üstte. Berk, Ayşe’nin hemen üstünde. Emre, Can’ın hemen üstünde. Ayşe kaçıncı kattadır?',
           answer: '3. kat — Can 1, Emre 2, Ayşe 3, Berk 4, Deniz 5',
           accept: ['3 kat', '3'],
         },
         {
-          text: 'Bir servis A→B→C sırasıyla çağrılıyor. B çökerse hangi servisler etkilenir?',
-          answer: 'C etkilenir (B’ye bağımlı), A ayakta kalır ama B’den yanıt alamaz',
+          text: 'Kitap, defterin sağında. Kalem, kitabın sağında. Silgi, defterin solunda. Soldan sağa sıralama nedir?',
+          answer: 'Silgi · Defter · Kitap · Kalem',
+          accept: ['silgi defter kitap kalem'],
         },
         {
-          text: 'Dört modül: X, Y’ye bağımlı. Y, Z’ye bağımlı. W bağımsız. Hangi sırayla başlatılmalı?',
-          answer: 'Z → Y → X; W sırada bağımsız, herhangi bir anda',
-          accept: ['z y x', 'z y x w', 'w z y x', 'z w y x', 'z y w x'],
+          text: 'Kuyrukta Zeynep, Ali’nin önünde. Ali, Veli’nin önünde. Ayşe kuyruğun en sonunda değil. Kuyruğun en sonunda kim vardır?',
+          answer: 'Veli — Zeynep, Ali, Veli sırası kesin; Ayşe en sonda olamayacağına göre son sırada Veli var',
+          accept: ['veli'],
         },
         {
           text: 'Masada saat yönünde oturan 4 kişi: Ali’nin karşısında Veli var. Ayşe, Ali’nin solunda. Dördüncü kişi Zeynep. Veli’nin solunda kim oturur?',
           answer: 'Zeynep — saat yönünde Ali · Ayşe · Veli · Zeynep',
           accept: ['zeynep'],
         },
-      ],
-    },
-  },
-
-  // ——— Şakak Lobu (Temporal) ———
-  {
-    id: 'terim-zinciri',
-    categoryId: 'temporal',
-    title: 'Teknik Terim Zinciri',
-    description:
-      'Verilen başlıkla ilgili terimleri zincirleme hatırlayıp her birini tek cümleyle tanımlama alıştırması.',
-    difficulty: 'orta',
-    minutes: 6,
-    categoryLabel: 'Hafıza',
-    benefits: ['Terim hatırlamayı hızlandırır', 'Cevaplarda teknik derinliği artırır'],
-    engine: {
-      kind: 'prompt',
-      instruction:
-        'Başlıkla ilgili en az 6 terim sayın, her birini tek cümleyle tanımlayın. Duraklamadan devam edin.',
-      secondsPerPrompt: 60,
-      prompts: [
-        { text: 'Radar sistemleri' },
-        { text: 'Gömülü yazılım doğrulama' },
-        { text: 'Güdüm ve kontrol' },
-        { text: 'Elektronik harp' },
-        { text: 'Sistem mühendisliği süreçleri' },
-        { text: 'Siber güvenlik temelleri' },
+        {
+          text: 'Elif, Burak’tan büyük. Burak, Cem’den büyük. Dilek, Elif’ten büyük. Yaşça en küçük ve en büyük kimdir?',
+          answer: 'En küçük Cem, en büyük Dilek — Cem < Burak < Elif < Dilek',
+        },
       ],
     },
   },
   {
     id: 'ters-siralama',
-    categoryId: 'temporal',
-    title: 'Ters Sıralı Terim Tekrarı',
+    categoryId: 'hafiza-muhakeme',
+    title: 'Ters Sıralı Kelime Tekrarı',
     description:
-      'Okunan terim dizisini tersten tekrar ederek çalışan bellek görevlerinde pratik yapma çalışması.',
+      'Okunan kelime dizisini tersten tekrar ederek çalışma belleğini kullanma pratiği.',
     difficulty: 'orta',
     minutes: 4,
     categoryLabel: 'Hafıza',
-    benefits: ['Ters sıralama görevinde ölçülebilir gelişme sağlar', 'Uzun soruları akılda tutma pratiği verir'],
+    benefits: [
+      'Ters sıralama görevinde ölçülebilir gelişme sağlar',
+      'Uzun cümleleri akılda tutma pratiği verir',
+    ],
     engine: {
       kind: 'prompt',
       instruction: 'Diziyi bir kez okuyun, kapatın ve tersten yazın.',
       secondsPerPrompt: 40,
       prompts: [
         {
-          text: 'radar · anten · dalga · filtre',
-          answer: 'filtre · dalga · anten · radar',
-          accept: ['filtre dalga anten radar'],
+          text: 'kalem · defter · kitap · silgi',
+          answer: 'silgi · kitap · defter · kalem',
+          accept: ['silgi kitap defter kalem'],
         },
         {
-          text: 'ivme · atalet · süzgeç · kalman · sapma',
-          answer: 'sapma · kalman · süzgeç · atalet · ivme',
-          accept: ['sapma kalman süzgeç atalet ivme'],
+          text: 'sabır · kanaat · hikmet · edep · vakar',
+          answer: 'vakar · edep · hikmet · kanaat · sabır',
+          accept: ['vakar edep hikmet kanaat sabır'],
         },
         {
-          text: 'menzil · irtifa · azimut · hedef · kilit',
-          answer: 'kilit · hedef · azimut · irtifa · menzil',
-          accept: ['kilit hedef azimut irtifa menzil'],
+          text: 'deniz · dalga · kıyı · martı · fener',
+          answer: 'fener · martı · kıyı · dalga · deniz',
+          accept: ['fener martı kıyı dalga deniz'],
         },
         {
-          text: 'derleme · bağlama · yükleme · çalıştırma · kesme',
-          answer: 'kesme · çalıştırma · yükleme · bağlama · derleme',
-          accept: ['kesme çalıştırma yükleme bağlama derleme'],
+          text: 'sabah · öğle · ikindi · akşam · gece',
+          answer: 'gece · akşam · ikindi · öğle · sabah',
+          accept: ['gece akşam ikindi öğle sabah'],
         },
         {
-          text: 'gereksinim · tasarım · üretim · doğrulama · kabul · teslim',
-          answer: 'teslim · kabul · doğrulama · üretim · tasarım · gereksinim',
-          accept: ['teslim kabul doğrulama üretim tasarım gereksinim'],
+          text: 'harf · hece · sözcük · tamlama · cümle · paragraf',
+          answer: 'paragraf · cümle · tamlama · sözcük · hece · harf',
+          accept: ['paragraf cümle tamlama sözcük hece harf'],
         },
         {
-          text: 'sensör · füzyon · karar · eyleyici · geri besleme · kayıt',
-          answer: 'kayıt · geri besleme · eyleyici · karar · füzyon · sensör',
-          accept: ['kayıt geri besleme eyleyici karar füzyon sensör'],
+          text: 'şiir · roman · masal · deneme · makale · destan',
+          answer: 'destan · makale · deneme · masal · roman · şiir',
+          accept: ['destan makale deneme masal roman şiir'],
         },
       ],
     },
   },
 
-  // ——— Arka Lob (Oksipital) ———
+  // ——— Örüntü & Analoji ———
   {
     id: 'oruntu-tanima',
-    categoryId: 'oksipital',
-    title: 'Hızlı Örüntü Tanıma',
+    categoryId: 'oruntu-analoji',
+    title: 'Sözel Örüntü ve Analoji',
     description:
-      'Sayı ve şekil dizilerindeki kuralı süre dolmadan yakalayıp diziyi devam ettirme egzersizi.',
+      'Kelime dizilerindeki kuralı yakalayıp diziyi devam ettirme, benzerlik ilişkilerini tamamlama ve sıra dışı olanı bulma egzersizi.',
     difficulty: 'orta',
     minutes: 5,
-    categoryLabel: 'Görsel Algı',
-    benefits: ['Şema ve grafik okumayı hızlandırır', 'Teknik testlerde tepki süresini kısaltır'],
+    categoryLabel: 'Örüntü',
+    benefits: [
+      'Kelimeler arasındaki ilişkiyi görmeyi çalıştırır',
+      'Bağlamdan anlam çıkarma alışkanlığı verir',
+    ],
     engine: {
       kind: 'prompt',
-      instruction: 'Diziyi devam ettirin. Süre dolunca cevap açılır, kendinizi dürüstçe puanlayın.',
+      instruction:
+        'Diziyi devam ettirin, eksik halkayı bulun ya da sıra dışı olanı seçin. Süre dolunca cevap açılır, kendinizi dürüstçe puanlayın.',
       secondsPerPrompt: 40,
       prompts: [
-        { text: '2 · 6 · 12 · 20 · 30 · ?', answer: '42 (artış: 4, 6, 8, 10, 12)', accept: ['42'] },
-        { text: '1 · 1 · 2 · 3 · 5 · 8 · ?', answer: '13 (Fibonacci)', accept: ['13'] },
-        { text: '81 · 27 · 9 · 3 · ?', answer: "1 (her adımda 3'e bölünüyor)", accept: ['1'] },
-        { text: '3 · 4 · 6 · 9 · 13 · ?', answer: '18 (artış: 1, 2, 3, 4, 5)', accept: ['18'] },
-        { text: '2 · 3 · 5 · 7 · 11 · ?', answer: '13 (asal sayılar)', accept: ['13'] },
-        { text: '1 · 4 · 9 · 16 · 25 · ?', answer: '36 (tam kareler)', accept: ['36'] },
-        { text: '64 · 32 · 48 · 24 · 36 · ?', answer: '18 (sırayla ÷2 ve ×1,5)', accept: ['18'] },
+        {
+          text: 'Pazartesi · Çarşamba · Cuma · ?',
+          answer: 'Pazar (her adımda bir gün atlanıyor)',
+          accept: ['pazar'],
+        },
+        {
+          text: 'Ocak · Mart · Mayıs · Temmuz · ?',
+          answer: 'Eylül (her adımda bir ay atlanıyor)',
+          accept: ['eylül'],
+        },
+        {
+          text: 'okul : öğrenci :: hastane : ?',
+          answer: 'hasta — yer : o yerde bulunan kişi (doktor da kabul edilebilir)',
+        },
+        {
+          text: 'sıcak : soğuk :: yüksek : ?',
+          answer: 'alçak (ya da düşük) — zıt anlam ilişkisi',
+        },
+        {
+          text: 'Hangisi diğerlerinden farklı? elma · armut · kiraz · masa · üzüm',
+          answer: 'masa — diğerleri meyve',
+          accept: ['masa'],
+        },
+        {
+          text: 'Hangisi diğerlerinden farklı? kalem · silgi · defter · bulut · cetvel',
+          answer: 'bulut — diğerleri kırtasiye malzemesi',
+          accept: ['bulut'],
+        },
+        {
+          text: 'Hangisi diğerlerinden farklı? koşmak · yürümek · uçmak · sevinmek · sürünmek',
+          answer: 'sevinmek — diğerleri hareket bildiren fiiller',
+          accept: ['sevinmek'],
+        },
       ],
     },
   },
 
   // ——— Fizyolojik & Beden ———
   {
-    id: 'goz-20-20-20',
-    categoryId: 'goz-sagligi',
-    title: '20-20-20 Göz Dinlendirme Kuralı',
+    id: 'diksiyon-artikulasyon',
+    categoryId: 'fizyolojik',
+    title: 'Diksiyon ve Artikülasyon (Tekerleme)',
     description:
-      'Ekran başında uzun süre çalışanlar için göz odaklanma kaslarını gevşeten ve dijital yorgunluğu önleyen 20 saniyelik mola pratiği.',
-    difficulty: 'kolay',
-    minutes: 2,
-    categoryLabel: 'Göz Sağlığı',
+      'Zorlu tekerlemeleri ve ses kümeleri yoğun cümleleri takılmadan okuma antrenmanı.',
+    difficulty: 'zor',
+    minutes: 5,
+    categoryLabel: 'Diksiyon',
     benefits: [
-      'Göz odaklanma kaslarını (siliyer kaslar) gevşetir',
-      'Ekran yorgunluğunu ve baş ağrısını azaltır',
-      'Göz kuruluğu ve batma hissini düşürür',
+      'Konuşma sırasında dil sürçmelerini azaltmaya yardım eder',
+      'Topluluk önünde konuşma akıcılığını çalıştırır',
     ],
     engine: {
       kind: 'prompt',
       instruction:
-        'Her adımda bakışlarınızı ekrandan tamamen ayırıp en az 6 metre (20 fit) uzaktaki bir noktaya odaklanın.',
-      secondsPerPrompt: 20,
+        'Her ifadeyi önce yavaş ve net, sonra normal hızda üç kez tekrarlayın. Sonu yutmadan bitirin.',
+      secondsPerPrompt: 50,
       prompts: [
-        { text: '1. Adım: Bakışlarınızı ekrandan ayırın. Ufuktaki veya uzaktaki sabit bir noktaya odaklanın.' },
-        { text: '2. Adım: Derin nefes alırken uzaktaki nesnenin detaylarına (renk, çizgi, kenar) dikkat edin.' },
-        { text: '3. Adım: Göz kaslarınızın esnediğini hissedin. Gözlerinizi yavaşça iki kez kırpın.' },
-        { text: '4. Adım: Sakince nefes verin ve uzağa bakmaya devam edin. Bakışlarınızı yumuşatın.' },
-        { text: '5. Adım: Ekranınıza dönmeden önce gözlerinizi kapatıp 5 saniye karanlıkta dinlendirin.' },
-      ],
-    },
-  },
-  {
-    id: 'goz-esnetme-8-cizme',
-    categoryId: 'goz-sagligi',
-    title: 'Göz Kasları Esnetme & 8 Çizimi',
-    description:
-      'Ekrana sabit bakmaktan sertleşen göz çevresi motor kaslarını esnetmek ve göz takip hızını artırmak için dairesel ve yönlü pratik.',
-    difficulty: 'orta',
-    minutes: 3,
-    categoryLabel: 'Göz Kasları',
-    benefits: [
-      'Göz motor kaslarının esnekliğini artırır',
-      'Göz içi kan dolaşımını canlandırır',
-      'Odak değiştirme hızını ve geniş açılı algıyı geliştirir',
-    ],
-    engine: {
-      kind: 'prompt',
-      instruction:
-        'Başınızı tamamen sabit tutun. Hareketleri YALNIZCA gözlerinizi döndürerek uygulayın.',
-      secondsPerPrompt: 25,
-      prompts: [
-        { text: 'Yukarı - Aşağı: Başınız sabit. Bakışlarınızı tavan ile zemin arasında yavaşça 5 kez gidip getirin.' },
-        { text: 'Sağ - Sol: Bakışlarınızı başınızı çevirmeden en sola, ardından en sağa yavaşça 5 kez kaydırın.' },
-        { text: 'Çapraz Esnetme: Sol üst köşeden sağ alt köşeye, ardından sağ üstten sol alta bakın.' },
-        { text: 'Hayali 8 Çizimi: 3 metre ötede dev bir "8" işareti olduğunu hayal edin ve gözlerinizle yavaşça çizin.' },
-        { text: 'Tersine 8 Çizimi: Hayali 8 işaretini şimdi ters yönde yavaşça takip edin.' },
-        { text: 'Yakın & Uzak Odak: Parmağınızı burnunuzdan 15 cm uzağa koyun. Parmağınız ile uzaktaki duvar arasında odağı değiştirin.' },
-      ],
-    },
-  },
-  {
-    id: 'goz-palming-isitmali-dinlenme',
-    categoryId: 'goz-sagligi',
-    title: 'Avuç İçi Isıtma (Palming)',
-    description:
-      'Avuç içlerini ovuşturarak ısıtıp gözlerin üzerine kapatma. Zifiri karanlık ve doğal sıcaklık ile optik sinirleri derinlemesine dinlendirir.',
-    difficulty: 'kolay',
-    minutes: 3,
-    categoryLabel: 'Göz Dinlendirme',
-    benefits: [
-      'Optik sinirleri ve göz çevresi dokularını rahatlatır',
-      'Göz içi tansiyonu ve baskı hissini düşürür',
-      'Zihinsel yorgunluğu ve göz parlamasını azaltır',
-    ],
-    engine: {
-      kind: 'prompt',
-      instruction:
-        'Ellerinizi ovuşturun. Avuçlarınızı göz kürelerine basbayağı bastırmadan, göz yuvalarını kapatacak şekilde kubbe yapın.',
-      secondsPerPrompt: 30,
-      prompts: [
-        { text: '1. Ellerinizi Isıtın: Avuç içlerinizi sürtünerek sıcaklık hissedene kadar 10 saniye hızlıca ovuşturun.' },
-        { text: '2. Koyu Kubbe Yapın: Avuçlarınızı gözlerinizin üzerine yerleştirin. Işık sızmadığından emin olun.' },
-        { text: '3. Derin Karanlık: Gözler kapalı. Karanlığın derinliğine odaklanın, omuzlarınızı serbest bırakın.' },
-        { text: '4. Isı Transferi: Avuçlarınızdaki sıcaklığın göz çevrenizdeki kaslara yayıldığını hissedin.' },
-        { text: '5. Yavaşça Açın: Ellerinizi yavaşça çekin. Kirpiklerinizi yavaşça aralayarak ortama uyum sağlayın.' },
+        { text: 'Bir berber bir berbere bre berber gel beraber bir berber dükkânı açalım.' },
+        { text: 'Dal sarkar kartal kalkar, kartal kalkar dal sarkar.' },
+        { text: 'Şu köşe yaz köşesi, şu köşe kış köşesi, ortada su şişesi.' },
+        { text: 'Çarşıdan çalı çırpı çuvalı aldım, çuvalın çıkıntısı çatırdadı.' },
+        { text: 'Kırk küp, kırkının da kulpu kırık kara küp.' },
+        { text: 'Yağmurlu yamaçta yürüyen yorgun yolcu yarım yamalak yemek yedi.' },
       ],
     },
   },
@@ -657,7 +424,7 @@ export const EXERCISES: Exercise[] = [
     categoryId: 'fizyolojik',
     title: 'Odaklanma ve Nefes Açma (Pacer)',
     description:
-      '4-4-4-4 kuralıyla uygulanan (Nefes Al, Tut, Ver, Bekle) interaktif nefes düzenleyici. Otonom sinir sistemini dengeler ve mülakat öncesi stresi azaltır.',
+      '4-4-4-4 kuralıyla uygulanan (Nefes Al, Tut, Ver, Bekle) interaktif nefes düzenleyici. Otonom sinir sistemini dengeler ve konuşma öncesi stresi azaltır.',
     difficulty: 'kolay',
     minutes: 3,
     categoryLabel: 'Nefes',
@@ -681,7 +448,7 @@ export const EXERCISES: Exercise[] = [
     // nefes egzersizi akciğer hacmini anlamlı biçimde artırmıyor
     // (YAPILACAKLAR Bölüm 1 → "Ne yapar, ne yapmaz").
     description:
-      'Diyafram kullanımını ve veriş kontrolünü geliştiren 4-7-8 nefes tekniği. Sesinizin mülakatta daha güçlü ve titremeden çıkmasını sağlar.',
+      'Diyafram kullanımını ve veriş kontrolünü geliştiren 4-7-8 nefes tekniği. Sesinizin konuşma sırasında daha güçlü ve titremeden çıkmasına yardımcı olur.',
     difficulty: 'orta',
     minutes: 5,
     categoryLabel: 'Nefes',
@@ -701,7 +468,7 @@ export const EXERCISES: Exercise[] = [
     categoryId: 'fizyolojik',
     title: 'Kutu Nefesi (Box Breathing)',
     description:
-      'Sunum ve mülakat öncesi kalp atışını düşürmek için kullanılan, eşit fazlı 5-5-5-5 nefes düzeni.',
+      'Sunum ve konuşma öncesi kalp atışını düşürmek için kullanılan, eşit fazlı 5-5-5-5 nefes düzeni.',
     difficulty: 'kolay',
     minutes: 4,
     categoryLabel: 'Nefes',

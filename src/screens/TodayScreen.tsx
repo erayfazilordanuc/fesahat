@@ -1,32 +1,22 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { Sunrise, BrainCircuit, TrendingUp, User, Mic, Cpu, ChevronRight } from 'lucide-react-native';
+import { Sunrise, Hammer, TrendingUp, User, Lightbulb, ChevronRight } from 'lucide-react-native';
 
 import { AppScreen, TabHeader, Surface, toneColor, toneSoft, toneText } from '../components/AppUI';
 import { useThemeTokens } from '../components/practice/PracticeUI';
-import { DailyPracticeCard, DailyFaithCard } from '../components/practice/DailyPracticeCard';
+import { DailyPracticeCard, DailySozCard } from '../components/practice/DailyPracticeCard';
 import { DailyWordCard } from '../components/practice/DailyWordCard';
 import { HabitCard } from '../components/practice/HabitCard';
-import { firstName, targetDepartmentLabel, useProfile } from '../utils/profile';
+import { firstName, useProfile } from '../utils/profile';
 import { useOnboarding, dismissTour } from '../utils/onboarding';
-import { getCompany } from '../data/companies';
-import { pickDailyInterview, pickDailyTechnical } from '../data/questions';
+import { useDailyPracticeSettings } from '../utils/dailyPracticeSettings';
+import { pickDailyVerbalQuestion } from '../data/verbalReasoning';
 import { useDayKey } from '../utils/today';
 
 // Bugün sekmesi — uygulamanın giriş ekranı.
 //
 // Tek soruyu cevaplar: "bugün ne yapmalıyım?" O yüzden ekranda yalnızca günün
-// işi var; modül kataloğu Gelişim'de, ölçüm İlerleme'de duruyor.
-//
-// Eskiden bu ekran `SimulationScreen`'di ve en büyük öğesi "Günlük Mülakata
-// Başla" idi; günlük pratik listesi en alttaydı. Uygulama mülakat uygulaması
-// olmaktan çıkınca sıralama tersine döndü — mülakat artık Gelişim sekmesindeki
-// bir sütun (YAPILACAKLAR Bölüm 0).
-//
-// 2026-10-04: mülakat en üste **şerit** olarak geri geldi (`DailyInterviewStrip`)
-// ama kart olarak değil, tek satır olarak — ekranı aşağı doğru uzatmaması şartı
-// vardı. Kurgu ve geçmiş hâlâ Gelişim → Kariyer & Mülakat'ta; buradaki yalnızca
-// günün genel sorusu ve hedef alanın günün teknik sorusu için kısayol.
+// işi var; alan kataloğu Atölye'de, ölçüm Karne'de duruyor.
 
 export default function TodayScreen({ navigation }: any) {
   const t = useThemeTokens();
@@ -44,14 +34,14 @@ export default function TodayScreen({ navigation }: any) {
         />
       }
     >
-      {/* Günün mülakatı + günün teknik sorusu — tek satırlık şerit, en üstte. */}
-      <DailyInterviewStrip navigation={navigation} />
-
       {/* Hızlı tur — yalnızca oryantasyon bittiyse ve kart kapatılmadıysa görünür. */}
       {completed && !tourDismissed ? <QuickTourCard /> : null}
 
-      {/* Günün duası + vecizesi tek kartta — yalnızca dinî içerik açıkken. */}
-      <DailyFaithCard navigation={navigation} />
+      {/* Günün sözü (dinî mod açıksa üstünde günün duası). */}
+      <DailySozCard navigation={navigation} />
+
+      {/* Günün kavrayış sorusu — tek satır, Anlayış & Kavrayış modülü açıkken. */}
+      <DailyVerbalCard navigation={navigation} />
 
       {/* Günün kelimesi — lugat kapalıysa ya da ana ekranda gösterilmiyorsa çıkmaz. */}
       <DailyWordCard navigation={navigation} />
@@ -62,8 +52,8 @@ export default function TodayScreen({ navigation }: any) {
       {/* Günlük pratik modülleri — hepsi kapalıysa hiç render edilmez. */}
       <DailyPracticeCard navigation={navigation} />
 
-      {/* Seri kartı ve "Gelişim sekmesine bak" yönlendirmesi 2026-09-18'de
-          kaldırıldı: seri bilgisi İlerleme sekmesinde zaten var, sekme çubuğu da
+      {/* Seri kartı ve "Atölye sekmesine bak" yönlendirmesi 2026-09-18'de
+          kaldırıldı: seri bilgisi Karne sekmesinde zaten var, sekme çubuğu da
           hep ekranda. Bugün sekmesi tek soruya odaklı kalsın — "bugün ne
           yapmalıyım". */}
     </AppScreen>
@@ -71,98 +61,45 @@ export default function TodayScreen({ navigation }: any) {
 }
 
 /**
- * Günün mülakatı ve günün teknik sorusu — Bugün sekmesinin en üstündeki şerit.
+ * Günün kavrayış sorusu — Bugün sekmesinde tek satırlık şerit.
  *
- * Neden kart değil şerit: mülakat 2026-09-18'de bu ekrandan çıkarılmıştı çünkü
- * kart olarak en büyük öğeydi ve Bugün'ü "günün işi" ekranı olmaktan çıkarıyordu.
- * Geri gelirken **tek satır** olarak geldi — iki dokunma hedefi yan yana, ekranı
- * aşağı doğru uzatmıyor. Asıl mülakat kurgusu (kurum/tür seçimi, geçmiş) hâlâ
- * Gelişim → Kariyer & Mülakat'ta; burası yalnızca kısayol.
- *
- * Sol taraf günün genel sorusu (`pickDailyInterview`), sağ taraf hedef alanın
- * günün teknik sorusu (`pickDailyTechnical`). Hedef alan seçilmemişse sağ taraf
- * "Alan seç" olup Profil'e götürüyor — soru havuzu departmansız seçilemiyor.
+ * Kart değil şerit: Bugün ekranı "bugün ne yapmalıyım" sorusuna odaklı kalsın
+ * diye her modül burada en fazla bir satır kaplıyor. Soruyu burada
+ * cevaplatmıyoruz; dokununca setin tamamı `Quiz` ekranında açılıyor — tek
+ * soruluk bir cevap kaydı ölçümü bölerdi (`comprehensionProgress` set
+ * bazında kaydediyor).
  */
-function DailyInterviewStrip({ navigation }: any) {
+function DailyVerbalCard({ navigation }: any) {
   const t = useThemeTokens();
-  const profile = useProfile();
-  // Gün dönümünde (uygulama açıkken gece yarısı geçerse) soru tazelensin.
+  const { settings } = useDailyPracticeSettings();
+  // Gün dönümünde soru tazelensin.
   const day = useDayKey();
+  const daily = React.useMemo(() => pickDailyVerbalQuestion(), [day]);
 
-  const daily = React.useMemo(() => pickDailyInterview(), [day]);
-  const company = getCompany(daily.companyId);
-  const department = targetDepartmentLabel(profile);
-  const technicalCompany = React.useMemo(
-    () =>
-      profile.targetDepartment
-        ? getCompany(pickDailyTechnical(profile.targetDepartment).companyId)
-        : null,
-    [day, profile.targetDepartment],
-  );
+  if (!settings.comprehension.enabled || !settings.comprehension.showOnHome) return null;
 
   return (
-    <View
-      className={`flex-row items-stretch rounded-2xl border overflow-hidden mt-1 ${t.cardBg} ${t.cardBorder}`}
+    <Pressable
+      onPress={() => navigation.navigate('Quiz', { setId: daily.set.id })}
+      accessibilityRole="button"
+      accessibilityLabel={`Günün kavrayış sorusu: ${daily.set.title}. Alıştırmayı açmak için dokun.`}
+      className={`flex-row items-center rounded-2xl border mt-4 px-3 py-2.5 ${t.cardBg} ${t.cardBorder}`}
     >
-      <Pressable
-        onPress={() => navigation.navigate('DailyInterview')}
-        accessibilityRole="button"
-        accessibilityLabel={`Günün mülakatı, ${company.name}, genel soru. Başlamak için dokun.`}
-        className="flex-1 flex-row items-center px-3 py-2.5"
+      <View
+        className={`w-8 h-8 rounded-lg items-center justify-center mr-2.5 ${toneSoft('blue', t.isLight)}`}
       >
-        <View
-          className={`w-8 h-8 rounded-lg items-center justify-center mr-2.5 ${toneSoft('blue', t.isLight)}`}
-        >
-          <Mic size={15} color={toneColor('blue', t.isLight)} />
-        </View>
-        <View className="flex-1">
-          <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
-            Günün mülakatı
-          </Text>
-          <Text className={`text-[11px] ${t.muted}`} numberOfLines={1}>
-            {company.name} · genel
-          </Text>
-        </View>
-      </Pressable>
-
-      <Pressable
-        onPress={() =>
-          profile.targetDepartment
-            ? navigation.navigate('DailyInterview', {
-                daily: true,
-                type: 'teknik',
-                department: profile.targetDepartment,
-              })
-            : navigation.navigate('Profil')
-        }
-        accessibilityRole="button"
-        accessibilityLabel={
-          department
-            ? `Günün teknik sorusu, ${department}${technicalCompany ? `, ${technicalCompany.name}` : ''}. Başlamak için dokun.`
-            : 'Hedef alan seçilmedi. Profilde seçmek için dokun.'
-        }
-        className={`flex-row items-center px-3 py-2.5 border-l ${t.dividerColor}`}
-        style={{ maxWidth: '44%' }}
-      >
-        <View
-          className={`w-8 h-8 rounded-lg items-center justify-center mr-2 ${toneSoft(
-            department ? 'violet' : 'slate',
-            t.isLight,
-          )}`}
-        >
-          <Cpu size={15} color={toneColor(department ? 'violet' : 'slate', t.isLight)} />
-        </View>
-        <View className="flex-1">
-          <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
-            {department ? 'Teknik' : 'Alan seç'}
-          </Text>
-          <Text className={`text-[11px] ${t.muted}`} numberOfLines={1}>
-            {department || 'Profil'}
-          </Text>
-        </View>
-        <ChevronRight size={14} color={t.iconColor} />
-      </Pressable>
-    </View>
+        <Lightbulb size={15} color={toneColor('blue', t.isLight)} />
+      </View>
+      <View className="flex-1 pr-2">
+        <Text className={`text-[12px] font-bold ${t.title}`} numberOfLines={1}>
+          Günün kavrayış sorusu
+        </Text>
+        <Text className={`text-[11px] ${t.muted}`} numberOfLines={1}>
+          {daily.set.title}
+        </Text>
+      </View>
+      <ChevronRight size={14} color={t.iconColor} />
+    </Pressable>
   );
 }
 
@@ -174,8 +111,8 @@ function DailyInterviewStrip({ navigation }: any) {
  */
 const TOUR_ROWS: { icon: React.ComponentType<{ size?: number; color?: string }>; tone: 'emerald' | 'violet' | 'blue' | 'slate'; label: string; text: string }[] = [
   { icon: Sunrise, tone: 'emerald', label: 'Bugün', text: 'günün işi burada; bitirdiklerin serine sayılır.' },
-  { icon: BrainCircuit, tone: 'violet', label: 'Gelişim', text: 'bütün alanlar; seçtiğin hedefler en üstte.' },
-  { icon: TrendingUp, tone: 'blue', label: 'İlerleme', text: 'seriler, ölçümler ve geçmiş.' },
+  { icon: Hammer, tone: 'violet', label: 'Atölye', text: 'bütün alanlar; seçtiğin hedefler en üstte.' },
+  { icon: TrendingUp, tone: 'blue', label: 'Karne', text: 'seriler, ölçümler ve geçmiş.' },
   { icon: User, tone: 'slate', label: 'Profil', text: 'hedeflerin, hatırlatıcılar ve ayarlar.' },
 ];
 

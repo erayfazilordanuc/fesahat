@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { TrendingUp, Award, Cpu, Flame, ChartColumn, NotebookPen } from 'lucide-react-native';
+import { TrendingUp, Cpu, Flame, ChartColumn, NotebookPen } from 'lucide-react-native';
 
 import {
   AppScreen,
@@ -16,9 +16,16 @@ import {
 import { useThemeTokens } from '../components/practice/PracticeUI';
 import { TrendChart } from '../components/TrendChart';
 import { testHistory, useDailyProgress, type PracticeModule } from '../utils/dailyPracticeProgress';
-import { interviewStats, useInterviewSessions } from '../utils/interviewHistory';
 import { exerciseStats, useExerciseLogs } from '../utils/exerciseHistory';
 import { MEASURE_TESTS } from '../data/measureTests';
+import {
+  useComprehension,
+  accuracyFor,
+  accuracyBySkill,
+} from '../utils/comprehensionProgress';
+import { useComm, completedScenarioCount } from '../utils/commProgress';
+import { QUIZ_SKILL_LABELS } from '../data/quiz';
+import { COMM_SCENARIOS } from '../data/communication';
 
 // İlerleme sekmesi — uygulamanın ölçtüğü **her şey**.
 //
@@ -35,10 +42,8 @@ import { MEASURE_TESTS } from '../data/measureTests';
 //   2. Aynı ekranda üç ayrı kart biçimi vardı (ızgara kutusu, geçmiş kartı,
 //      karne kartı). Hepsi tek bir satır biçimine indi.
 //
-// 2026-09-20: "Kayıtlar" dördüncü girişini (Yanıt defteri) alınca alt alta
-// dört satır ekranın yarısını kaplar oldu; ikişerli ızgaraya geçildi
-// (`RecordGrid`). Yukarıdaki 1. maddedeki "yamuk" sorunu burada yok: giriş
-// sayısı çift ve tek kalırsa boş dolgu ekleniyor.
+// "Kayıtlar" ikişerli ızgarada (`RecordGrid`). Yukarıdaki 1. maddedeki "yamuk"
+// sorunu burada yok: giriş sayısı tek kalırsa boş dolgu ekleniyor.
 
 const MODULE_LABELS: Record<PracticeModule, string> = {
   dailyText: 'Günün metni',
@@ -46,7 +51,93 @@ const MODULE_LABELS: Record<PracticeModule, string> = {
   speech: 'Konuşma egzersizi',
   belagat: 'Belagat',
   lugat: 'Günün kelimeleri',
+  comprehension: 'Anlayış & kavrayış',
+  communication: 'İletişim',
 };
+
+/**
+ * Anlayış & kavrayış doğruluğu ve iletişim ilerlemesi.
+ *
+ * ⚠️ İki ayrı ölçüm mantığı var ve kasıtlı olarak farklı sunuluyor
+ * (KARARLAR → "Ölçüm skalası norm uydurmaz", YAPILACAKLAR_FESAHAT Bölüm 4):
+ *  - Anlayış/kavrayış sorularının tek doğru cevabı var → **doğruluk yüzdesi**
+ *    gösterilir, ama bu kişinin kendi geçmişidir; nüfus normu ya da "seviye"
+ *    iddiası yok. Kayıt yoksa yüzde HİÇ gösterilmez (sıfır yazmak yanıltıcı).
+ *  - İletişim senaryolarının tek doğru cevabı yok → yalnızca **tamamlanma**
+ *    sayılır, yüzde başarı olarak sunulmaz.
+ */
+function ComprehensionSection() {
+  const t = useThemeTokens();
+  const comprehension = useComprehension();
+  const comm = useComm();
+
+  const overall = accuracyFor(comprehension);
+  const skills = accuracyBySkill(comprehension).slice(0, 4);
+  const completedScenarios = completedScenarioCount(comm);
+  const summaryCount = comprehension.summaryAttempts.length;
+
+  const hasAnything =
+    overall !== null || completedScenarios > 0 || summaryCount > 0;
+  if (!hasAnything) return null;
+
+  return (
+    <>
+      <SectionLabel>ANLAYIŞ & İLETİŞİM</SectionLabel>
+      <Surface>
+        {overall !== null ? (
+          <View className="flex-row items-center justify-between">
+            <Text className={`text-[12px] ${t.body}`}>Soru doğruluğu (kendi geçmişin)</Text>
+            <Text className={`text-[13px] font-bold ${t.title}`}>%{overall}</Text>
+          </View>
+        ) : null}
+
+        {skills.length > 0 ? (
+          <View className={`mt-3 pt-3 border-t ${t.dividerColor}`}>
+            <Text className={`text-[10px] font-bold tracking-widest mb-2 ${t.muted}`}>
+              EN ÇOK ÇALIŞILACAK BECERİLER
+            </Text>
+            {skills.map((entry) => (
+              <View key={entry.skill} className="flex-row items-center justify-between mt-1.5">
+                <Text className={`text-[12px] flex-1 pr-2 ${t.body}`} numberOfLines={1}>
+                  {QUIZ_SKILL_LABELS[entry.skill]}
+                </Text>
+                <Text className={`text-[11px] ${t.muted}`}>
+                  {entry.correct}/{entry.total} · %{entry.percent}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {summaryCount > 0 ? (
+          <View className={`mt-3 pt-3 border-t ${t.dividerColor}`}>
+            <View className="flex-row items-center justify-between">
+              <Text className={`text-[12px] ${t.body}`}>Özetleme alıştırması</Text>
+              <Text className={`text-[13px] font-bold ${t.title}`}>{summaryCount}</Text>
+            </View>
+            <Text className={`text-[10px] mt-1 ${t.muted}`}>
+              Öz-değerlendirme — doğruluk olarak sayılmaz.
+            </Text>
+          </View>
+        ) : null}
+
+        {completedScenarios > 0 ? (
+          <View className={`mt-3 pt-3 border-t ${t.dividerColor}`}>
+            <View className="flex-row items-center justify-between">
+              <Text className={`text-[12px] ${t.body}`}>Tamamlanan iletişim senaryosu</Text>
+              <Text className={`text-[13px] font-bold ${t.title}`}>
+                {completedScenarios}/{COMM_SCENARIOS.length}
+              </Text>
+            </View>
+            <Text className={`text-[10px] mt-1 ${t.muted}`}>
+              Senaryolarda tek doğru cevap yok; başarı yüzdesi tutulmaz.
+            </Text>
+          </View>
+        ) : null}
+      </Surface>
+    </>
+  );
+}
 
 /** Grafiğe beslenecek son N kaydı eskiden yeniye sıralar. */
 function lastValues<T>(items: T[], take: number, pick: (item: T) => number): number[] {
@@ -56,10 +147,8 @@ function lastValues<T>(items: T[], take: number, pick: (item: T) => number): num
 export default function ProgressScreen({ navigation }: any) {
   const t = useThemeTokens();
   const { progress } = useDailyProgress();
-  const sessions = useInterviewSessions();
   const logs = useExerciseLogs();
 
-  const interviews = interviewStats(sessions);
   const exercises = exerciseStats(logs);
 
   const modules = Object.entries(progress.modules) as [
@@ -73,15 +162,10 @@ export default function ProgressScreen({ navigation }: any) {
   const started = modules.filter(([, m]) => m.totalSessions > 0);
   const notStarted = modules.filter(([, m]) => m.totalSessions === 0);
 
-  const interviewSeries = lastValues(
-    sessions.filter((session) => session.analysis),
-    7,
-    (session) => session.analysis?.rating ?? 0,
-  );
   const exerciseSeries = lastValues(logs, 7, (log) => log.effort);
-  const hasChartData = interviewSeries.length > 1 || exerciseSeries.length > 1;
+  const hasChartData = exerciseSeries.length > 1;
 
-  // Karne satırının alt yazısı: kaç testte en az bir ölçüm var.
+  // Ölçümler satırının alt yazısı: kaç testte en az bir ölçüm var.
   const measuredCount = MEASURE_TESTS.filter(
     (test) => testHistory(progress, test.id).length > 0,
   ).length;
@@ -92,7 +176,7 @@ export default function ProgressScreen({ navigation }: any) {
       header={
         <TabHeader
           icon={<TrendingUp size={24} color={toneColor('blue', t.isLight)} />}
-          title="İlerleme"
+          title="Karne"
           subtitle="Ne kadar yol aldın. Seriler, ölçümler ve geçmiş bir arada."
         />
       }
@@ -102,15 +186,6 @@ export default function ProgressScreen({ navigation }: any) {
       </View>
       <View className="flex-row gap-2.5">
         {/* `compact`: tasarım aynı, kutular alçaldı — ekran kalabalık geliyordu. */}
-        <StatTile
-          compact
-          label="Mülakat"
-          icon={<Award size={14} color={toneColor('blue', t.isLight)} />}
-          tone="blue"
-          value={interviews.averageRating}
-          unit="/100 ort."
-          hint={`${interviews.total} oturum`}
-        />
         <StatTile
           compact
           label="Egzersiz"
@@ -144,6 +219,8 @@ export default function ProgressScreen({ navigation }: any) {
         ) : null}
       </Surface>
 
+      <ComprehensionSection />
+
       <SectionLabel>KAYITLAR</SectionLabel>
       <RecordGrid
         items={[
@@ -151,19 +228,10 @@ export default function ProgressScreen({ navigation }: any) {
             key: 'karne',
             icon: <ChartColumn size={16} color={toneColor('emerald', t.isLight)} />,
             tone: 'emerald',
-            title: 'Karne',
+            title: 'Ölçümler',
             subtitle: `${measuredCount}/${MEASURE_TESTS.length} ölçüm`,
-            label: `Karne. Bütün ölçümler; ${MEASURE_TESTS.length} testin ${measuredCount} tanesinde ölçümün var.`,
+            label: `Ölçümler. Bütün ölçümler; ${MEASURE_TESTS.length} testin ${measuredCount} tanesinde ölçümün var.`,
             onPress: () => navigation.navigate('Measurements'),
-          },
-          {
-            key: 'mulakat',
-            icon: <Award size={16} color={toneColor('blue', t.isLight)} />,
-            tone: 'blue',
-            title: 'Mülakat',
-            subtitle: 'Kayıt, puan',
-            label: 'Mülakat geçmişi. Kayıtlar ve puanlar.',
-            onPress: () => navigation.navigate('InterviewHistory'),
           },
           {
             key: 'egzersiz',
@@ -193,17 +261,12 @@ export default function ProgressScreen({ navigation }: any) {
           <SectionLabel>GELİŞİM EĞRİSİ</SectionLabel>
           <Surface>
             <View className="flex-row items-center justify-end mb-2">
-              <LegendDot color={toneColor('blue', t.isLight)} label="Mülakat" />
-              <View className="w-3" />
               <LegendDot color={toneColor('violet', t.isLight)} label="Egzersiz" />
             </View>
             <TrendChart
               height={115}
               maxValue={100}
               series={[
-                ...(interviewSeries.length > 1
-                  ? [{ color: toneColor('blue', t.isLight), values: interviewSeries, fill: true }]
-                  : []),
                 ...(exerciseSeries.length > 1
                   ? [{ color: toneColor('violet', t.isLight), values: exerciseSeries, fill: true }]
                   : []),
@@ -267,8 +330,8 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 /**
  * "Kayıtlar" girişlerinin ikişerli ızgarası.
  *
- * Bu dört giriş eskiden alt alta birer `ActionRow`'du ve ekranın yarısını
- * kaplıyordu; ikişerli dizilince dördü de tek bakışta görünüyor. Hücreler
+ * Girişler alt alta dizilince ekranın büyük kısmını kaplıyordu; ikişerli
+ * dizilince hepsi tek bakışta görünüyor. Hücreler
  * `flex-1` ile eşit bölünüyor, satırlar ayrı ayrı sarılıyor — `flex-wrap` +
  * yüzde genişlik yerine bu, yazı tipi ölçeği büyüdüğünde de hizayı koruyor.
  *

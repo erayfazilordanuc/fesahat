@@ -1,10 +1,12 @@
 """Uygulama ikonlarını `assets/brand/ikon/` kaynağından üretir.
 
 Kaynaklar:
-  terakki-icon-master.svg → zemin degradesi (stop-color'lar)
-  terakki-icon-mark.svg   → figür geometrisi (yalnızca M/L/Z poligonları)
+  fesahat-icon-master.svg → zemin degradesi (stop-color'lar)
+  fesahat-icon-mark.svg   → figür geometrisi (yalnızca M/L/Z; evenodd, delikli)
 
-Figür, mark.svg'deki tam tuval yerleşiminin MARK_SCALE katı olarak ortalanır.
+SVG'ler `build_brand_svg.py` ile üretilir; figür ya da MARK_SCALE değişirse önce
+o çalıştırılır. Figür, mark.svg'deki tam tuval yerleşiminin MARK_SCALE katı
+olarak ortalanır.
 Degrade SVG ile birebir aynı: yukarıdan aşağı, piksel merkezinden örneklenir.
 
 Kullanım:
@@ -24,10 +26,14 @@ BRAND = os.path.join(ROOT, 'assets/brand/ikon')
 ASSETS = os.path.join(ROOT, 'assets')
 
 SIZE = 1024
-MARK_SCALE = 0.52  # amblem boyutu — YAPILACAKLAR Bölüm 8
+MARK_SCALE = 0.62  # amblem boyutu (balon geniş bir figür; Android güvenli alanı %66)
 # Splash görseli tam boy figür taşır; ekrandaki boyutu app.json → expo-splash-screen
 # `imageWidth` belirler ve SplashOverlay aynı değeri kullanır.
 SPLASH_SCALE = 1.0
+# Bildirim ikonu (96×96, beyaz + şeffaf): küçük boyutta figür tuvali daha dolu
+# doldursun. Android yalnızca alfa kanalını kullanır.
+NOTIFICATION_SIZE = 96
+NOTIFICATION_SCALE = 1.08
 WHITE = (255, 255, 255)
 
 
@@ -38,7 +44,7 @@ def _svg(name):
 
 def gradient_stops():
     found = re.findall(r'<stop offset="([\d.]+)" stop-color="#([0-9A-Fa-f]{6})"',
-                       _svg('terakki-icon-master.svg'))
+                       _svg('fesahat-icon-master.svg'))
     assert len(found) >= 2, 'master.svg içinde degrade durakları bulunamadı'
     return [(float(o), tuple(int(c[i:i + 2], 16) for i in (0, 2, 4))) for o, c in found]
 
@@ -52,8 +58,19 @@ def grad_at(y, size, stops):
     return tuple(round(c0[i] + (c1[i] - c0[i]) * f) for i in range(3))
 
 
-def mark_polys(size, scale):
-    s = _svg('terakki-icon-mark.svg')
+def _inside(pt, poly):
+    x, y = pt
+    c = False
+    for i in range(len(poly)):
+        (x0, y0), (x1, y1) = poly[i - 1], poly[i]
+        if (y0 > y) != (y1 > y) and x < x0 + (y - y0) / (y1 - y0) * (x1 - x0):
+            c = not c
+    return c
+
+
+def mark_shapes(size, scale):
+    """(dış konturlar, delikler). Delik = tek sayıda başka konturun içindeki kontur."""
+    s = _svg('fesahat-icon-mark.svg')
     tx, ty, k = map(float, re.search(
         r'translate\(([-\d.]+),([-\d.]+)\) scale\(([-\d.]+)\)', s).groups())
     d = re.search(r' d="([^"]+)"', s).group(1)
@@ -65,17 +82,21 @@ def mark_polys(size, scale):
         polys.append([((((x * k + tx) - 512) * scale + 512) * u,
                        (((y * k + ty) - 512) * scale + 512) * u)
                       for x, y in zip(nums[0::2], nums[1::2])])
-    return polys
+    outer, holes = [], []
+    for i, p in enumerate(polys):
+        depth = sum(_inside(p[0], q) for j, q in enumerate(polys) if j != i)
+        (holes if depth % 2 else outer).append(p)
+    return outer, holes
 
 
-def compose(mask, fg, stops=None):
+def compose(mask, fg, stops=None, size=SIZE):
     """stops yoksa şeffaf zemin; varsa degrade zemin üzerine figür."""
-    px = bytearray(SIZE * SIZE * 4)
-    for y in range(SIZE):
-        row = grad_at(y, SIZE, stops) if stops else None
-        for x in range(SIZE):
-            a = mask[y * SIZE + x]
-            i = (y * SIZE + x) * 4
+    px = bytearray(size * size * 4)
+    for y in range(size):
+        row = grad_at(y, size, stops) if stops else None
+        for x in range(size):
+            a = mask[y * size + x]
+            i = (y * size + x) * 4
             if row is None:
                 px[i:i + 3] = bytes(fg)
                 px[i + 3] = a
@@ -114,7 +135,7 @@ def downscale(px, src, dst):
 def main():
     stops = gradient_stops()
     print('Degrade:', ' → '.join('#%02X%02X%02X' % c for _, c in stops))
-    mask = rasterize(SIZE, mark_polys(SIZE, MARK_SCALE))
+    mask = rasterize(SIZE, *mark_shapes(SIZE, MARK_SCALE))
     icon = compose(mask, WHITE, stops)
     fg = compose(mask, WHITE)
     targets = [
@@ -123,11 +144,18 @@ def main():
         ('android-icon-background.png', compose(bytes(SIZE * SIZE), WHITE, stops)),
         ('android-icon-foreground.png', fg),
         ('android-icon-monochrome.png', fg),
-        ('splash-icon.png', compose(rasterize(SIZE, mark_polys(SIZE, SPLASH_SCALE)), WHITE)),
+        ('splash-icon.png', compose(rasterize(SIZE, *mark_shapes(SIZE, SPLASH_SCALE)), WHITE)),
     ]
     for name, px in targets:
         write_png(os.path.join(ASSETS, name), SIZE, SIZE, px)
         print('  yazıldı: assets/' + name)
+
+    # Bildirim ikonu (app.json → expo-notifications `icon`): doğrudan 96px'te
+    # rasterize edilir — 1024'ten küçültmekten daha keskin.
+    n = NOTIFICATION_SIZE
+    write_png(os.path.join(ASSETS, 'notification-icon.png'), n, n,
+              compose(rasterize(n, *mark_shapes(n, NOTIFICATION_SCALE)), WHITE, size=n))
+    print('  yazıldı: assets/notification-icon.png')
 
     # Web simgesi (app.json → web.favicon): icon.png'nin küçültülmüşü.
     write_png(os.path.join(ASSETS, 'favicon.png'), FAVICON_SIZE, FAVICON_SIZE,

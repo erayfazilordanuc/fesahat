@@ -12,7 +12,7 @@ import { planHabitNotifications } from './habitPlan';
 // `Notifications.scheduleNotificationAsync` çağrılarını yapıyor. Günlük
 // pratik bildirimlerinden (`dailyNotifications.ts`) kasıtlı olarak ayrı bir
 // Android kanalı kullanıyor ki kullanıcı yalnızca aralıklı hatırlatıcıları
-// sessize alabilsin (4b'deki serbest alarm kanalı da ileride ayrı gelecek).
+// sessize alabilsin.
 
 export const HABIT_CHANNEL_ID = 'habit-reminders';
 

@@ -33,7 +33,7 @@ import {
 } from '../utils/dailyPracticeProgress';
 import { TestTrend } from '../components/practice/TestTrend';
 import { MeasureCard, MeasureScale, CountStepper } from '../components/practice/MeasureTests';
-import { DailyFaithCard } from '../components/practice/DailyPracticeCard';
+import { DailySozCard } from '../components/practice/DailyPracticeCard';
 import { useDayKey } from '../utils/today';
 import { findMeasureTest, TEST_BREATHS_PER_TEXT } from '../data/measureTests';
 import { formatDuration } from '../utils/dateUtils';
@@ -143,7 +143,7 @@ export default function DailyTextScreen({ navigation, route }: any) {
           {/* Günün duası + vecizesi tek kartta; kendi içinde dinî içerik
               şalterine bakıyor. Bugün sekmesiyle aynı bileşen — iki ekranda iki
               ayrı dua kutusu bakımı zorlaştırıyordu. */}
-          <DailyFaithCard />
+          <DailySozCard />
 
           {/* Yazı boyutu */}
           <View className="flex-row items-center justify-between mt-4">
@@ -257,7 +257,7 @@ export default function DailyTextScreen({ navigation, route }: any) {
             />
 
             <Text className={`text-[11px] mt-3 leading-4 ${t.muted}`}>
-              Sunum ve mülakat için tipik aralık 120-150 kelime/dakika. Hızlı konuşmak akıcılık
+              Sunum ve sesli okuma için tipik aralık 120-150 kelime/dakika. Hızlı konuşmak akıcılık
               değil; çoğu zaman gerginlik göstergesi. Amaç yükseltmek değil, kendi aralığını bilmek.
             </Text>
           </Card>
@@ -326,6 +326,7 @@ export default function DailyTextScreen({ navigation, route }: any) {
                 { value: 'dini', label: 'Dinî' },
                 { value: 'edebi', label: 'Edebî' },
                 { value: 'hitabet', label: 'Hitabet' },
+                { value: 'felsefi', label: 'Felsefî' },
               ] as const
             ).map((option) => (
               <Chip
@@ -405,6 +406,7 @@ export default function DailyTextScreen({ navigation, route }: any) {
               { value: 'dini', label: 'Dinî' },
               { value: 'edebi', label: 'Edebî' },
               { value: 'hitabet', label: 'Hitabet' },
+              { value: 'felsefi', label: 'Felsefî' },
             ] as const
           ).map((option) => (
             <Chip
@@ -483,7 +485,7 @@ function ArtDetail({ artId }: { artId: string }) {
       </View>
       <Text className={`text-[14px] font-bold ${t.title}`}>{art.name}</Text>
       <Text className={`text-[12px] mt-1.5 leading-5 ${t.body}`}>{art.definition}</Text>
-      <Text className={`text-[11px] mt-2 italic ${t.accent}`}>{art.interviewUse}</Text>
+      <Text className={`text-[11px] mt-2 italic ${t.accent}`}>{art.practicalUse}</Text>
     </Card>
   );
 }

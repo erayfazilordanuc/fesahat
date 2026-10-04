@@ -10,9 +10,9 @@ import { useDailyProgress, isCompletedToday } from '../../utils/dailyPracticePro
 import type { LugatWord } from '../../data/lugat';
 
 // Ana ekran (Bugün sekmesi) kelime kartı — günün metni kartının hemen altında.
-// Dil & İfade (lugat) modülü artık günün metni gibi tam bir günlük pratik: bu
+// Dil (lugat & Türkçe) modülü artık günün metni gibi tam bir günlük pratik: bu
 // kart bugünün ilk henüz öğrenilmemiş kelimesini gösterir, "Öğrendim" ve
-// "Tümü" ile Dil & İfade'ye yönlendirir. Tamamlanma mantığı burada tekrar
+// "Tümü" ile Dil ekranına yönlendirir. Tamamlanma mantığı burada tekrar
 // yazılmaz — hepsi lugatProgress.ts'teki markLearned/completeReview'dan gelir.
 
 export function DailyWordCard({ navigation }: { navigation?: any }) {
@@ -75,7 +75,7 @@ function WordBody({
       <Pressable
         onPress={onOpen}
         accessibilityRole="button"
-        accessibilityLabel={`${word.word} — Dil & İfade'yi aç`}
+        accessibilityLabel={`${word.word} — Dil ekranını aç`}
       >
         <View className="flex-row items-center flex-wrap mt-1">
           <Text className={`text-[20px] font-black ${t.title}`}>{word.word}</Text>
@@ -126,7 +126,7 @@ function ReviewBody({
   const t = useThemeTokens();
   return (
     <View>
-      <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Dil & İfade'yi aç">
+      <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Dil ekranını aç">
         <Text className={`text-[12px] leading-5 mt-1 ${t.body}`}>
           Bu seviyedeki kelimelerin hepsini öğrendin; bugünkü liste tekrar için.
         </Text>

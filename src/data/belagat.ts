@@ -12,9 +12,9 @@ import type { BelagatBranchFilter } from '../utils/dailyPracticeSettings';
  * Bunların önkoşulu fesahattir: sözün açık, seçik ve söylenmesi kolay olması.
  *
  * Bu modül müfredatı üç şekilde kullanılabilir hale getirir:
- *   1. Kart olarak öğrenme (tanım + örnek + mülakatta kullanım)
+ *   1. Kart olarak öğrenme (tanım + örnek + günlük kullanım)
  *   2. Tanıma alıştırması (örnek verilir, sanat sorulur)
- *   3. Üretim alıştırması (mülakat bağlamında o sanatla cümle kurma)
+ *   3. Üretim alıştırması (gerçek bir bağlamda o sanatla cümle kurma)
  * Ayrıca fesahat kusurları, diksiyon tarafıyla doğrudan bağlantılı bir "kaçınılacaklar" listesi verir.
  */
 
@@ -46,8 +46,8 @@ export type BelagatArt = {
   /** Neden işe yarıyor — dinleyicide oluşturduğu etki. */
   effect: string;
   example: { text: string; source?: string; note: string };
-  /** Savunma sanayii mülakatı bağlamında somut kullanım. */
-  interviewUse: string;
+  /** Günlük konuşma, sunum ve yazıda somut kullanım. */
+  practicalUse: string;
   /** Üretim alıştırması. */
   exercise: { prompt: string; hint: string; sampleAnswer: string };
 };
@@ -67,8 +67,8 @@ const MEANI: BelagatArt[] = [
       text: 'Aynı arıza: teknik ekibe "besleme hattında 40 mV dalgalanma var", yöneticiye "kartın gücü kararsız, iki günde çözülür".',
       note: 'Bilgi aynı, seçilen ayrıntı düzeyi ve terimler hâle göre değişti.',
     },
-    interviewUse:
-      'Karşınızda üç kişilik bir panel varsa cevabı en teknik olmayan üyeye göre kurun, sonra teknik derinliği katman katman ekleyin.',
+    practicalUse:
+      'Karışık bir topluluğa anlatıyorsanız sözü konuya en uzak kişiye göre kurun, sonra ayrıntıyı katman katman ekleyin.',
     exercise: {
       prompt:
         'Yaptığınız bir teknik işi iki kez anlatın: (1) alan uzmanına, (2) İK uzmanına. Cümle sayısı aynı olsun.',
@@ -90,7 +90,7 @@ const MEANI: BelagatArt[] = [
       text: '"Bunu bilmiyorum. Nasıl bulacağımı biliyorum."',
       note: 'İki kısa cümle, uzun bir savunmadan daha güçlü. Fazlalık atılmış.',
     },
-    interviewUse:
+    practicalUse:
       'Sorunun cevabı "evet" ise önce "evet" deyin, sonra tek cümle gerekçe ekleyin. Girizgâhla başlayan cevaplar zayıf duyulur.',
     exercise: {
       prompt: 'Aşağıdaki cevabı anlamından bir şey kaybetmeden yarıya indirin.',
@@ -112,7 +112,7 @@ const MEANI: BelagatArt[] = [
       text: '"Üç seçeneği değerlendirdik. Birincisi maliyeti düşürüyordu. İkincisi süreyi kısaltıyordu. Üçüncüsü ikisini de biraz iyileştiriyordu. Üçüncüyü seçtik."',
       note: 'Tek cümlede söylenebilirdi; sayarak söylemek kararın yöntemli olduğunu gösteriyor.',
     },
-    interviewUse:
+    practicalUse:
       'Karar süreçlerinizi anlatırken kasten sayın. "Şu üç kriteri kullandım" demek, sonucu tek cümlede söylemekten daha güvenilir duyulur.',
     exercise: {
       prompt: 'Bir teknik kararınızı, kriterleri tek tek sayarak anlatın.',
@@ -134,13 +134,13 @@ const MEANI: BelagatArt[] = [
       text: '"Bu analizi ben yaptım." / "Ben bu analizi yaptım." / "Yaptım bu analizi ben."',
       note: 'Üç cümle aynı bilgi, üç farklı vurgu: kim, ne, kesinlik.',
     },
-    interviewUse:
+    practicalUse:
       'Katkınızı vurgulayacaksanız özneyi yüklemin hemen önüne alın. Sonucu vurgulayacaksanız sayıyı oraya koyun: "maliyeti yüzde on iki düşürdük" değil, "yüzde on iki düşürdük maliyeti" bile olabilir.',
     exercise: {
       prompt: 'Bir başarınızı üç farklı öğe sırasıyla söyleyin ve kaydedip dinleyin.',
       hint: 'Hangi sıralamada en az böbürlenme duyuluyor? Onu kullanın.',
       sampleAnswer:
-        '"Test süresini yarıya indiren otomasyonu ben yazdım." → katkı vurgulu. "Yazdığım otomasyon test süresini yarıya indirdi." → sonuç vurgulu; mülakatta bu ikincisi daha güçlü.',
+        '"Test süresini yarıya indiren otomasyonu ben yazdım." → katkı vurgulu. "Yazdığım otomasyon test süresini yarıya indirdi." → sonuç vurgulu; çoğu durumda bu ikincisi daha güçlü.',
     },
   },
   {
@@ -156,8 +156,8 @@ const MEANI: BelagatArt[] = [
       text: '"Bu arızayı çözen tek şey besleme filtresiydi."',
       note: '"Besleme filtresi de işe yaradı" demekle arasındaki fark, kesinlik farkıdır.',
     },
-    interviewUse:
-      'Emin olduğunuz yerde kasr kullanın, emin olmadığınız yerde kesinlikle kullanmayın — panel bunu test eder.',
+    practicalUse:
+      'Emin olduğunuz yerde kasr kullanın, emin olmadığınız yerde hiç kullanmayın — dinleyici kesinlik iddiasını kovalar.',
     exercise: {
       prompt: 'Kesin olarak bildiğiniz bir teknik gerçeği kasr ile ifade edin.',
       hint: 'Yanlış yerde kullanılan kasr, bir sonraki soruda size geri döner.',
@@ -177,7 +177,7 @@ const MEANI: BelagatArt[] = [
       text: '"— Kaç kişilik ekiptiniz? — Dört." ',
       note: '"Dört kişilik bir ekipteydik" demeye gerek yok; hazif doğal ve güçlü.',
     },
-    interviewUse:
+    practicalUse:
       'Kısa sorulara kısa cevap verin. Tam cümle kurma zorunluluğu hissetmek, gerginliğin en görünür belirtisidir.',
     exercise: {
       prompt: 'Beş kısa soruya tek kelimeyle veya tek öbekle cevap verme provası yapın.',
@@ -198,7 +198,7 @@ const MEANI: BelagatArt[] = [
       text: '"Testi tekrarladık ve sonuç değişmedi." / "Testi tekrarladık. Sonuç değişmedi."',
       note: 'İkincisi, sonucun beklenmediğini de duyurur.',
     },
-    interviewUse:
+    practicalUse:
       'Uzun, "ve"lerle bağlanmış cevaplar nefesi de bitirir. Bir cevapta en fazla iki bağlaç kuralı koyun.',
     exercise: {
       prompt: 'Üç bağlaçlı uzun bir cevabı, bağlaçları silerek kısa cümlelere bölün.',
@@ -221,7 +221,7 @@ const MEANI: BelagatArt[] = [
       text: '"Doğrulamayı atlarsak ne olur? Sahada öğreniriz."',
       note: 'Bildirim yerine soru: dinleyici sonucu kendisi kurar.',
     },
-    interviewUse:
+    practicalUse:
       'Bir tasarım tercihini savunurken önce riski soru olarak ortaya atın, sonra cevaplayın. Tek yönlü anlatımı kırar.',
     exercise: {
       prompt: 'Bir teknik savunmanızı, ortasına bir retorik soru koyarak yeniden kurun.',
@@ -246,8 +246,8 @@ const BEYAN: BelagatArt[] = [
       text: '"Bu alt sistem, uçağın bağışıklık sistemi gibi çalışır: tehdidi kendi başına tanır ve karşılık üretir."',
       note: 'Benzeyen: alt sistem. Benzetilen: bağışıklık sistemi. Yön: kendi başına tanıyıp karşılık üretmesi. Edat: gibi.',
     },
-    interviewUse:
-      'Teknik olmayan bir panel üyesine sisteminizi anlatırken tek bir teşbih kurun ve cevap boyunca ona sadık kalın. İki farklı benzetme dinleyiciyi kaybettirir.',
+    practicalUse:
+      'Konuyu bilmeyen birine bir şeyi anlatırken tek bir teşbih kurun ve sonuna kadar ona sadık kalın. İki farklı benzetme dinleyiciyi kaybettirir.',
     exercise: {
       prompt: 'Üzerinde çalıştığınız bir sistemi, mühendislik dışı bir şeye benzeterek anlatın.',
       hint: 'Benzetme yönünü açıkça söyleyin; söylenmeyen benzetme yönü yanlış anlaşılır.',
@@ -268,7 +268,7 @@ const BEYAN: BelagatArt[] = [
       text: '"Doğrulama, tasarımın sigortasıdır."',
       note: '"Sigorta gibidir" demek zayıf; "sigortasıdır" demek iddia.',
     },
-    interviewUse:
+    practicalUse:
       'Cevabınızı kapatırken kullanın. Son cümlenin bir teşbîh-i belîğ olması, cevabı akılda bırakır.',
     exercise: {
       prompt: 'Mesleğinizle ilgili bir kavramı "…dır" kalıbında bir benzetmeye dönüştürün.',
@@ -290,8 +290,8 @@ const BEYAN: BelagatArt[] = [
       source: 'Mehmet Âkif Ersoy',
       note: 'Şehitler için "güneşler" denmiş; benzeyen söylenmemiş — açık istiare.',
     },
-    interviewUse:
-      'Ölçülü kullanın. Teknik bir mülakatta bir cevapta en fazla bir istiare; fazlası edebiyat yapma izlenimi verir.',
+    practicalUse:
+      'Ölçülü kullanın. Gündelik bir açıklamada bir fikre en fazla bir istiare; fazlası edebiyat yapma izlenimi verir.',
     exercise: {
       prompt: 'Bir başarısızlık deneyiminizi tek bir istiareyle anlatın.',
       hint: 'Benzetilen kelimeyi seçin, benzeyeni söylemeyin.',
@@ -312,8 +312,8 @@ const BEYAN: BelagatArt[] = [
       text: '"Ankara kararını açıkladı." / "Bütün fabrika ayakta."',
       note: 'Şehir → kurum; yapı → içindeki insanlar.',
     },
-    interviewUse:
-      'Kurum ve ekip adlarını kısaltarak kullanmak akıcılık verir; ama panel kimin ne yaptığını sorarsa net isim vermeye hazır olun.',
+    practicalUse:
+      'Uzun adları kısaltarak anmak akıcılık verir; ama dinleyici kimin kastedildiğini sorarsa net karşılığını vermeye hazır olun.',
     exercise: {
       prompt: 'Bir ekip çalışmanızı mecâz-ı mürsel kullanarak özetleyin, sonra netleştirin.',
       hint: 'Mecaz akıcılık için, netleştirme güvenilirlik için.',
@@ -334,8 +334,8 @@ const BEYAN: BelagatArt[] = [
       text: '"O dönemde elimizi taşın altına koyduk."',
       note: 'Gerçek anlam mümkün, kastedilen sorumluluk almak.',
     },
-    interviewUse:
-      'Eski ekibinizle yaşadığınız sorunu anlatırken kinayeye başvurun. Doğrudan suçlama, mülakatta en pahalı hatadır.',
+    practicalUse:
+      'Birinin hatasından söz etmek zorunda kaldığınızda kinayeye başvurun. Doğrudan suçlama, konuşmanın gidişini en hızlı bozan şeydir.',
     exercise: {
       prompt: 'Bir çatışma deneyiminizi tek bir kinayeyle, kimseyi suçlamadan anlatın.',
       hint: 'Kişi değil durum anlatın.',
@@ -355,11 +355,11 @@ const BEYAN: BelagatArt[] = [
       text: '"Kızım sana söylüyorum, gelinim sen anla."',
       note: 'Muhatap görünürde kız, kastedilen gelin.',
     },
-    interviewUse:
-      'Mülakatta neredeyse hiç kullanmayın. Tanımasının değeri şudur: karşı taraf ta\'rîz yaparsa (örneğin "önceki adaylar bunu bilirdi"), bunu kişisel almadan sakin cevap verirsiniz.',
+    practicalUse:
+      'Kendiniz neredeyse hiç kullanmayın. Tanımasının değeri şudur: karşı taraf ta\'rîz yaparsa (örneğin "bunu herkes bilir"), iğneyi kişisel almadan sakin cevap verirsiniz.',
     exercise: {
       prompt: 'Size ta\'rîz ile yüklenen bir soruya, imayı görmezden gelen sakin bir cevap yazın.',
-      hint: 'İmaya değil, sorunun teknik çekirdeğine cevap verin.',
+      hint: 'İmaya değil, sorunun kendisine cevap verin.',
       sampleAnswer:
         'Soru: "Bu kadar tecrübeyle hâlâ mı burada?" → Cevap: "Bu alanda derinleşmeyi seçtim; şu üç problemi çözebildiğim yer burasıydı."',
     },
@@ -377,7 +377,7 @@ const BEYAN: BelagatArt[] = [
       text: '"Sistem, hata verdiğinde bize nedenini söylemiyordu; sadece susuyordu."',
       note: 'Susmak insana ait; sistem kişileştirilmiş.',
     },
-    interviewUse:
+    practicalUse:
       'Hata ayıklama (debug) hikâyelerinde çok işe yarar: sistemi bir aktör gibi anlatmak, kronolojiyi dinlenebilir kılar.',
     exercise: {
       prompt: 'Bir hata ayıklama sürecini, sistemi kişileştirerek anlatın.',
@@ -403,7 +403,7 @@ const BEDI: BelagatArt[] = [
       source: 'Kadı Burhaneddin',
       note: 'İlk "yer yer" = zaman zaman; ikinci "yer yer" = toprak seni yer.',
     },
-    interviewUse:
+    practicalUse:
       'Sunum ve rapor başlıklarında kullanın; konuşma içinde fazlası dikkat dağıtır.',
     exercise: {
       prompt: 'Kendi teknik alanınızdan bir sesteş çift bularak tek cümle kurun.',
@@ -424,7 +424,7 @@ const BEDI: BelagatArt[] = [
       text: '"Ölçtük, biçtik, seçtik."',
       note: 'Üç yüklem aynı sesle bitiyor; karar sürecinin özeti bir ritim kazanıyor.',
     },
-    interviewUse:
+    practicalUse:
       'Bir cevabı üçlü ve ses uyumlu bir listeyle kapatmak, kapanışı profesyonelleştirir.',
     exercise: {
       prompt: 'Çalışma yönteminizi, sonları uyumlu üç kelimeyle özetleyin.',
@@ -445,7 +445,7 @@ const BEDI: BelagatArt[] = [
       text: '"Küçük bir ihmalin büyük bir bedeli oldu."',
       note: 'Küçük–büyük karşıtlığı, cümlenin dersini taşıyor.',
     },
-    interviewUse:
+    practicalUse:
       'Öğrenilen ders (lessons learned) anlatırken en verimli sanattır: hata küçük, sonuç büyük.',
     exercise: {
       prompt: 'Bir teknik ödünleşimi (trade-off) tıbâk ile tek cümlede anlatın.',
@@ -466,8 +466,8 @@ const BEDI: BelagatArt[] = [
       text: '"Birincisi hızlı ve pahalıydı, ikincisi yavaş ve ucuzdu."',
       note: 'hızlı–yavaş ve pahalı–ucuz çiftleri aynı sırada.',
     },
-    interviewUse:
-      'Alternatif çözümleri karşılaştırırken bu kalıbı kurun; panel karşılaştırma yeteneğinizi doğrudan görür.',
+    practicalUse:
+      'Seçenekleri karşılaştırırken bu kalıbı kurun; dinleyici neyi neye göre tarttığınızı doğrudan görür.',
     exercise: {
       prompt: 'İki tasarım alternatifini mukabele kalıbıyla karşılaştırın.',
       hint: 'Sıralamayı ikinci yarıda bozmayın; bozarsanız etki kaybolur.',
@@ -488,7 +488,7 @@ const BEDI: BelagatArt[] = [
       text: '"Ekip o gece kalmadı; işi yarım bırakmayı sevmiyordu."',
       note: 'Gerçek sebep takvim baskısı olabilir; anlatıcı erdemli bir sebep gösteriyor.',
     },
-    interviewUse:
+    practicalUse:
       'Motivasyon sorularında ("neden bu alan?") işe yarar. Teknik kök-neden sorularında kesinlikle kullanmayın.',
     exercise: {
       prompt: '"Neden savunma sanayii?" sorusunu hüsn-i ta\'lîl ile cevaplayın.',
@@ -509,8 +509,8 @@ const BEDI: BelagatArt[] = [
       text: '"Bu mimarinin neden böyle kurulduğunu tam çözemedim; sizin gerekçeniz neydi?"',
       note: 'Konuşan gerekçeyi tahmin ediyor ama karşı tarafa söz veriyor.',
     },
-    interviewUse:
-      'Panelin bir tercihini eleştirmek zorundaysanız bu tonu kullanın: eleştiri, soru kılığında gelir.',
+    practicalUse:
+      'Karşınızdakinin bir tercihini eleştirmek zorundaysanız bu tonu kullanın: eleştiri, soru kılığında gelir.',
     exercise: {
       prompt: 'Katılmadığınız bir teknik tercihi, tecâhül-i ârif tonuyla sorgulayın.',
       hint: 'Cümlenin sonu soru olsun; iddia olmasın.',
@@ -531,8 +531,8 @@ const BEDI: BelagatArt[] = [
       text: '"O hafta ekip nefes almadı."',
       note: 'Gulüv derecesinde abartı; anlatıda kabul edilir, raporda edilmez.',
     },
-    interviewUse:
-      'Sayı verirken asla kullanmayın. "Yüzde elli iyileştirdik" diyorsanız yüzde elli olmalı — panel bunu kovalar.',
+    practicalUse:
+      'Sayı verirken asla kullanmayın. "Yarı yarıya azaldı" diyorsanız gerçekten öyle olmalı — dinleyici sayıyı kovalar.',
     exercise: {
       prompt: 'Bir başarınızı abartısız, yalnızca ölçülebilir ifadelerle yeniden yazın.',
       hint: 'Her sıfatı bir sayıyla değiştirmeyi deneyin.',
@@ -555,8 +555,8 @@ const BEDI: BelagatArt[] = [
       source: 'Nedîm',
       note: '"Gül" hem çiçek hem "gülmek" emri; kastedilen ikincisi.',
     },
-    interviewUse:
-      'Teknik mülakatta yeri yok, ama sunum başlıklarında ve ekip içi iletişimde etkilidir.',
+    practicalUse:
+      'Ciddi bir açıklamada yeri yok, ama sunum başlıklarında ve gündelik iletişimde etkilidir.',
     exercise: {
       prompt: 'Alanınızdan çok anlamlı bir terim seçip tevriyeli bir başlık kurun.',
       hint: '"yük", "akım", "hat", "kalkan" gibi terimler uygundur.',
@@ -576,7 +576,7 @@ const BEDI: BelagatArt[] = [
       text: '"O prototip bizim için bir Truva atıydı: içine koyduğumuz her ek özellik takvimi içeriden çökertti."',
       note: 'Göndermeyi tanımayan dinleyici cümleyi kaybeder.',
     },
-    interviewUse:
+    practicalUse:
       'Sektör tarihine yapılan telmihler (bilinen bir program, bir standart, bir kaza raporu) hazırlıklı olduğunuzu gösterir.',
     exercise: {
       prompt: 'Alanınızdan bilinen bir vakaya telmih yaparak bir mühendislik dersini anlatın.',
@@ -598,7 +598,7 @@ const BEDI: BelagatArt[] = [
       text: '"Ölçmediğinizi yönetemezsiniz; o yüzden ilk iş ölçüm altyapısını kurduk."',
       note: 'Yaygın kabul görmüş söz, teknik kararın gerekçesi olarak kullanılıyor.',
     },
-    interviewUse:
+    practicalUse:
       'Bir kararınıza itiraz gelirse ortak bir ilkeye dayandırın. Ama tek başına gerekçe olarak kullanmayın; ardından veri gelmeli.',
     exercise: {
       prompt: 'Bir kararınızı bir atasözü ya da mühendislik ilkesiyle destekleyin, ardından veriyi ekleyin.',
@@ -620,8 +620,8 @@ const BEDI: BelagatArt[] = [
       text: '"Ölçtük. Yine ölçtük. Sonuç değişmeyince tasarımı değiştirdik."',
       note: 'Tekrar, ısrarın kendisini anlatıyor.',
     },
-    interviewUse:
-      'Cevabınızın tek bir ana fikri varsa o fikri iki kez, farklı yerlerde söyleyin. Panel, tekrarlananı hatırlar.',
+    practicalUse:
+      'Sözünüzün tek bir ana fikri varsa o fikri iki kez, farklı yerlerde söyleyin. Dinleyici tekrarlananı hatırlar.',
     exercise: {
       prompt: 'Bir cevabınızın ana fikrini, başta ve sonda birer kez söyleyecek şekilde kurun.',
       hint: 'İkinci tekrarda kelimeleri biraz değiştirin; birebir tekrar yapay durur.',
@@ -642,7 +642,7 @@ const BEDI: BelagatArt[] = [
       text: '"Sade, sağlam, sürdürülebilir."',
       note: 'Üç sözcükte "s" tekrarı — akılda kalıcı bir ilke seti.',
     },
-    interviewUse:
+    practicalUse:
       'Kendi çalışma ilkelerinizi anlatırken ses uyumlu bir üçlü kurun; hazırlıklı olduğunuzu gösterir.',
     exercise: {
       prompt: 'Çalışma prensiplerinizi aynı sesle başlayan üç kelimeyle ifade edin.',
@@ -669,7 +669,8 @@ export type FesahatFlaw = {
   definition: string;
   badExample: string;
   goodExample: string;
-  interviewRisk: string;
+  /** Konuşmada yol açtığı somut zarar. */
+  practicalRisk: string;
 };
 
 export const FESAHAT_FLAWS: FesahatFlaw[] = [
@@ -682,8 +683,8 @@ export const FESAHAT_FLAWS: FesahatFlaw[] = [
     badExample:
       '"Sorumluluklarımızdakilerin sıralanmasındaki sıkıntılar sürdürülebilirliği zorlaştırdı."',
     goodExample: '"Görev dağılımındaki karışıklık işi yavaşlattı."',
-    interviewRisk:
-      'Gerginken bu tür cümlelerde takılırsınız ve takılma, bilgi eksikliği gibi algılanır.',
+    practicalRisk:
+      'Gerginken bu tür cümlelerde takılırsınız ve takılma, bilmemek gibi algılanır.',
   },
   {
     id: 'garabet',
@@ -693,8 +694,8 @@ export const FESAHAT_FLAWS: FesahatFlaw[] = [
       'Sözün anlaşılmasını engelleyen alışılmadık kelime kullanımıdır. Belâgatte kusurdur, çünkü belâgatin ölçütü muhataptır.',
     badExample: '"Sistemin mütekabiliyet esasına müstenit bir mimarisi var."',
     goodExample: '"Sistemin iki tarafı da birbirine aynı kuralla cevap veriyor."',
-    interviewRisk:
-      'Gereksiz jargon, uzman olmayan panel üyesini dışarıda bırakır ve gösteriş olarak okunur.',
+    practicalRisk:
+      'Gereksiz jargon, konuyu bilmeyen dinleyiciyi dışarıda bırakır ve gösteriş olarak okunur.',
   },
   {
     id: 'takid-lafzi',
@@ -704,8 +705,8 @@ export const FESAHAT_FLAWS: FesahatFlaw[] = [
       'Öğelerin yanlış sıralanması sebebiyle cümlenin ilk okunuşta yanlış anlaşılmasıdır.',
     badExample: '"Testi geçen kartı ekibe teslim eden mühendisi aradım."',
     goodExample: '"Kartı ekibe teslim eden mühendisi aradım; kart testi geçmişti."',
-    interviewRisk:
-      'Panel cümleyi ikinci kez kurmak zorunda kalır; dikkat cevaptan çıkıp cümleye kayar.',
+    practicalRisk:
+      'Dinleyici cümleyi zihninde ikinci kez kurmak zorunda kalır; dikkat anlamdan çıkıp cümleye kayar.',
   },
   {
     id: 'takid-manevi',
@@ -715,7 +716,7 @@ export const FESAHAT_FLAWS: FesahatFlaw[] = [
       'Kullanılan mecaz, kinaye veya telmihin muhatap tarafından çözülememesidir. Sanat, anlaşılmadığı yerde kusura döner.',
     badExample: '"O projede hep sırtımızda bir kambur taşıdık." (neyin kastedildiği belirsiz)',
     goodExample: '"O projede eski bir kod tabanını sürüklemek zorunda kaldık."',
-    interviewRisk: 'Anlaşılmayan mecaz, cevabınızı içi boş gösterir.',
+    practicalRisk: 'Anlaşılmayan mecaz, sözünüzü içi boş gösterir.',
   },
   {
     id: 'kesret-i-tekrar',
@@ -726,8 +727,8 @@ export const FESAHAT_FLAWS: FesahatFlaw[] = [
     badExample:
       '"Yani bu konuda şunu söyleyebilirim ki bu konu bizim için önemli bir konuydu."',
     goodExample: '"Bu konu bizim için kritikti."',
-    interviewRisk:
-      'Dolgu kelimelerle birlikte gelir ve uygulamanın analizindeki "dolgu kelime" puanını doğrudan düşürür.',
+    practicalRisk:
+      'Dolgu kelimelerle birlikte gelir ve dolgu kelime ölçümünü doğrudan yükseltir.',
   },
   {
     id: 'zaf-i-telif',
@@ -737,8 +738,8 @@ export const FESAHAT_FLAWS: FesahatFlaw[] = [
       'Cümlenin gramer bakımından kusurlu olmasıdır; özne-yüklem uyumsuzluğu, düşük cümle ve yanlış tamlamalar bu başlığa girer.',
     badExample: '"Ekip olarak yapılan testlerde başarılı olundu ve rapor sunuldu."',
     goodExample: '"Testleri ekip olarak yaptık, geçtik ve raporu sunduk."',
-    interviewRisk:
-      'Edilgen ve düşük cümleler katkınızı görünmez kılar; panel kimin ne yaptığını anlamaz.',
+    practicalRisk:
+      'Edilgen ve düşük cümleler katkınızı görünmez kılar; dinleyici kimin ne yaptığını anlamaz.',
   },
 ];
 

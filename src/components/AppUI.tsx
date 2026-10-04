@@ -15,7 +15,7 @@ import { tabBarContentPadding } from './tabBar';
 import { trUpper } from '../utils/text';
 export { useThemeTokens };
 
-// Mülakat / egzersiz / profil ekranlarının paylaştığı arayüz parçaları.
+// Ekranların paylaştığı arayüz parçaları.
 // Tema ayrımı, projenin geri kalanı gibi NativeWind sınıflarıyla isLight üzerinden yapılıyor.
 //
 // Ortak ölçüler: tüm ekranlar SCREEN_PADDING yan boşluğunu kullanır ve
@@ -159,7 +159,7 @@ export function AppHeader({
 }
 
 /**
- * Sekme köklerinin (Mülakat / Egzersizler / Profil) ortak başlığı:
+ * Sekme köklerinin (Bugün / Atölye / Karne / Profil) ortak başlığı:
  * arka planı olmayan ikon + büyük başlık, altında açıklama satırı.
  */
 export function TabHeader({
@@ -511,7 +511,7 @@ export function StatTile({
   hint?: string;
   tone?: Tone;
   /**
-   * Alçaltılmış kutu — tasarım aynı, ölçüler küçük. İlerleme sekmesi için
+   * Alçaltılmış kutu — tasarım aynı, ölçüler küçük. Karne sekmesi için
    * eklendi; varsayılan boyut değişmedi ki Egzersiz Geçmişi ve Egzersiz Detayı
    * ekranları etkilenmesin.
    */

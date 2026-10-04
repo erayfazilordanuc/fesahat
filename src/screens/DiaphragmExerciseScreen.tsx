@@ -530,7 +530,7 @@ export default function DiaphragmExerciseScreen({ navigation, route }: any) {
           <>
             <SettingRow
               title="Seviye"
-              description="1: farkındalık · 2: kontrollü nefes · 3: mülakat baskısı"
+              description="1: farkındalık · 2: kontrollü nefes · 3: konuşma baskısı"
               right={<View />}
             />
             <View className="flex-row flex-wrap">

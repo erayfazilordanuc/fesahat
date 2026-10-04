@@ -8,7 +8,7 @@ import type { DailyModuleKey, TimeOfDay } from './dailyPracticeSettings';
 // hedefleri, günlük taahhüdü ve oryantasyonun durumu modül ayarı değil.
 // Kararlar ve gerekçeleri KARARLAR.md → "İlk açılış oryantasyonu".
 
-export type OnboardingGoal = 'lugat' | 'konusma' | 'nefes' | 'zihin' | 'kariyer';
+export type OnboardingGoal = 'lugat' | 'konusma' | 'anlayis' | 'iletisim' | 'belagat';
 export type DailyMinutes = 3 | 5 | 10;
 export type ReminderSlot = 'sabah' | 'ogle' | 'aksam' | 'yok';
 
@@ -39,7 +39,7 @@ export const ONBOARDING_DEFAULTS: OnboardingState = {
   tourDismissed: false,
 };
 
-export const GOAL_ORDER: OnboardingGoal[] = ['lugat', 'konusma', 'nefes', 'zihin', 'kariyer'];
+export const GOAL_ORDER: OnboardingGoal[] = ['lugat', 'konusma', 'anlayis', 'iletisim', 'belagat'];
 
 export const GOAL_META: Record<
   OnboardingGoal,
@@ -48,39 +48,39 @@ export const GOAL_META: Record<
     subtitle: string;
     /** Bugün listesinde öne alınacak günlük pratik modülleri. */
     modules: DailyModuleKey[];
-    /** Gelişim sekmesindeki alanın kimliği (GrowthScreen → `Pillar.id`). */
+    /** Atölye sekmesindeki alanın kimliği (WorkshopScreen → `Pillar.id`). */
     pillarId: string;
   }
 > = {
   lugat: {
-    title: 'Kelime & Türkçe',
-    subtitle: 'Kelime hazinesi, doğru yazım, okuma',
-    modules: ['lugat', 'dailyText', 'belagat'],
-    pillarId: 'ifade',
+    title: 'Dil',
+    subtitle: 'Kelime hazinesi, doğru Türkçe, deyimler',
+    modules: ['lugat', 'dailyText'],
+    pillarId: 'dil',
   },
   konusma: {
-    title: 'Konuşma & Diksiyon',
-    subtitle: 'Artikülasyon, tekerleme, dolgu kelimeleri azaltma',
-    modules: ['speech'],
+    title: 'Konuşma',
+    subtitle: 'Diksiyon, tekerleme, hitabet nefesi',
+    modules: ['speech', 'diaphragm'],
     pillarId: 'konusma',
   },
-  nefes: {
-    title: 'Nefes & Denge',
-    subtitle: 'Diyafram nefesi, sakinleşme',
-    modules: ['diaphragm'],
-    pillarId: 'nefes',
+  anlayis: {
+    title: 'Anlayış & Kavrayış',
+    subtitle: 'Okuduğunu anlama, özetleme, sözel muhakeme',
+    modules: ['comprehension', 'dailyText'],
+    pillarId: 'anlayis',
   },
-  zihin: {
-    title: 'Zihin & Odak',
-    subtitle: 'Hafıza, dikkat, mantık alıştırmaları',
-    modules: [],
-    pillarId: 'zihin',
+  iletisim: {
+    title: 'İletişim',
+    subtitle: 'Dinleme, ikna, geri bildirim, zor konuşmalar',
+    modules: ['communication'],
+    pillarId: 'iletisim',
   },
-  kariyer: {
-    title: 'Kariyer & Mülakat',
-    subtitle: 'Mülakat pratiği ve hazırlık',
-    modules: [],
-    pillarId: 'kariyer',
+  belagat: {
+    title: 'Belagat',
+    subtitle: 'Söz sanatları — ileri düzey',
+    modules: ['belagat'],
+    pillarId: 'belagat',
   },
 };
 
@@ -91,7 +91,15 @@ export const REMINDER_SLOTS: Record<Exclude<ReminderSlot, 'yok'>, { label: strin
 };
 
 /** Hedef seçilmemişken Bugün listesinin sırası — DailyPracticeCard'ın mevcut sırası. */
-const DEFAULT_MODULE_ORDER: DailyModuleKey[] = ['dailyText', 'lugat', 'diaphragm', 'speech', 'belagat'];
+const DEFAULT_MODULE_ORDER: DailyModuleKey[] = [
+  'lugat',
+  'dailyText',
+  'comprehension',
+  'speech',
+  'communication',
+  'diaphragm',
+  'belagat',
+];
 
 /** Hedeflerin modülleri seçim sırasıyla önde, kalanlar varsayılan sırayla arkada. */
 export function moduleOrderForGoals(goals: readonly OnboardingGoal[]): DailyModuleKey[] {
@@ -109,6 +117,7 @@ export function moduleOrderForGoals(goals: readonly OnboardingGoal[]): DailyModu
 
 const STORAGE_KEY = 'onboarding';
 
+/** Kayıtlı eski hedefler (ör. kaldırılan 'kariyer') `GOAL_META`'da olmadığı için burada elenir. */
 function isGoal(value: unknown): value is OnboardingGoal {
   return typeof value === 'string' && value in GOAL_META;
 }
@@ -127,8 +136,6 @@ function hasExistingUsage(): boolean {
   }
   const lugat = readJson<{ words?: Record<string, unknown> } | null>('lugat-progress', null);
   if (lugat?.words && Object.keys(lugat.words).length > 0) return true;
-  const interviews = readJson<{ sessions?: unknown[] } | null>('interview-history', null);
-  if ((interviews?.sessions?.length ?? 0) > 0) return true;
   const exercises = readJson<{ logs?: unknown[] } | null>('exercise-history', null);
   if ((exercises?.logs?.length ?? 0) > 0) return true;
   const profile = readJson<{ name?: string } | null>('user-profile', null);

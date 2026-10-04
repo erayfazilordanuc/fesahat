@@ -26,31 +26,29 @@ import Animated, {
 const NATIVE_BACKGROUND = '#029568';
 /** app.json → expo-splash-screen `imageWidth` */
 const IMAGE_WIDTH = 170;
-/** assets/brand/ikon/terakki-icon-master.svg degradesi */
+/** assets/brand/ikon/fesahat-icon-master.svg degradesi */
 const GRADIENT = ['#05B179', '#029568', '#007B59'] as const;
 /** splash-icon.png içinde figürün alt kenarı (858 / 1024) */
 const MARK_BOTTOM = 0.838;
 
 /**
- * "Terakki" yazısı CANLI METİN DEĞİL, hazır bir görsel
- * (`tools/icon-forge/build_wordmark.py` üretiyor, kaynak yine Italianno).
+ * "Fesahat" yazısı CANLI METİN DEĞİL, hazır bir görsel
+ * (`tools/icon-forge/build_wordmark.py` üretiyor, kaynak Italianno).
  *
- * NEDEN: Italianno'da 'i'nin noktası, harfin ilerleme genişliğinin DIŞINDA
- * duruyor (glif 77: gövde x=32..247, nokta x=218..278, ilerleme 192). "Terakki"de
- * 'i' son harf olduğu için Android'in metin kutusu son ilerleme genişliğinde
- * bitiyor ve nokta kırpılıyordu — ekranda "Terakkı" görünüyordu.
+ * NEDEN (Terakki'den devralınan karar, gerekçesi hâlâ geçerli): Italianno'da
+ * 'i'nin noktası harfin ilerleme genişliğinin DIŞINDA duruyor (glif 77: gövde
+ * x=32..247, nokta x=218..278, ilerleme 192). "Terakki"de 'i' son harf olduğu
+ * için Android'in metin kutusu son ilerleme genişliğinde bitiyor ve nokta
+ * kırpılıyordu. "Fesahat" 't' ile bittiği için bu belirli tuzağa düşmüyor, ama
+ * yazıyı görsel olarak üretmenin ikinci kazancı duruyor: splash font
+ * yüklenmesini beklemiyor, native ekrandan JS katmanına geçiş erken oluyor.
  *
  * Denenip ELENEN yollar (bir daha kazılmasın): iki yana NBSP koymak, son harfi
  * ayrı bir `Text`'e almak, araya ZWNJ (U+200C) koymak. Üçü de cihazda çözmedi.
- * Fontun `ccmp`/`locl` kuralları da sanık değil; ayrıntı KARARLAR.md.
- *
- * Yazıyı kendimiz çizince Android'in metin motoru devreden çıkıyor: nokta
- * garanti. Ek kazanç — splash artık font yüklenmesini beklemiyor, native
- * ekrandan JS katmanına geçiş erkene alınıyor.
  */
-const WORDMARK = require('../../assets/brand/wordmark-terakki.png');
-/** Görselin en/boy oranı 535/172; genişlik eski 60pt yazıyla aynı boyu veriyor. */
-const WORDMARK_WIDTH = 134;
+const WORDMARK = require('../../assets/brand/wordmark-fesahat.png');
+/** Görselin en/boy oranı 546/173; genişlik eski 60pt yazıyla aynı boyu veriyor. */
+const WORDMARK_WIDTH = 136;
 const WORDMARK_HEIGHT = 43;
 
 /**

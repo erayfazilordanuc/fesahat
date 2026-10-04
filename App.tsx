@@ -16,7 +16,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Sunrise, BrainCircuit, TrendingUp, User } from 'lucide-react-native';
+import { Sunrise, Hammer, TrendingUp, User } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing, configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
 configureReanimatedLogger({
@@ -43,26 +43,26 @@ import { loadApiKey } from './src/utils/aiCredentials';
 import TodayScreen from './src/screens/TodayScreen';
 import GrowthScreen from './src/screens/GrowthScreen';
 import ProgressScreen from './src/screens/ProgressScreen';
-import InterviewScreen from './src/screens/InterviewScreen';
-import DailyInterviewScreen from './src/screens/DailyInterviewScreen';
-import CustomInterviewScreen from './src/screens/CustomInterviewScreen';
-import AnalysisScreen from './src/screens/AnalysisScreen';
 import BrainExercisesScreen from './src/screens/BrainExercisesScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import AiSetupScreen from './src/screens/AiSetupScreen';
 import ExerciseEngineScreen from './src/screens/ExerciseEngineScreen';
-import InterviewHistoryScreen from './src/screens/InterviewHistoryScreen';
 import ExerciseHistoryScreen from './src/screens/ExerciseHistoryScreen';
 import ResponseJournalScreen from './src/screens/ResponseJournalScreen';
 import ExerciseDetailScreen from './src/screens/ExerciseDetailScreen';
-import NewsScreen from './src/screens/NewsScreen';
 import DiaphragmExerciseScreen from './src/screens/DiaphragmExerciseScreen';
 import SpeechExerciseScreen from './src/screens/SpeechExerciseScreen';
 import BelagatExerciseScreen from './src/screens/BelagatExerciseScreen';
 import DailyTextScreen from './src/screens/DailyTextScreen';
 import RemindersScreen from './src/screens/RemindersScreen';
 import LanguageScreen from './src/screens/LanguageScreen';
+import ComprehensionScreen from './src/screens/ComprehensionScreen';
+import QuizScreen from './src/screens/QuizScreen';
+import SummaryScreen from './src/screens/SummaryScreen';
+import CommunicationScreen from './src/screens/CommunicationScreen';
+import CommScenarioScreen from './src/screens/CommScenarioScreen';
+import ListeningSkillScreen from './src/screens/ListeningSkillScreen';
 import MeasurementsScreen from './src/screens/MeasurementsScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 
@@ -272,26 +272,26 @@ function AppContent() {
               component={OnboardingScreen}
               options={{ gestureEnabled: false, animation: 'fade' }}
             />
-            <Stack.Screen name="DailyInterview" component={DailyInterviewScreen} options={{ presentation: 'fullScreenModal' }} />
-            <Stack.Screen name="CustomInterview" component={CustomInterviewScreen} options={{ presentation: 'modal' }} />
-            <Stack.Screen name="Analysis" component={AnalysisScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'modal' }} />
             <Stack.Screen name="AiSetup" component={AiSetupScreen} options={{ presentation: 'modal' }} />
             <Stack.Screen name="Reminders" component={RemindersScreen} />
             <Stack.Screen name="Measurements" component={MeasurementsScreen} />
             <Stack.Screen name="Language" component={LanguageScreen} />
-            <Stack.Screen name="Interview" component={InterviewScreen} />
             <Stack.Screen name="BrainExercises" component={BrainExercisesScreen} />
             <Stack.Screen name="ExerciseEngine" component={ExerciseEngineScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="ExerciseDetail" component={ExerciseDetailScreen} options={{ presentation: 'modal' }} />
-            <Stack.Screen name="InterviewHistory" component={InterviewHistoryScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="ExerciseHistory" component={ExerciseHistoryScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="ResponseJournal" component={ResponseJournalScreen} options={{ presentation: 'fullScreenModal' }} />
-            <Stack.Screen name="NewsScreen" component={NewsScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="DiaphragmExercise" component={DiaphragmExerciseScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="SpeechExercise" component={SpeechExerciseScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="BelagatExercise" component={BelagatExerciseScreen} options={{ presentation: 'fullScreenModal' }} />
             <Stack.Screen name="DailyText" component={DailyTextScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen name="Comprehension" component={ComprehensionScreen} />
+            <Stack.Screen name="Quiz" component={QuizScreen} options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="Summary" component={SummaryScreen} options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="Communication" component={CommunicationScreen} />
+            <Stack.Screen name="CommScenario" component={CommScenarioScreen} options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="ListeningSkill" component={ListeningSkillScreen} options={{ presentation: 'fullScreenModal' }} />
           </Stack.Navigator>
         </BackgroundVariantProvider>
       </View>
@@ -400,9 +400,9 @@ function MainTabs() {
           }}
         >
           {/* Sekme sırası uygulamanın mantığını anlatır:
-              Bugün (ne yapmalıyım) → Gelişim (ne çalışabilirim)
-              → İlerleme (ne kadar yol aldım) → Profil (ben kimim).
-              "Gelişim" ile "İlerleme" anlamca yakın olduğu için ikisi farklı
+              Bugün (ne yapmalıyım) → Atölye (ne çalışabilirim)
+              → Karne (ne kadar yol aldım) → Profil (ben kimim).
+              "Atölye" ile "Karne" anlamca yakın olduğu için ikisi farklı
               renk ve ikon taşıyor; ayrımı ekranların alt başlıkları söylüyor. */}
           <Tab.Screen
             name="Bugün"
@@ -416,21 +416,21 @@ function MainTabs() {
             })}
           />
           <Tab.Screen
-            name="Gelişim"
+            name="Atölye"
             component={GrowthScreen}
             options={tabOptions({
-              name: 'Gelişim',
-              icon: BrainCircuit,
+              name: 'Atölye',
+              icon: Hammer,
               active: isLight ? '#7c3aed' : '#a78bfa',
               activeText: isLight ? 'text-violet-600' : 'text-violet-400',
               isLight,
             })}
           />
           <Tab.Screen
-            name="İlerleme"
+            name="Karne"
             component={ProgressScreen}
             options={tabOptions({
-              name: 'İlerleme',
+              name: 'Karne',
               icon: TrendingUp,
               active: isLight ? '#2563eb' : '#60a5fa',
               activeText: isLight ? 'text-blue-600' : 'text-blue-400',

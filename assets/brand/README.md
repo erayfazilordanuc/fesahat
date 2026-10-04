@@ -1,89 +1,111 @@
-# Marka
+# Marka: Fesahat
 
-Terakki'nin logo kaynağı. `assets/` kökündeki uygulama ikonları buradan türetilir;
-elle düzenlenmez.
+Fesahat'ın logo kaynağı. `assets/` kökündeki uygulama ikonları buradan türetilir.
+**Elle düzenlenmez — `python3 tools/icon-forge/build_from_brand.py` ile yeniden üretilir.**
 
-## Marka
+---
 
-**Kademe** — sabit adımla yükselen dört eşit modül; sonuncusu boş.
+## 🗣 Marka Tanımı
 
-| İstenen anlam | Şekilde karşılığı |
-| --- | --- |
-| Düzen | Modüller birebir aynı boyda, aralık sabit |
-| Sistem | Yerleşim serbest değil, tek bir adım kuralına uyuyor |
-| Yükselme | Dizi çapraz çıkıyor |
-| Gelişme | Son modül boş — şekil "bitti" demiyor, sıradakini gösteriyor |
+**Geçici İşaret:** Zümrüt renk degrade zemin üzerinde beyaz konuşma balonu. Balon içinde yeşil **"F"** harfi.
 
-Boş modül dolu olanlarla aynı kutuda; yani "eksik" değil, **sıradaki**.
-Marka bu yüzden bir durumu değil bir gidişi anlatıyor.
+**Anlam:** Dil / Söz / Konuşma / İletişim. Balonu seçmek, dikte etme / dinleme dinamiğini işaret eder.
 
-### Elenen fikirler
+⚠️ **Nihai Logo Kararı Açık**
 
-Denemeler `adaylar/` altında ve `tools/icon-forge/marks.py` geçmişinde.
+Bu işaret geçici bir çözümdür. Logo tasarımı karar beklemeye alındı. İcon-forge araçlarına
+kaynakların dosya adları uyarlanmıştır (Terakki → Fesahat); tasarım değişirse `build_brand_svg.py` yeniden çalıştırılacak.
 
-| Fikir | Neden elendi |
-| --- | --- |
-| Kollarını kaldırmış kişi | Genel geçer bir "başarı" ikonu; anlam taşımıyordu |
-| Doğan güneş | Yarım daire + ufuk çizgisi kaçınılmaz olarak şapka gibi okundu |
-| Açık kitap | İki çizgi hâlinde aşağı bakan V; hacim verilince papyona döndü |
-| Eşik (kemerli kapı) | At nalı / mıknatıs okunuyor |
-| Kitap yığını | Eşit çubuklar tabak yığını, koyu temada hamburger menü |
-| Piramit (Yapı) | Simetrik olduğu için düzeni anlatıp yükselmeyi anlatmıyor; ödül kürsüsü |
-| Büyüyen kademe | Modüller büyüyünce ritim bozuluyor, en küçüğü kalıntı gibi duruyor |
-| Ağ (düğümler) | Doğru okunuyor ama standart "trend grafiği" ikonundan ayrışmıyor |
+### Terakki'den Devralınan Elenen Fikirler
 
-## Renkler
+Aynı tuzaklara düşülmesin diye Terakki'nin elenen logo adayları:
 
-Kaynak `src/components/AppUI.tsx` ve `src/components/ScreenBackground.tsx`;
-buradaki değerler onların kopyası, değişirse birlikte değişmeli.
+- **Açık kitap:** Hacim verilince papyon gibi okunuyor
+- **Eşik (kemerli kapı):** At nalı / mıknatıs okunuyor
+- **Kitap yığını:** Hamburger menü benzediği için
+- **Piramit:** Yükselişi, ritmi anlatmıyor; ödül kürsüsü gibi
+- **Ağ (düğümler):** Standart trend grafiği ikonundan ayrışmıyor
 
-| Kullanım | Açık tema | Koyu tema |
+## 🎨 Renkler
+
+| Adı | Hex | Kullanım |
 | --- | --- | --- |
-| Figür | `#059669` | `#34d399` |
-| Ekran zemini | `#f6fdf9` | `#121214` |
+| Zümrüt | `#059669` | Tema rengi, icon aktivasyon (Bugün sekme), figür (açık tema) |
+| Zümrüt Açık | `#34d399` | Figür (koyu tema) |
+| Sıcak Kâğıt | `#fcfbf7` | Metin & ikon (koyu zemin) |
+| Derin Gece | `#121214` | Zemin (koyu tema) |
 
-Uygulama ikonu degradesi `ikon/terakki-icon-master.svg`'den gelir — yukarıdan
-aşağı üç duraklı: `#05B179` → `#029568` → `#007B59` (2026-09-19 kararı; eski
-iki duraklı `#10B981` → `#04614A` ve ara sürüm `#0EA876 → #0A8D65 → #077456`
-`arsiv/` altında). Orta durak `#029568`; Android `adaptiveIcon.backgroundColor`,
-native splash zemini ve `SplashOverlay` bu değeri kullanıyor.
+**Uygulama Ikonu Degradesi:** `ikon/fesahat-icon-master.svg`'den okunur — yukarıdan aşağı 3 durak:
 
-## Dosyalar
+```
+#05B179 (0%) → #029568 (50%) → #007B59 (100%)
+```
 
-| Dosya | Ne |
+Orta durak `#029568` şu yerlerde kullanılır:
+- `app.json` → `android.adaptiveIcon.backgroundColor`
+- Native splash zemini
+- `SplashOverlay.tsx` arka planı
+- iOS `SplashScreenBackground.colorset`
+
+## 📄 Dosyalar
+
+| Dosya | Amaç |
 | --- | --- |
-| `ikon/terakki-icon-master.svg` | Uygulama ikonunun kaynağı: degrade zemin + beyaz figür. **Degrade renkleri buradan okunur.** |
-| `ikon/terakki-icon-mark.svg` | Şeffaf zeminde yalnız figür. **Figür geometrisi buradan okunur.** |
-| `ikon/terakki-icon-white.svg` | Beyaz zeminli varyant |
-| `ikon/terakki-1024.png` · `512` · `192` | Master'ın rasterları (figür tam boy) |
-| `app-icon.png` | `assets/icon.png`'nin kopyası (figür %52) |
-| `adaylar/` | Elenen adaylar |
+| `ikon/fesahat-icon-master.svg` | **Kaynağı.** Degrade zemin (`stop-color` 3 durak) + beyaz figür. Degrade renkleri buradan okunur. |
+| `ikon/fesahat-icon-mark.svg` | **Figür kaynağı.** Şeffaf zemin, yalnız figür (M/L/Z komutları, evenodd doldurma). `build_from_brand.py` geometri ve kontur bilgisini buradan çıkarır. |
+| `ikon/fesahat-icon-white.svg` | Beyaz zemin + şeffaf figür (varsa tasarımda işe yarayabilir) |
+| `app-icon.png` | Master'ın PNG kopyası; tasarım amaçları için |
+| `arsiv/` | Terakki'nin eski ikon dosyaları (referans / geri dönüş) |
+| `adaylar/` | Elenen tasarım adayları (varsa) |
 
-## Yeniden üretmek
+## 🔄 İkonları Yeniden Üretmek
 
+**Şu zaman yeniden üret:**
+- Degrade renkleri değişti (master.svg `stop-color`)
+- Figür biçimi değişti (mark.svg path veya scale)
+- MARK_SCALE / SPLASH_SCALE ayarları değişti
+
+### Adım 1: SVG kaynakları hazırla
+Tasarımcı `fesahat-icon-master.svg` ve `fesahat-icon-mark.svg`'yi güncellediyse:
+
+```bash
+python3 tools/icon-forge/build_brand_svg.py
+```
+(SVG'leri oluşturup normalize eder; gerekirse çalıştır.)
+
+### Adım 2: PNG ikonlarını türet
 ```bash
 python3 tools/icon-forge/build_from_brand.py
 ```
 
-`assets/icon.png`, `android-icon-background.png`, `android-icon-foreground.png`,
-`android-icon-monochrome.png`, `splash-icon.png` ve `brand/app-icon.png` üretilir.
-İkon figür boyutu betikteki `MARK_SCALE` (şu an `0.52`); splash görseli tam boy
-figür taşır (`SPLASH_SCALE`). Native tarafa işlemek için ardından
-`npx expo prebuild` — önce `DEVAM.md` "Ortam tuzakları"nı oku.
+Çıktılar:
+- `assets/icon.png` (1024×1024, degrade + figür)
+- `assets/brand/app-icon.png` (icon.png'ye aynı)
+- `assets/android-icon-background.png` (zemin)
+- `assets/android-icon-foreground.png` (figür)
+- `assets/android-icon-monochrome.png` (figür)
+- `assets/splash-icon.png` (tam boy figür)
+- `assets/favicon.png` (48×48, web)
+- `assets/notification-icon.png` (96×96, bildirim)
 
-`notification-icon.png` bu betikle üretilmiyor.
+### Adım 3: Native'e işle
+```bash
+npx expo prebuild --platform android --clean
+# veya
+npx expo prebuild --platform ios --clean
+```
 
-## Açılış ekranı (splash)
+*⚠️ Prebuild'den önce [DEVAM.md](../../DEVAM.md) → "Ortam tuzakları" oku.*
+
+## 🌅 Açılış Ekranı (Splash)
 
 İki katman:
 
-1. **Native splash** — `app.json` → `expo-splash-screen`: düz `#029568` zemin,
-   ortada `splash-icon.png` 170 dp genişlikte. Android 12+ native splash degrade
-   ve yazı desteklemediği için bu kadar.
-2. **`src/components/SplashOverlay.tsx`** — native splash'in birebir aynısıyla
-   başlar, onu kapatır; degradeyi (`#05B179` → `#029568` → `#007B59`) ve altındaki
-   kaligrafik "Terakki" yazısını açar, sonra uygulamaya solar.
+1. **Native splash** — `app.json` → `expo-splash-screen`: düz `#029568` zemin, ortada `splash-icon.png` 170 dp. Android 12+ degrade desteklemez.
+2. **`src/components/SplashOverlay.tsx`** — native splash'in üzerine: degrade zemin + kaligrafik "Fesahat" yazısı. Yazı fontu **Italianno** (`assets/fonts/`, SIL OFL).
 
-Yazı fontu **Italianno** (`assets/fonts/`, SIL Open Font License —
-`Italianno-OFL.txt`). Zemin rengi ve `imageWidth` iki yerde birden geçiyor;
-biri değişirse diğeri de değişmeli.
+**Dikkat:** Zemin rengi `#029568` ve `imageWidth: 170` iki yerde duruyor:
+- `app.json` → `expo-splash-screen`
+- `SplashOverlay.tsx`
+
+Biri değişirse diğeri de değişmeli.

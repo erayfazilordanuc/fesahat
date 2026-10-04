@@ -48,7 +48,7 @@ for key, name, fn in MARKS:
                     buf[i + c] = int(row[c] * (1 - al) + fg[c] * al)
                 buf[i + 3] = 255
 
-    slug = name.lower().translate(SLUG)
+    slug = name.replace('İ', 'I').lower().translate(SLUG)
     path = os.path.join(OUT, f'{key}-{slug}.png')
     write_png(path, W, H, buf)
     print(path)

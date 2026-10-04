@@ -1,19 +1,9 @@
-import { appSettingsStore, normalizeBaseUrl } from './appSettings';
 import { getApiKey } from './aiCredentials';
 
-// Gemini'ye giden tek kapı. İKİ YOL var, sırayla denenmiyor — hangisi kuruluysa o:
-//
-// 1. **Kullanıcının kendi anahtarı (BYOK, varsayılan).** Anahtar cihazın
-//    kasasında (`aiCredentials.ts`), çağrı doğrudan Google'a gidiyor. Sunucu
-//    gerekmiyor; kota ve fatura kullanıcının kendi hesabında.
-// 2. **Sunucu proxy'si (`server/server.ts`).** Ayarlar'da sunucu adresi
-//    doluysa kullanılıyor. Anahtar sunucuda kalır, uygulama görmez.
-//
-// Anahtar varsa 1, yoksa ve adres varsa 2 kullanılıyor. İkisi de yoksa yapay
-// zekâ kapalı sayılıyor (`aiAvailability.ts`) ve buraya hiç gelinmiyor.
-//
-// Kullanıcı kararı 2026-09-20: BYOK varsayılan yol. Proxy, ileride ortak bir
-// sunucu açılırsa diye duruyor (YAPILACAKLAR Bölüm 00).
+// Gemini'ye giden tek kapı: kullanıcının kendi anahtarı (BYOK). Anahtar cihazın
+// kasasında (`aiCredentials.ts`), çağrı doğrudan Google'a gidiyor. Sunucu yok;
+// kota ve fatura kullanıcının kendi hesabında. Anahtar yoksa yapay zekâ kapalı
+// sayılıyor (`aiAvailability.ts`) ve buraya hiç gelinmiyor.
 
 const GOOGLE_API_ROOT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -21,10 +11,8 @@ export type GeminiCall = {
   prompt: string;
   /** Gemini'nin JSON şeması — verilirse yanıt application/json olarak istenir. */
   responseSchema?: Record<string, unknown>;
-  /** Mülakat kaydının sesi (base64, m4a). */
+  /** Konuşma kaydının sesi (base64, m4a). */
   audioBase64?: string;
-  /** Mülakat sırasında yakalanan kareler (base64, jpeg). */
-  capturedPhotos?: string[];
   /** Ses yüksekliği ölçümleri — prompt'a ekleniyor. */
   dbLogs?: number[];
   model?: string;
@@ -46,14 +34,11 @@ export class GeminiError extends Error {
 const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 /**
- * Ses/kare varsa çok-ortamlı (multimodal) parça listesi kurar.
+ * Ses varsa çok-ortamlı (multimodal) parça listesi kurar.
  *
- * `server/server.ts` bugüne kadar aynı işi yapıyordu; mantık birebir buraya
- * taşındı ki iki yol da aynı istemi üretsin.
- *
- * ⚠️ Ses MIME türü: sunucu `audio/m4a` gönderiyordu. Bu IANA'da kayıtlı bir tür
- * değil ve Gemini'nin desteklenen türler listesinde geçmiyor; m4a dosyaları
- * MPEG-4 kabı olduğu için doğrusu `audio/mp4`. Taşırken düzeltildi.
+ * ⚠️ Ses MIME türü: `audio/m4a` IANA'da kayıtlı bir tür değil ve Gemini'nin
+ * desteklenen türler listesinde geçmiyor; m4a dosyaları MPEG-4 kabı olduğu için
+ * doğrusu `audio/mp4`.
  */
 function buildParts(call: GeminiCall): Record<string, unknown>[] {
   let text = call.prompt;
@@ -61,16 +46,13 @@ function buildParts(call: GeminiCall): Record<string, unknown>[] {
   if (call.dbLogs && call.dbLogs.length > 0) {
     text += `\n\nSES YÜKSEKLİĞİ LOGLARI (dB):\n${JSON.stringify(call.dbLogs)}`;
     text +=
-      '\nYukarıdaki desibel loglarını inceleyerek adayın mülakatta sesini nasıl kullandığını (bağırma, fısıldama, ani tepkiler) değerlendir.';
+      '\nYukarıdaki desibel loglarını inceleyerek konuşmacının sesini nasıl kullandığını (bağırma, fısıldama, ani yükselmeler) değerlendir.';
   }
 
   const parts: Record<string, unknown>[] = [{ text }];
 
   if (call.audioBase64) {
     parts.push({ inlineData: { mimeType: 'audio/mp4', data: call.audioBase64 } });
-  }
-  for (const photo of call.capturedPhotos ?? []) {
-    parts.push({ inlineData: { mimeType: 'image/jpeg', data: photo } });
   }
 
   return parts;
@@ -124,7 +106,7 @@ function describeGoogleError(status: number, payload: any): GeminiError {
   return new GeminiError(detail || 'Yapay zekâ yanıt veremedi.', reason || 'UNKNOWN');
 }
 
-/** 1. yol — kullanıcının kendi anahtarıyla doğrudan Google'a. */
+/** Kullanıcının kendi anahtarıyla doğrudan Google'a. */
 async function callDirect(call: GeminiCall, apiKey: string): Promise<string> {
   const model = call.model ?? DEFAULT_MODEL;
   const url = `${GOOGLE_API_ROOT}/${model}:generateContent`;
@@ -158,70 +140,9 @@ async function callDirect(call: GeminiCall, apiKey: string): Promise<string> {
     .trim();
 }
 
-/** 2. yol — Ayarlar'da sunucu adresi tanımlıysa `server/server.ts` proxy'si. */
-async function callProxy(call: GeminiCall, base: string): Promise<string> {
-  const config: Record<string, unknown> = {};
-  if (call.responseSchema) {
-    config.responseMimeType = 'application/json';
-    config.responseSchema = call.responseSchema;
-  }
-  if (call.useSearch) {
-    config.tools = [{ googleSearch: {} }];
-  }
-
-  const url = `${base}/api/gemini`;
-  let response: Response;
-
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Sunucuda APP_TOKEN tanımlıysa gerekli; boşsa başlık hiç eklenmiyor.
-        ...(appSettingsStore.get().appToken
-          ? { 'x-app-token': appSettingsStore.get().appToken }
-          : {}),
-      },
-      body: JSON.stringify({
-        model: call.model ?? DEFAULT_MODEL,
-        contents: call.prompt,
-        config: Object.keys(config).length > 0 ? config : undefined,
-        audioBase64: call.audioBase64,
-        capturedPhotos: call.capturedPhotos,
-        dbLogs: call.dbLogs,
-      }),
-      signal: call.signal,
-    });
-  } catch (e: any) {
-    if (e?.name === 'AbortError') throw e;
-    throw new GeminiError(
-      `Sunucuya ulaşılamadı (${url}). Sunucu çalışıyor mu ve telefon aynı ağda mı?`,
-      'NETWORK',
-    );
-  }
-
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok || !payload?.success) {
-    const code = payload?.error;
-    if (code === 'API_KEY_MISSING') {
-      throw new GeminiError('Sunucuda GEMINI_API_KEY tanımlı değil.', code);
-    }
-    throw new GeminiError(
-      payload?.message || payload?.error || 'Yapay zekâ yanıt veremedi.',
-      code,
-    );
-  }
-
-  return typeof payload.text === 'string' ? payload.text : '';
-}
-
 export async function callGemini(call: GeminiCall): Promise<string> {
   const apiKey = getApiKey();
   if (apiKey) return callDirect(call, apiKey);
-
-  const base = normalizeBaseUrl(appSettingsStore.get().apiBaseUrl);
-  if (base) return callProxy(call, base);
 
   // Buraya normalde hiç gelinmiyor: çağıran her yer önce `aiAvailable()`
   // soruyor. Yine de sessiz kalmaktansa açık bir kod dönülüyor.
@@ -250,48 +171,20 @@ export type ConnectionResult = { ok: boolean; message: string };
  * Kurulum ekranındaki "Doğrula" ve "Bağlantıyı test et" düğmeleri.
  *
  * `overrideKey`: anahtarı kaydetmeden önce denemek için.
- * `via`: hangi yolun sınanacağı. Varsayılan `'auto'` gerçek çağrıyla aynı
- * önceliği izler (anahtar varsa o). `'proxy'` anahtarı yok sayıp sunucuyu
- * dener — "Gelişmiş" bölümündeki test düğmesi bunu ister, yoksa anahtarı olan
- * kullanıcıda sunucu adresi hiç sınanmadan "başarılı" derdi.
  */
-export async function testConnection(
-  overrideKey?: string,
-  via: 'auto' | 'proxy' = 'auto',
-): Promise<ConnectionResult> {
-  const base = normalizeBaseUrl(appSettingsStore.get().apiBaseUrl);
-
-  if (via === 'proxy') {
-    if (!base) return { ok: false, message: 'Önce bir sunucu adresi gir.' };
-    try {
-      const text = await callProxy({ prompt: 'ping' }, base);
-      return text.length === 0
-        ? { ok: false, message: 'Sunucuya ulaşıldı ama yanıt boş geldi. Tekrar dene.' }
-        : { ok: true, message: 'Sunucuya ulaşıldı ve yapay zekâ yanıt verdi.' };
-    } catch (e) {
-      return { ok: false, message: (e as GeminiError).message || 'Bağlantı kurulamadı.' };
-    }
-  }
-
+export async function testConnection(overrideKey?: string): Promise<ConnectionResult> {
   const key = overrideKey?.trim() || getApiKey();
 
-  if (!key && !base) {
-    return { ok: false, message: 'Önce bir anahtar gir ya da sunucu adresi tanımla.' };
+  if (!key) {
+    return { ok: false, message: 'Önce bir anahtar gir.' };
   }
 
   try {
-    const text = key
-      ? await callDirect({ prompt: 'ping' }, key)
-      : await callProxy({ prompt: 'ping' }, base);
+    const text = await callDirect({ prompt: 'ping' }, key);
     if (text.length === 0) {
       return { ok: false, message: 'Bağlantı kuruldu ama yanıt boş geldi. Tekrar dene.' };
     }
-    return {
-      ok: true,
-      message: key
-        ? 'Anahtar çalışıyor. Yapay zekâ değerlendirmesi artık açık.'
-        : 'Sunucuya ulaşıldı ve yapay zekâ yanıt verdi.',
-    };
+    return { ok: true, message: 'Anahtar çalışıyor. Yapay zekâ değerlendirmesi artık açık.' };
   } catch (e) {
     const error = e as GeminiError;
     return { ok: false, message: error.message || 'Bağlantı kurulamadı.' };

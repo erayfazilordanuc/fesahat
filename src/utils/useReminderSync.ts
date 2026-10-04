@@ -5,8 +5,6 @@ import { useDailyPracticeSettings } from './dailyPracticeSettings';
 import { syncReminders, NOTIFICATION_BUDGET, type ReminderPayload } from './dailyNotifications';
 import { syncHabitReminders, type HabitReminderPayload } from './habitNotifications';
 import { habitStore, incrementHabit } from './habitReminders';
-import { syncAlarms } from './alarmNotifications';
-import { alarmStore } from './customAlarms';
 import { useAppSettings } from './appSettings';
 
 /**
@@ -27,7 +25,6 @@ export function useReminderSync(delayMs = 500): void {
   // bildirimler iptal edilip yeniden kurulurdu. `habitReminders.ts` sayaçları ayrı
   // alanda tuttuğu için `reminders` referansı yalnızca gerçek ayar değişiminde değişir.
   const habitReminders = habitStore.use().reminders;
-  const alarms = alarmStore.use().alarms;
 
   React.useEffect(() => {
     const id = setTimeout(() => {
@@ -39,25 +36,17 @@ export function useReminderSync(delayMs = 500): void {
           everyOtherDay: reminderFrequency === 'everyOtherDay',
         });
 
-        // 2) Serbest alarmlar: kullanıcının bilerek kurduğu hatırlatmalar,
-        //    bu yüzden aralıklı hatırlatıcılardan ÖNCE yer alıyorlar. Maliyetleri
-        //    de küçük (tekrarlayan tetikleyici; alarm başına 1-7 bildirim).
-        const alarmResult = await syncAlarms(alarmStore.get(), {
-          enabled,
-          budget: NOTIFICATION_BUDGET - scheduledCount,
-        });
-
-        // 3) Aralıklı hatırlatıcılar: kalan bütçeyi paylaşır, sığmayanı kırpar.
+        // 2) Aralıklı hatırlatıcılar: kalan bütçeyi paylaşır, sığmayanı kırpar.
         //    Depodan güncel durum okunuyor: efekt sayaçları izlemediği için
         //    kapanışta yakalanan state bayat olabilir.
         await syncHabitReminders(habitStore.get(), {
           enabled,
-          budget: NOTIFICATION_BUDGET - scheduledCount - alarmResult.scheduled,
+          budget: NOTIFICATION_BUDGET - scheduledCount,
         });
       })().catch((e) => console.warn('[bildirim] eşitleme başarısız.', e));
     }, delayMs);
     return () => clearTimeout(id);
-  }, [settings, reminderFrequency, habitReminders, alarms, delayMs]);
+  }, [settings, reminderFrequency, habitReminders, delayMs]);
 }
 
 /**

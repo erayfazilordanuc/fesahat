@@ -53,7 +53,7 @@ import { useDayKey } from '../utils/today';
 import { useDueWordIds } from '../utils/lugatProgress';
 import { addResponse } from '../utils/responseHistory';
 
-// Dil & İfade ekranı.
+// Dil ekranı (lugat & Türkçe).
 // Amaç söz sanatları değil kelime öğrenmek: lugat (söz varlığı) geliştirme,
 // Türkçeyi daha iyi anlama ve doğru kullanma. Belagat (söz sanatları) burada
 // yalnızca "Daha fazla" altında, ileri düzey ayrı bir bölüme bağlantı olarak yer alır.
@@ -115,10 +115,10 @@ export default function LanguageScreen({ navigation, route }: any) {
 
   return (
     <ScreenShell
-      title="Dil & İfade"
+      title="Dil"
       subtitle={`${learnedCount} kelime öğrenildi · ${streak} günlük seri`}
       onClose={() => navigation?.goBack?.()}
-      right={<SettingsButton onPress={() => setSheetOpen(true)} label="Dil & İfade ayarları" />}
+      right={<SettingsButton onPress={() => setSheetOpen(true)} label="Dil ayarları" />}
     >
       <View className="mt-1 mb-2">
         <Segmented<Tab>

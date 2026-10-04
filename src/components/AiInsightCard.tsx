@@ -8,7 +8,7 @@ import { useThemeTokens } from './practice/PracticeUI';
 import { callGeminiJson, GeminiError } from '../utils/geminiClient';
 import { AI_UNAVAILABLE_HINT, useAiAvailable } from '../utils/aiAvailability';
 
-// Mülakat ve egzersiz geçmişi ekranlarının paylaştığı "toplu analiz" kartı.
+// Geçmiş ekranlarının paylaştığı "toplu analiz" kartı.
 // Tek tek oturumları değil, birikmiş kaydın tamamını değerlendirir.
 
 export type Insight = {

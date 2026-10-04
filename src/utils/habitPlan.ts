@@ -32,7 +32,7 @@ export type HabitReminderPlanInput = {
 };
 
 export type PlannedHabitNotification = {
-  /** `terakki.habit.<hatırlatıcı>.<gg>.<sıra>` — kimlik çakışmasın diye tarihli. */
+  /** `fesahat.habit.<hatırlatıcı>.<gg>.<sıra>` — kimlik çakışmasın diye tarihli. */
   identifier: string;
   habitId: string;
   title: string;
@@ -126,7 +126,7 @@ export function planHabitNotifications(
         at.setHours(slot.hour, slot.minute, 0, 0);
         if (at.getTime() < earliest.getTime()) return;
         queue.push({
-          identifier: `terakki.habit.${reminder.id}.${dayStamp(day)}.${index}`,
+          identifier: `fesahat.habit.${reminder.id}.${dayStamp(day)}.${index}`,
           habitId: reminder.id,
           title: reminder.title,
           body: reminder.message,

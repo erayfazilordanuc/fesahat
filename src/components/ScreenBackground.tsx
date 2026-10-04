@@ -16,7 +16,7 @@ import { useAppTheme } from '../utils/ThemeContext';
  * tipe cast ediyor. Biri değişip diğeri değişmezse degrade sessizce
  * varsayılana düşer, hata vermez.
  */
-export type BackgroundVariant = 'Bugün' | 'Gelişim' | 'İlerleme' | 'Profil';
+export type BackgroundVariant = 'Bugün' | 'Atölye' | 'Karne' | 'Profil';
 
 type Palette = [string, string, ...string[]];
 
@@ -30,9 +30,9 @@ type Palette = [string, string, ...string[]];
  */
 export function backgroundColors(variant: BackgroundVariant, isLight: boolean): Palette {
   switch (variant) {
-    case 'Gelişim':
+    case 'Atölye':
       return isLight ? ['#ffffff', '#fbf8ff', '#ece2fa'] : ['#121214', '#151517', '#1c1826'];
-    case 'İlerleme':
+    case 'Karne':
       return isLight ? ['#ffffff', '#f6faff', '#dfeafc'] : ['#121214', '#151517', '#171b28'];
     case 'Profil':
       return isLight ? ['#ffffff', '#f9fafb', '#e9edf2'] : ['#121214', '#151517', '#1a1b1e'];

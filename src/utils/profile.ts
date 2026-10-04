@@ -1,6 +1,5 @@
 import { createPersistentStore } from './store';
 import { isProfileIconId, type ProfileIconId } from '../data/profileIcons';
-import { DEPARTMENTS, type DepartmentId } from '../data/questions';
 import type { Tone } from '../components/AppUI';
 
 export type { ProfileIconId };
@@ -15,11 +14,6 @@ export type Profile = {
   icon: ProfileIconId;
   avatarTone: Tone;
   avatarUri: string;
-  /**
-   * Mülakatta ve günün teknik sorusunda kullanılan hedef alan.
-   * `''` = seçilmedi; o hâlde teknik soru gösterilmez, seçime yönlendirilir.
-   */
-  targetDepartment: DepartmentId | '';
 };
 
 const DEFAULTS: Profile = {
@@ -30,24 +24,23 @@ const DEFAULTS: Profile = {
   icon: 'userCheck',
   avatarTone: 'blue',
   avatarUri: '',
-  targetDepartment: '',
 };
 
 export const profileStore = createPersistentStore<Profile>('user-profile', DEFAULTS, (stored) => {
   const value = (stored ?? {}) as Partial<Profile> & { github?: string };
+  // Yalnızca bilinen alanlar okunuyor: eski kayıttaki artık kullanılmayan
+  // alanlar (ör. Terakki'den kalma `targetDepartment`) sessizce yok sayılır ve
+  // bir sonraki yazımda diskten düşer.
   return {
-    ...DEFAULTS,
-    ...value,
+    name: value.name ?? DEFAULTS.name,
+    role: value.role ?? DEFAULTS.role,
+    linkedin: value.linkedin ?? DEFAULTS.linkedin,
     // Alan eskiden "github" idi; eski kayıtlar kaybolmasın diye taşınıyor.
     website: value.website ?? value.github ?? '',
     // Kütüphaneden kalkmış ya da bozulmuş bir kimlik ekranı çökertmesin.
     icon: isProfileIconId(value.icon) ? value.icon : DEFAULTS.icon,
-    // Katalog değişirse (YAPILACAKLAR Bölüm 00) kaybolmuş bir departman kimliği
-    // kalabilir; "seçilmedi"ye düşürülüyor, yoksa boş havuzla soru seçilmeye
-    // çalışılır.
-    targetDepartment: DEPARTMENTS.some((d) => d.id === value.targetDepartment)
-      ? (value.targetDepartment as DepartmentId)
-      : '',
+    avatarTone: value.avatarTone ?? DEFAULTS.avatarTone,
+    avatarUri: value.avatarUri ?? DEFAULTS.avatarUri,
   };
 });
 
@@ -62,24 +55,4 @@ export function saveProfile(patch: Partial<Profile>): void {
 /** Ana ekrandaki karşılamada kullanılan ilk isim; ad girilmemişse boş döner. */
 export function firstName(profile: Profile): string {
   return profile.name.trim().split(/\s+/)[0] ?? '';
-}
-
-/** Seçilmiş hedef alanın etiketi; seçilmemişse boş döner. */
-export function targetDepartmentLabel(profile: Profile): string {
-  return DEPARTMENTS.find((d) => d.id === profile.targetDepartment)?.label ?? '';
-}
-
-/**
- * Yapay zekâ istemlerine eklenecek bağlam cümlesi.
- * İkisi de boşsa boş döner — "hedefi: ." gibi sakat bir cümle kurulmasın.
- */
-export function careerContext(profile: Profile): string {
-  const role = profile.role.trim();
-  const department = targetDepartmentLabel(profile);
-  return [
-    role ? `Kullanıcının kariyer hedefi: ${role}.` : '',
-    department ? `Hedeflediği alan: ${department}.` : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
 }

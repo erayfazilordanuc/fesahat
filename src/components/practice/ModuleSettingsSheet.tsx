@@ -1,6 +1,16 @@
 import React from 'react';
 import { View, Alert, Platform } from 'react-native';
-import { Bell, BellOff, Wind, Mic, Feather, BookOpen, BookOpenText } from 'lucide-react-native';
+import {
+  Bell,
+  BellOff,
+  Wind,
+  Mic,
+  Feather,
+  BookOpen,
+  BookOpenText,
+  BookOpenCheck,
+  MessagesSquare,
+} from 'lucide-react-native';
 
 import { Toggle, type Tone } from '../AppUI';
 import { BottomSheet, Card, SettingRow, TimeStepper, useThemeTokens } from './PracticeUI';
@@ -22,20 +32,20 @@ export const MODULE_META: Record<
   { title: string; icon: React.ComponentType<{ size?: number; color?: string }>; tone: Tone; offDescription: string }
 > = {
   // Kapalı modülün nerede gizlendiği modüle göre değişiyor: dördü de Bugün
-  // listesinden kalkıyor, Gelişim'de ise yalnızca kendi kartı olanlar
+  // listesinden kalkıyor, Atölye'de ise yalnızca kendi kartı olanlar
   // (DailyPracticeCard ve GrowthScreen filtreleri).
   diaphragm: {
     title: 'Diyafram Egzersizi',
     icon: Wind,
     tone: 'blue',
     offDescription:
-      "Kapalıyken Bugün listesinde ve Gelişim'deki Dinlenme & Denge alanında görünmez, hatırlatması kurulmaz.",
+      "Kapalıyken Bugün listesinde ve Atölye'deki Konuşma alanında görünmez, hatırlatması kurulmaz.",
   },
   speech: {
     title: 'Konuşma Egzersizi',
     icon: Mic,
     tone: 'violet',
-    offDescription: "Kapalıyken Bugün listesinde ve Gelişim'de görünmez, hatırlatması kurulmaz.",
+    offDescription: "Kapalıyken Bugün listesinde ve Atölye'de görünmez, hatırlatması kurulmaz.",
   },
   belagat: {
     title: 'Belagat',
@@ -55,7 +65,21 @@ export const MODULE_META: Record<
     icon: BookOpenText,
     tone: 'violet',
     offDescription:
-      "Kapalıyken Bugün listesinde, ana ekrandaki kelime kartında ve Gelişim'deki Dil & İfade alanında görünmez, hatırlatması kurulmaz.",
+      "Kapalıyken Bugün listesinde, ana ekrandaki kelime kartında ve Atölye'deki Dil alanında görünmez, hatırlatması kurulmaz.",
+  },
+  comprehension: {
+    title: 'Anlayış & Kavrayış',
+    icon: BookOpenCheck,
+    tone: 'blue',
+    offDescription:
+      "Kapalıyken Bugün listesinde ve Atölye'deki Anlayış & Kavrayış alanında görünmez, hatırlatması kurulmaz.",
+  },
+  communication: {
+    title: 'İletişim Becerileri',
+    icon: MessagesSquare,
+    tone: 'amber',
+    offDescription:
+      "Kapalıyken Bugün listesinde ve Atölye'deki İletişim alanında görünmez, hatırlatması kurulmaz.",
   },
 };
 
@@ -95,7 +119,7 @@ export function useEnableNotifications(): () => Promise<boolean> {
       result === 'unsupported'
         ? 'Bildirimler simülatör/emülatörde çalışmaz. Gerçek bir cihazda deneyin.'
         : Platform.OS === 'ios'
-          ? 'Ayarlar → Bildirimler üzerinden Terakki için bildirimlere izin verin.'
+          ? 'Ayarlar → Bildirimler üzerinden Fesahat için bildirimlere izin verin.'
           : 'Uygulama bilgileri → Bildirimler üzerinden izin verin.',
     );
     return false;

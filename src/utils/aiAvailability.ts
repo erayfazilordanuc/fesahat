@@ -1,4 +1,3 @@
-import { appSettingsStore, useAppSettings } from './appSettings';
 import { hasApiKey, useApiKey } from './aiCredentials';
 
 /**
@@ -8,30 +7,24 @@ import { hasApiKey, useApiKey } from './aiCredentials';
  * uygulama yapay zekâ olmadan da **tam** çalışır. Bu yüzden yapay zekâ isteyen
  * her yer, çağrıyı yapıp hatayı yakalamak yerine önce buraya sorar.
  *
- * Eskiden böyle değildi: ekranlar çağrıyı yapıyor, `GeminiError` yakalayıp
- * mesajını olduğu gibi basıyordu. Sunucu tanımsızken kullanıcı şunu görüyordu:
- * "Sunucu adresi tanımlı değil. Ayarlar → Backend API Adresi alanını doldurun."
- * Bu bir son kullanıcı cümlesi değil, geliştirici talimatı.
+ * Aksi hâlde ekranlar çağrıyı yapıp `GeminiError` mesajını olduğu gibi
+ * basardı; anahtarsız kullanıcı geliştirici talimatı görürdü.
  *
- * İKİ YOL (bkz. `geminiClient.ts`): kullanıcının kendi anahtarı (varsayılan)
- * ya da sunucu adresi. Biri yeterli.
+ * Tek koşul: kullanıcının kendi Gemini anahtarı (BYOK, bkz. `geminiClient.ts`).
  */
 export function aiAvailable(): boolean {
-  return hasApiKey() || appSettingsStore.get().apiBaseUrl.trim().length > 0;
+  return hasApiKey();
 }
 
-/** Bileşen içinde canlı okuma; anahtar girilince ya da adres değişince yeniden render eder. */
+/** Bileşen içinde canlı okuma; anahtar girilince ya da silinince yeniden render eder. */
 export function useAiAvailable(): boolean {
-  const { apiBaseUrl } = useAppSettings();
-  const apiKey = useApiKey();
-  return Boolean(apiKey) || apiBaseUrl.trim().length > 0;
+  return Boolean(useApiKey());
 }
 
 /**
  * Yapay zekâ kapalıyken gösterilecek ortak, teknik olmayan açıklama.
  *
- * Yanında her zaman kuruluma götüren bir düğme bulunur (`AiInsightCard`,
- * `AnalysisScreen`) — eskiden yalnızca bu cümle vardı ve kullanıcı nereden
+ * Yanında her zaman kuruluma götüren bir düğme bulunur (`AiInsightCard`) — eskiden yalnızca bu cümle vardı ve kullanıcı nereden
  * açacağını bulamıyordu.
  */
 export const AI_UNAVAILABLE_HINT =

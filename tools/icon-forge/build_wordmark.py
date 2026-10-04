@@ -1,11 +1,13 @@
-"""Splash ekranındaki "Terakki" yazısını fontun eğrilerinden PNG olarak üretir.
+"""Splash ekranındaki "Fesahat" yazısını fontun eğrilerinden PNG olarak üretir.
 
 NEDEN GÖRSEL, NEDEN CANLI YAZI DEĞİL:
-Italianno'da 'i'nin noktası, harfin ilerleme genişliğinin DIŞINDA duruyor
-(glif 77: gövde x=32..247, nokta x=218..278, ilerleme 192). "Terakki"de 'i' son
-harf olduğu için Android metin kutusu son ilerleme genişliğinde bitiyor ve nokta
-kırpılıyordu — ekranda "Terakkı" görünüyordu. NBSP eklemek, harfi ayrı `Text`e
-almak ve ZWNJ denendi; hiçbiri çözmedi (ayrıntı KARARLAR.md).
+Italianno'da bazı glifler (ör. 'i'nin noktası) ilerleme genişliğinin DIŞINA
+taşıyor (glif 77: gövde x=32..247, nokta x=218..278, ilerleme 192). Kelimenin son
+harfi böyle bir glifse Android metin kutusu son ilerleme genişliğinde bitiyor ve
+taşan kısım kırpılıyordu (önceki marka yazısında 'i'nin noktası kayboluyordu).
+NBSP eklemek, harfi ayrı `Text`e almak ve ZWNJ denendi; hiçbiri çözmedi (ayrıntı
+KARARLAR.md). "Fesahat" 't' ile bitiyor; yine de aynı yolu kullanıyoruz — sabit bir
+marka varlığı olarak font yüklenmesini beklemiyor, kuyruk/sap taşmaları kırpılmıyor.
 
 Yazıyı burada kendimiz çizince Android'in metin motoru devreden çıkıyor: nokta
 garanti çiziliyor. Ek kazanç — splash artık font yüklenmesini beklemiyor.
@@ -27,9 +29,9 @@ from png import write_png
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 FONT = os.path.join(ROOT, 'assets/fonts/Italianno-Regular.ttf')
-OUT = os.path.join(ROOT, 'assets/brand/wordmark-terakki.png')
+OUT = os.path.join(ROOT, 'assets/brand/wordmark-fesahat.png')
 
-WORD = 'Terakki'
+WORD = 'Fesahat'
 #: Bir em'in kaç piksele karşılık geleceği. Ekranda yazı ~60pt; 4 katı
 #: çözünürlükte üretip küçültmek kenarları temiz bırakıyor.
 EM_PX = 240
@@ -260,7 +262,7 @@ def main():
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     write_png(OUT, w, h, px)
-    print('yazıldı: assets/brand/wordmark-terakki.png')
+    print('yazıldı: assets/brand/wordmark-fesahat.png')
 
     # SplashOverlay'in kullanacağı ölçüler — yazı eskisiyle aynı boyda dursun.
     ink_units = (maxx - minx) / scale

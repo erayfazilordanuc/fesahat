@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, Alert, Linking, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, Alert, Linking, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import {
   ShieldCheck,
@@ -9,8 +9,6 @@ import {
   Lock,
   RefreshCw,
   Trash2,
-  ChevronDown,
-  ChevronRight,
   Plug,
 } from 'lucide-react-native';
 
@@ -19,7 +17,6 @@ import {
   AppHeader,
   Surface,
   SectionLabel,
-  TextField,
   ActionButton,
   toneColor,
   toneSoft,
@@ -35,34 +32,21 @@ import {
   API_KEY_CONSOLE_URL,
 } from '../utils/aiCredentials';
 import { testConnection } from '../utils/geminiClient';
-import {
-  API_BASE_URL_PLACEHOLDER,
-  normalizeBaseUrl,
-  updateAppSettings,
-  useAppSettings,
-} from '../utils/appSettings';
 
 // Yapay zekâ kurulum ekranı — BYOK (kendi anahtarını getir) akışı.
 //
 // Kullanıcı kararı 2026-09-20: BYOK varsayılan yol. Uygulamayı kuran herkes
 // kendi Google hesabından ücretsiz bir Gemini anahtarı alıp buraya yapıştırır;
-// hiçbir ortak sunucu ya da paylaşılan kota gerekmez. Sunucu (proxy) yolu
-// "Gelişmiş" bölümünde, kendi `server/server.ts`'ini çalıştıranlar için duruyor.
+// hiçbir ortak sunucu ya da paylaşılan kota gerekmez.
 
 export default function AiSetupScreen({ navigation }: any) {
   const t = useThemeTokens();
   const apiKey = useApiKey();
-  const appSettings = useAppSettings();
 
   const hasKey = !!apiKey;
   const [editing, setEditing] = React.useState(!hasKey);
   const [draft, setDraft] = React.useState('');
   const [testing, setTesting] = React.useState(false);
-  const [advancedOpen, setAdvancedOpen] = React.useState(false);
-
-  const [urlDraft, setUrlDraft] = React.useState(appSettings.apiBaseUrl);
-  const [tokenDraft, setTokenDraft] = React.useState(appSettings.appToken);
-  const [savingUrl, setSavingUrl] = React.useState(false);
 
   const showFormatWarning = draft.trim().length > 0 && !looksLikeApiKey(draft);
 
@@ -124,32 +108,6 @@ export default function AiSetupScreen({ navigation }: any) {
     ]);
   };
 
-  const saveAdvanced = () => {
-    const normalized = normalizeBaseUrl(urlDraft);
-    if (!normalized) {
-      updateAppSettings({ apiBaseUrl: '', appToken: '' });
-      setUrlDraft('');
-      Alert.alert('Kaldırıldı', 'Sunucu adresi temizlendi.');
-      return;
-    }
-    updateAppSettings({ apiBaseUrl: normalized, appToken: tokenDraft.trim() });
-    setUrlDraft(normalized);
-    Alert.alert('Kaydedildi', `Sunucu adresi güncellendi:\n${normalized}`);
-  };
-
-  const testAdvanced = async () => {
-    const normalized = normalizeBaseUrl(urlDraft);
-    if (normalized && normalized !== appSettings.apiBaseUrl) {
-      updateAppSettings({ apiBaseUrl: normalized });
-      setUrlDraft(normalized);
-    }
-    setSavingUrl(true);
-    // 'proxy': anahtar kayıtlı olsa bile burada sunucu yolu sınanmalı.
-    const result = await testConnection(undefined, 'proxy');
-    setSavingUrl(false);
-    Alert.alert(result.ok ? 'Bağlantı başarılı' : 'Bağlantı sorunu', result.message);
-  };
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -203,8 +161,9 @@ export default function AiSetupScreen({ navigation }: any) {
         ) : (
           <>
             <Text className={`text-[12px] leading-5 mb-4 ${t.muted}`}>
-              Yapay zekâ değerlendirmesi mülakat kayıtlarını okuyup geri bildirim çıkarır; bunun
-              için Google'ın Gemini modeline erişen bir anahtar gerekir.
+              Yapay zekâ değerlendirmesi özetlerini, iletişim senaryosu cevaplarını, belagat
+              cümlelerini ve diksiyon kayıtlarını değerlendirir; bunun için Google'ın Gemini
+              modeline erişen bir anahtar gerekir.
             </Text>
 
             <SectionLabel>1. Ücretsiz anahtar al</SectionLabel>
@@ -283,67 +242,10 @@ export default function AiSetupScreen({ navigation }: any) {
         <SectionLabel>Gizlilik</SectionLabel>
         <Surface>
           <PrivacyLine text="Anahtar yalnızca bu cihazda, işletim sisteminin kasasında saklanır; hiçbir sunucuya gönderilmez." />
-          <PrivacyLine text="Değerlendirme istendiğinde mülakat metni/sesi doğrudan Google'a gider." />
+          <PrivacyLine text="Değerlendirme istendiğinde yazdığın metin ya da ses kaydın doğrudan Google'a gider." />
           <PrivacyLine text="Kullanım, kendi Google hesabının ücretsiz kotasından düşer." />
           <PrivacyLine text="Yapay zekâ olmadan uygulamanın geri kalanı tam çalışır." last />
         </Surface>
-
-        {/* ——— Gelişmiş: kendi sunucun ——— */}
-        <Pressable
-          onPress={() => setAdvancedOpen((v) => !v)}
-          accessibilityRole="button"
-          accessibilityLabel={advancedOpen ? 'Gelişmiş bölümünü kapat' : 'Gelişmiş bölümünü aç'}
-          className="flex-row items-center mt-7 mb-2.5"
-        >
-          {advancedOpen ? (
-            <ChevronDown size={14} color={t.iconColor} />
-          ) : (
-            <ChevronRight size={14} color={t.iconColor} />
-          )}
-          <Text
-            className={`text-[10px] font-semibold uppercase ml-1 ${t.muted}`}
-            style={{ letterSpacing: 1.4 }}
-          >
-            Gelişmiş: kendi sunucunu kullan
-          </Text>
-        </Pressable>
-
-        {advancedOpen ? (
-          <Surface>
-            <Text className={`text-[11px] leading-5 mb-3 ${t.muted}`}>
-              Çoğu kullanıcının buna ihtiyacı yok. Kendi bilgisayarında Terakki sunucusunu
-              (server/server.ts) çalıştıranlar, anahtar yerine sunucunun adresini girebilir.
-            </Text>
-            <TextField
-              value={urlDraft}
-              onChangeText={setUrlDraft}
-              placeholder={API_BASE_URL_PLACEHOLDER}
-              autoCapitalize="none"
-              keyboardType="url"
-            />
-            <TextField
-              value={tokenDraft}
-              onChangeText={setTokenDraft}
-              placeholder="Erişim jetonu (isteğe bağlı)"
-              autoCapitalize="none"
-            />
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <ActionButton label="Kaydet" tone="slate" labelSize={12} onPress={saveAdvanced} />
-              </View>
-              <View className="flex-1">
-                <ActionButton
-                  label={savingUrl ? 'Deneniyor…' : 'Bağlantıyı test et'}
-                  variant="outline"
-                  disabled={savingUrl}
-                  labelSize={12}
-                  icon={<Plug size={15} color={t.iconColor} />}
-                  onPress={testAdvanced}
-                />
-              </View>
-            </View>
-          </Surface>
-        ) : null}
       </AppScreen>
     </KeyboardAvoidingView>
   );

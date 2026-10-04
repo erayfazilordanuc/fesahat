@@ -16,12 +16,12 @@ import { pickDailyWords, type LugatLevel, type LugatWord } from '../data/lugat';
 import { useDayKey } from './today';
 import { completeModule, progressStore } from './dailyPracticeProgress';
 
-// Dil & İfade (lugat) modülünün kalıcı ilerlemesi ve tercihleri.
+// Dil (lugat & Türkçe) modülünün kalıcı ilerlemesi ve tercihleri.
 //
 // Günlük pratik serisine (dailyPracticeProgress) burada tek noktadan bağlanır:
 // bir gün için seçilen kelimelerin tamamı "Öğrendim" olunca ya da tekrar
 // gününde "Tekrarı tamamladım" düğmesine basılınca `completeModule(prev, 'lugat')`
-// çağrılır. Ekranlar (Bugün kartı, Dil & İfade) kendi tamamlanma mantığını
+// çağrılır. Ekranlar (Bugün kartı, Dil) kendi tamamlanma mantığını
 // yazmaz, hepsi `markLearned` / `completeReview` üzerinden buraya gelir.
 
 export type LugatWordProgress = {
@@ -185,7 +185,7 @@ export function useTodaysWords(): TodaysWords & { learned: number; total: number
   const state = lugatProgressStore.use();
   // `day` bağımlılığı: uygulama gece yarısını açık geçirirse liste önceki günde
   // takılı kalmasın (YAPILACAKLAR Bölüm 7 → "Gün dönümünde yenileme").
-  // Bu tek nokta hem Bugün'deki kelime kartını hem Dil & İfade'yi besliyor.
+  // Bu tek nokta hem Bugün'deki kelime kartını hem Dil ekranını besliyor.
   const day = useDayKey();
   return React.useMemo(() => {
     const result = todaysWords(state);

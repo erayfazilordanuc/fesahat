@@ -10,21 +10,17 @@ import { createCollectionStore } from './collectionStore';
 //
 // KAPSAM: serbest metin yanıtları + çoktan seçmeli cevaplar.
 //
-// ⚠️ MÜLAKAT BURAYA YAZILMAZ. Mülakat oturumunun kendi deposu var
-// (`interviewHistory.ts`) ve orada yanıtın yanında kurum, süre, ses dosyası ve
-// yapay zekâ analizi de duruyor. Aynı yanıtı iki yere yazmak iki ayrı doğruluk
-// kaynağı demek olurdu. Yanıt Defteri ekranı mülakat sekmesinde doğrudan
-// `interviewHistory`'yi okur.
-//
 // Kalıcılık `collectionStore` üzerinden: native'de `practice_responses`
 // tablosu, değilse `response-history` anahtarı altında JSON blok.
 
-export type ResponseModule = 'belagat' | 'exercise' | 'lugat';
+export type ResponseModule = 'belagat' | 'exercise' | 'lugat' | 'summary' | 'communication';
 
 export const RESPONSE_MODULE_LABELS: Record<ResponseModule, string> = {
   belagat: 'Belagat',
   exercise: 'Egzersiz',
   lugat: 'Lugat',
+  summary: 'Özet',
+  communication: 'İletişim',
 };
 
 /** `text`: kullanıcı kendi cümlesini yazdı. `choice`: hazır şıklardan seçti. */

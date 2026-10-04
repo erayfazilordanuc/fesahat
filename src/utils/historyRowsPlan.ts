@@ -1,8 +1,8 @@
 // Saf legacy-kv → satır listesi planı (YAPILACAKLAR Bölüm 0.4, aşama 2).
 //
-// React Native / Expo bağımlılığı yok — `interview-history` / `exercise-history`
+// React Native / Expo bağımlılığı yok — `exercise-history`
 // kv değerlerinin (JSON.parse edilmiş hâli) hangi satırların yeni SQLite
-// tablolarına ekleneceğine karar verir. Gerçek okuma / transaction
+// tablosuna ekleneceğine karar verir. Gerçek okuma / transaction
 // `db.native.ts`'te; bu dosya yalnızca kararı verir, böylece Node altında
 // (`npx tsx`) doğrudan sınanabilir.
 
@@ -18,7 +18,7 @@ export type HistoryRowsPlan<T> = {
 };
 
 /**
- * `legacy` (örn. `{ sessions: [...] }` ya da `{ logs: [...] }`) içindeki
+ * `legacy` (örn. `{ logs: [...] }`) içindeki
  * `field` dizisini satır planına çevirir.
  *
  * - `legacy` null / nesne değil / `field` dizi değilse → boş plan.

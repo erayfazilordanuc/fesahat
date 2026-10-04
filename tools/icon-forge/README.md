@@ -1,26 +1,28 @@
 # icon-forge
 
-Terakki'nin logo ve ikon dosyalarını üreten küçük araç takımı. Bağımlılığı yok —
-saf Python 3 (yalnızca `zlib` + `math`). Makinede Pillow/ImageMagick olmadığı
-için yazıldı.
+Fesahat'ın ikon dosyalarını üreten araç takımı. Bağımlılığı yok — saf Python 3 (yalnızca `zlib` + `math`). Pillow/ImageMagick yerine yazıldı.
 
 | Dosya | İş |
 | --- | --- |
 | `png.py` | PNG oku/yaz (8-bit, interlace yok). Alfa korunur. |
 | `draw.py` | Anti-aliased poligon rasterleyici + şekil üreticileri (`rrect`, `circle`, `thick_line`, `chevron`, `arrow_head`) |
-| `marks.py` | Logo adaylarının geometrisi |
-| `sheet.py` | Dört adayı dört bağlamda gösteren tek kontak sayfası |
-| `each.py` | Her adayı ayrı dosya olarak dışa aktarır |
-| `build_from_brand.py` | **Güncel** uygulama ikonlarını `assets/brand/ikon/` SVG'lerinden üretir |
-| `build_app_assets.py` | Eski Kademe türetmesi; güncel ikonları ezmesin diye `--eski-kademe` olmadan çalışmaz |
+| `build_brand_svg.py` | SVG kaynakları (fesahat-icon-master.svg, mark.svg) oluşturup normalize eder. İçeri degrade durağı tanımları ve figür geometrisi girer. |
+| `build_from_brand.py` | **Güncel.** PNG ikonlarını `assets/brand/ikon/` SVG'lerinden türet; uygulama ikonları ve bildirim ikonu. |
+| `brand.py` | Degrade ve SVG yardımcı fonksiyonları |
 
-## Kullanım
+## Günlük Kullanım
 
+**PNG ikonlarını yeniden üret:**
 ```bash
-cd tools/icon-forge
-python3 sheet.py . /tmp/adaylar.png          # toplu karşılaştırma
-python3 each.py  . ~/Desktop/logo-adaylari   # tek tek
+python3 tools/icon-forge/build_from_brand.py
 ```
+
+**SVG kaynakları güncelle** (tasarım değişirse):
+```bash
+python3 tools/icon-forge/build_brand_svg.py
+```
+
+Ayrıntılar: [assets/brand/README.md](../../assets/brand/README.md).
 
 ## Dikkat
 
@@ -29,28 +31,38 @@ yönünü doldurmadan önce tekdüze hâle getiriyor. Bu satır kaldırılırsa 
 iki şeklin ortak alanı delik olarak çıkar — ok gövdesi ok başının içinde delik
 açıyordu, hata buradan geliyordu.
 
-## Uygulama ikonları
+## Uygulama İkonları Türetimi
 
+**Komut:**
 ```bash
 python3 tools/icon-forge/build_from_brand.py
 ```
 
-Degradeyi `terakki-icon-master.svg`'nin `stop-color`'larından, figürü
-`terakki-icon-mark.svg`'nin poligonlarından okur; renk ya da boyut koda gömülü
-değil (boyut: `MARK_SCALE`). Ayrıntı `assets/brand/README.md`'de.
+**Kaynaklar:**
+- Degrade: `fesahat-icon-master.svg` → `<stop offset=... stop-color=...>`
+- Figür: `fesahat-icon-mark.svg` → SVG path (M/L/Z komutları, evenodd doldurma)
 
-Çıktılar:
-- `icon.png` (1024×1024) — marka degradesi + beyaz figür
-- `brand/app-icon.png` (1024×1024) — icon.png'ye aynı
-- `android-icon-background.png` (1024×1024) — desen degrade zemin
-- `android-icon-foreground.png` (1024×1024) — beyaz figür, şeffaf zemin
-- `android-icon-monochrome.png` (1024×1024) — beyaz figür, şeffaf zemin
-- `splash-icon.png` (1024×1024) — tam boy figür (ölçek: SPLASH_SCALE)
-- `favicon.png` (48×48) — icon.png'den alan ortalamasıyla küçültülen (web için)
+Renk/boyut koda gömülü değil:
+- `MARK_SCALE = 0.62` — uygulama ikonu figür boyutu (Android güvenli alan %66)
+- `SPLASH_SCALE = 1.0` — splash figür boyutu (tam tuval)
+- `NOTIFICATION_SCALE = 1.08` — bildirim ikonu (96×96 doğrudan)
 
-> **Degrade (2026-09-19 kararı):** `#05B179` → `#029568` → `#007B59`, kaynak
-> `terakki-icon-master.svg`. Betiğin çıktısı `assets/` içindeki ikonlarla
-> eşitlendi; eski degradelerin ikonları `assets/brand/arsiv/` altında duruyor.
-> `app.json` → `adaptiveIcon.backgroundColor` / splash `backgroundColor`,
-> `SplashOverlay.tsx` ve iOS `SplashScreenBackground.colorset` orta durakla
-> (`#029568`) aynı kalmalı.
+**Çıktılar:**
+| Dosya | Boyut | Amaç |
+| --- | --- | --- |
+| `assets/icon.png` | 1024×1024 | Uygulama ikonu (degrade + figür) |
+| `assets/brand/app-icon.png` | 1024×1024 | icon.png'ye aynı |
+| `assets/android-icon-background.png` | 1024×1024 | Adaptive zemin |
+| `assets/android-icon-foreground.png` | 1024×1024 | Adaptive figür |
+| `assets/android-icon-monochrome.png` | 1024×1024 | Adaptive monokrom |
+| `assets/splash-icon.png` | 1024×1024 | Açılış ekranı figürü |
+| `assets/notification-icon.png` | 96×96 | Bildirim ikonu |
+| `assets/favicon.png` | 48×48 | Web simgesi |
+
+**Degrade (güncel):** `#05B179` (0%) → `#029568` (50%) → `#007B59` (100%)
+
+Orta durak (`#029568`) bu yerlerde de kullanılır:
+- `app.json` → `android.adaptiveIcon.backgroundColor`
+- Native splash zemin
+- `SplashOverlay.tsx` arka planı
+- iOS `SplashScreenBackground.colorset`

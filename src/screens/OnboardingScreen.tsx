@@ -258,7 +258,7 @@ function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => v
             marginBottom: 12,
           }}
         >
-          Terakki'ye hoş geldin
+          Fesahat'a hoş geldin
         </Text>
         <Text
           style={{
@@ -507,14 +507,10 @@ function WarmupStep({ goal, onDone }: { goal: OnboardingGoal; onDone: () => void
       ) : goal === 'konusma' ? (
         <SpeechWarmup onDone={onDone} />
       ) : (
-        <BreathingWarmup
-          title={
-            goal === 'nefes'
-              ? '4-6 nefesi — 30 saniyelik sakinleşme'
-              : 'Odak nefesi — zor bir işten önce 30 saniye'
-          }
-          onDone={onDone}
-        />
+        // Anlayış, iletişim ve belagat hedeflerinin kendi ısınması henüz yok;
+        // üçü de konuşmadan önce nefesi toparlamaktan fayda gördüğü için ortak
+        // nefes ısınmasına düşüyor (YAPILACAKLAR → "Oryantasyon — kalanlar").
+        <BreathingWarmup title="Odak nefesi — başlamadan önce 30 saniye" onDone={onDone} />
       )}
     </View>
   );

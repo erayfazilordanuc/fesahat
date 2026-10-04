@@ -30,7 +30,7 @@ export function storageBackend(): 'sqlite' | 'file' | 'web' {
   return 'web';
 }
 
-// Aşama 2 (interview_sessions / exercise_logs) — web'de tablo yok, hep kv/
+// Aşama 2 (exercise_logs / practice_responses) — web'de tablo yok, hep kv/
 // localStorage yoluna düşülür; `collectionStore.ts` bunu `historyTablesReady()
 // === false` üzerinden anlar.
 

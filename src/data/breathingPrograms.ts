@@ -31,7 +31,7 @@ export type BreathingProgram = {
   level?: BreathingLevel;
   title: string;
   subtitle: string;
-  /** Neden yapıyoruz — mülakat performansına bağlanmış faydalar. Boşsa "Ne Kazandırır" kartı hiç gösterilmez. */
+  /** Neden yapıyoruz — konuşma ve hitabete bağlanmış faydalar. Boşsa "Ne Kazandırır" kartı hiç gösterilmez. */
   benefits: string[];
   segments: BreathingSegment[];
   safetyNote: string;
@@ -53,7 +53,7 @@ const LEVEL_1: BreathingProgram = {
   subtitle: 'Nefesin göğsünden karnına insin',
   benefits: [
     'Nefesin omuz yerine diyaframdan alındığını hissettirir',
-    'Mülakat öncesi kalp atışını yavaşlatır',
+    'Konuşma öncesi kalp atışını yavaşlatır',
     'Cümle sonunda sesin düşmesini engeller',
   ],
   safetyNote:
@@ -165,7 +165,7 @@ const LEVEL_2: BreathingProgram = {
 const LEVEL_3: BreathingProgram = {
   mode: 'progressive',
   level: 3,
-  title: 'Mülakat Baskısı',
+  title: 'Konuşma Baskısı',
   subtitle: '7-11 ve baskı altında toparlanma',
   benefits: [
     'Zor sorudan sonra sesi titremeden toparlamayı öğretir',
@@ -191,7 +191,7 @@ const LEVEL_3: BreathingProgram = {
       title: 'Baskı Altında Toparlanma',
       description:
         'Kısa ve hızlı bir nefes, ardından uzun bir verme. Zor bir sorudan sonra kullanacağınız kalıp.',
-      tip: 'Mülakatta soruyu duydun, cevabın yok. Bu nefesi bir kez al, sonra konuşmaya başla.',
+      tip: 'Soruyu duydun, cevabın hazır değil. Bu nefesi bir kez al, sonra konuşmaya başla.',
       cycles: 6,
       phases: [
         { kind: 'inhale', seconds: 2, cue: 'Sessiz ve hızlı al' },
@@ -218,7 +218,7 @@ const LEVEL_3: BreathingProgram = {
 /**
  * Günlük mod — her gün aynı, kısa bakım programı.
  * Seviyeden bağımsızdır: amaç kapasite artırmak değil, diyafram alışkanlığını
- * korumak ve mülakat/sunum öncesi hızlıca sakinleşmek.
+ * korumak ve konuşma/sunum öncesi hızlıca sakinleşmek.
  */
 const DAILY: BreathingProgram = {
   mode: 'daily',
@@ -227,7 +227,7 @@ const DAILY: BreathingProgram = {
   benefits: [
     'Kısa olduğu için her gün aksatmadan yapılabilir',
     'Diyaframdan nefes alma alışkanlığını canlı tutar',
-    'Mülakat ya da sunum öncesi birkaç dakikada sakinleştirir',
+    'Konuşma ya da sunum öncesi birkaç dakikada sakinleştirir',
   ],
   safetyNote:
     'Tutma fazlarını zorlamadan uygulayın. Baş dönmesi veya karıncalanma olursa durup normal nefesinize dönün.',

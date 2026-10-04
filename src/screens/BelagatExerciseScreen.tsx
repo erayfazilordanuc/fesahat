@@ -180,11 +180,11 @@ function LearnTab({ art, onDone }: { art: BelagatArt; onDone: () => void }) {
         </View>
       </Card>
 
-      <SectionTitle>Mülakatta Kullanımı</SectionTitle>
+      <SectionTitle>Günlük Kullanımı</SectionTitle>
       <Card>
         <View className="flex-row">
           <Lightbulb size={16} color={t.isLight ? '#d97706' : '#fbbf24'} />
-          <Text className={`text-[12px] ml-2 flex-1 leading-5 ${t.body}`}>{art.interviewUse}</Text>
+          <Text className={`text-[12px] ml-2 flex-1 leading-5 ${t.body}`}>{art.practicalUse}</Text>
         </View>
       </Card>
 
@@ -452,7 +452,7 @@ function ProductionTab({
             {[
               `Sanat gerçekten kullanıldı mı — ${art.shortDefinition.toLowerCase()}`,
               'Cümle sesli okunduğunda takılmadan çıkıyor mu (fesahat)?',
-              'Mülakat ortamında bu cümleyi kurabilir miydin (muktezâ-yı hâl)?',
+              'Gerçek bir konuşmada bu cümleyi kurabilir miydin (muktezâ-yı hâl)?',
             ].map((criterion) => (
               <View key={criterion} className="flex-row mb-2">
                 <Text className={`text-[12px] mr-2 ${t.accent}`}>•</Text>
@@ -597,7 +597,7 @@ function CurriculumTab({
                           <Text className={`text-[11px] mt-1 ${t.muted}`}>— {art.example.source}</Text>
                         ) : null}
                         <Text className={`text-[11px] mt-3 italic ${t.accent}`}>
-                          {art.interviewUse}
+                          {art.practicalUse}
                         </Text>
                       </View>
                     ) : null}
@@ -618,7 +618,7 @@ function CurriculumTab({
           <Text className={`text-[13px] font-bold ${t.title}`}>{flaw.name}</Text>
           <Text className={`text-[11px] mt-0.5 ${t.muted}`}>{flaw.shortDefinition}</Text>
           <Text className={`text-[11px] mt-2 leading-5 ${t.body}`}>{flaw.definition}</Text>
-          <Text className={`text-[11px] mt-2 italic ${t.accent}`}>{flaw.interviewRisk}</Text>
+          <Text className={`text-[11px] mt-2 italic ${t.accent}`}>{flaw.practicalRisk}</Text>
         </Card>
       ))}
     </View>

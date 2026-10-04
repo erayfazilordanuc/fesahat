@@ -16,7 +16,10 @@ import { trUpper } from '../utils/text';
 import { testHistory, useDailyProgress, type ProgressState } from '../utils/dailyPracticeProgress';
 import { AREA_LABELS, AREA_ORDER, MEASURE_TESTS, type MeasureArea } from '../data/measureTests';
 
-// Karne — bütün kasıtlı ölçümler tek ekranda (YAPILACAKLAR Bölüm 5).
+// Ölçümler — bütün kasıtlı ölçümler tek ekranda (YAPILACAKLAR Bölüm 5).
+//
+// ⚠️ Ad: sekme çubuğundaki "Karne" sekmesi (ProgressScreen) ile karışmasın
+// diye bu ekran "Ölçümler" adını taşıyor; Karne onun bir satırından açılıyor.
 //
 // İlerleme sekmesinden düğmeyle açılır: İlerleme bir özet ekranı (seriler,
 // kariyer/zihin kutuları, geçmiş kısayolları, gelişim eğrisi); on testin
@@ -36,7 +39,7 @@ export default function MeasurementsScreen({ navigation }: any) {
     <AppScreen
       header={
         <AppHeader
-          title="Karne"
+          title="Ölçümler"
           subtitle={`${measured}/${MEASURE_TESTS.length} testte ölçümün var`}
           onBack={() => navigation.goBack()}
         />
@@ -55,7 +58,7 @@ export default function MeasurementsScreen({ navigation }: any) {
 }
 
 /**
- * Karnenin bir alanı (Nefes / Veriş / Diksiyon / Dil & İfade): `MEASURE_TESTS`
+ * Ölçümlerin bir alanı (Nefes / Veriş / Diksiyon / Dil & İfade): `MEASURE_TESTS`
  * içindeki tüm testleri listeler. Ölçümü olmayan test de görünür — sayfa boş
  * durumda çökük görünmesin diye (Bölüm 0.2 kararı) — yalnızca "Henüz ölçüm yok" der.
  */
