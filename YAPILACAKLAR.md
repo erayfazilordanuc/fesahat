@@ -1,6 +1,6 @@
 # Yol Haritası
 
-Son güncelleme: 2026-09-20
+Son güncelleme: 2026-10-04
 
 Bu dosya yalnızca **açık işleri** tutar: yapılacaklar, cihazda doğrulanacaklar ve
 kullanıcı kararı bekleyen sorular. Tamamlanan işlerin ayrıntısı, gerekçesi ve
@@ -17,7 +17,7 @@ dönüştürmek. Tek soru: **"bugün kendini nerede geliştirdin?"**
 
 | Sütun | Kapsam | Açık iş |
 | --- | --- | --- |
-| **Kariyer & Mülakat** | Simülasyon, yapay zekâ analizi, geçmiş, sektör haberleri | Bölüm 00 (katalog), Bölüm 3 |
+| **Kariyer & Mülakat** | Simülasyon, yapay zekâ analizi, geçmiş, sektör haberleri | Bölüm 3 (katalog işi İrtifa'ya geçti) |
 | **Konuşma & Diksiyon** | Artikülasyon, tekerleme, vurgu-tonlama, tempo, dolgu kelime avı | Bölüm 6 |
 | **Dil & İfade** | Lugat & Türkçe; ileri düzeyde belagat | Bölüm 7 |
 | **Dinlenme & Denge** | Diyafram, nefes kontrolü, duruş, göz dinlendirme | Bölüm 1 |
@@ -37,8 +37,77 @@ Her yeni modül bunlara uyar — istisna yok:
 5. **Yeni durum `createPersistentStore` deseniyle** eklenir; ikinci bir state
    kütüphanesi (Zustand vb.) eklenmez.
 
+### ⚠️ Fork — üç uygulamaya ayrılma (2026-10-04)
+
+Kod tabanı iki kardeş uygulamaya kopyalanacak. **Kapsam paylaşımı (karar
+2026-10-04):**
+
+| Uygulama | Kime | Kapsam |
+| --- | --- | --- |
+| **Terakki** | Yalnızca sahibine (tek kullanıcı) | **Her şey.** Yedi sütun olduğu gibi kalır; kariyer & mülakat dahil hiçbir modül çıkmaz. Üst küme. |
+| **İrtifa** | Genele | **Mülakat ve iş.** Mülakat simülasyonu, kurum/sektör seçimi, iş hayatı ve kariyer yönetimi. [YAPILACAKLAR_İRTİFA.md](YAPILACAKLAR_İRTİFA.md) |
+| **Fesahat** | Genele | **Dil, konuşma, anlayış, kavrayış, iletişim.** [YAPILACAKLAR_FESAHAT.md](YAPILACAKLAR_FESAHAT.md) |
+
+İki kardeş dosyasının başına, bağlamı olmayan bir ajanın dönüşümü tek başına
+yürütebilmesi için brif yazıldı.
+
+**Terakki'de fork öncesi tek gerçek iş var:**
+
+1. **Cihazda doğrulama turu + yeniden derleme.** Bugün en önemli açık iş bu, ve
+   kopyalamayı bu bloke ediyor. Dört native modül eklendi (`expo-sqlite`,
+   `expo-secure-store`, `expo-clipboard`, `expo-system-ui`) ve **hiçbiri
+   telefonda görülmedi**; aşağıdaki "Cihazda doğrulanacaklar" listesi ~90
+   maddeye çıktı. İçinde veri kaybı riski taşıyan tek yer **SQLite v3 göçü**,
+   hiç denenmemiş tek yol da **sesli mülakat analizi** (ses MIME türü
+   `audio/m4a` → `audio/mp4` değişti). İkisi de kardeşlere aynen kopyalanacak;
+   doğrulanmadan kopyalanırsa bulunan her hata **üç kod tabanında** düzeltilir.
+
+> ⚠️ **Doğrulanana kadar Terakki'ye yeni özellik yazılmamalı.** Yazılan her yeni
+> satır, kopyalanmadan önce doğrulanmamış yüzeyi büyütüyor ve üç yere gidiyor.
+> Fork öncesi doğru hamle yeni iş değil, duran işin cihazda sınanması.
+
+**Doğrulama turunu açan komut: `npm run android`** (= `expo run:android`, native
+derleme dahil). Dört native modülü linkleyen şey bu; ayrı bir `pod-install` ya
+da prebuild gerekmiyor, çünkü Terakki'de `app.json` kimliği **değişmiyor** ve
+Android'de autolinking hallediyor. APK gerekirse
+`cd android && ./gradlew assembleRelease`; Gradle çalıştıran her komutta
+`JAVA_HOME` açıkça dışa aktarılır (JDK 17 şart — DEVAM.md "Ortam tuzakları" 1).
+
+**Kopyalamayı bloke eden beş madde** — aşağıdaki ~90 maddelik listenin tamamı
+değil, yalnızca *paylaşılan temele* dokunanlar. Gerisi (ikon degradesi, splash,
+Türkçe büyük harf, dar ekran taşmaları) kozmetik; üç kez düzeltilse de bedeli
+düşük, oysa veri kaybı ve çalışmayan yapay zekâ pahalı.
+
+1. Uygulama yeniden derlemeden sonra **açılıyor mu** (native modüller linklendi mi).
+2. **SQLite göçü** — mevcut veri yerinde mi, Ayarlar → Sistem Bilgileri "Depolama: SQLite" diyor mu. *Veri kaybı riski taşıyan tek yer.*
+3. **BYOK** — anahtar kaydediliyor, uygulama kapanıp açılınca duruyor, geçersiz anahtar kaydedilmeden reddediliyor mu.
+4. **Sesli mülakat analizi uçtan uca** — `audio/mp4` değişikliği hiç denenmedi; İrtifa'nın can damarı.
+5. **Yanıt Defteri + egzersizde yazı girişi** — en yeni, en az sınanmış kod.
+
+ℹ️ **Terakki'nin release imzası debug keystore'la** (`android/app/build.gradle:115`,
+Expo şablonu varsayılanı). Terakki yalnızca sahibinin telefonuna kurulduğu için
+**sorun değil, iş açılmıyor.** Ama Play Store'a çıkacak iki kardeş için gerçek
+keystore şart — her birinin Production bölümüne yazıldı.
+
+**Kimlik sabitleri Terakki'de değişmez.** `STORE_DIR = 'savunma-store'`,
+`DB_NAME = 'terakki.db'`, `AUDIO_DIR = 'terakki-audio'` ve `terakki.*` bildirim
+ön ekleri **olduğu gibi kalır** — cihazda veri var ve `savunma-store/` SQLite
+göçünün kaynağı; yeniden adlandırmak göç yolunu koparır. Yeniden adlandırma
+yalnızca **kardeşlerde** yapılır (her birinin Bölüm 0'ı), orada temiz kurulum
+olduğu için bedava.
+
+**Bölüm 00 aşama 2 (alanı kataloğa taşı) İrtifa'ya devredildi.** Gerekçe: o iş
+"yazılım şirketine hazırlanan biri uygulamayı açtığında kendine uygun hiçbir
+şey bulamaz" diye açılmıştı. Terakki **tek kullanıcılı** olduğuna göre o
+kullanıcı yok; sektör soyutlaması Terakki'de karşılığı olmayan bir
+genelleştirme. Katalog, genele açılan mülakat uygulamasının işi → İrtifa Bölüm
+00. Terakki'de kariyer & mülakat **kalır**, yalnızca sahibinin kendi ihtiyacına
+göre (ör. yazılım tarafına da hazırlanacaksa) şirket ve soru havuzu
+genişletilir; bunun için katalog mimarisi gerekmiyor.
+
 ### Sıra
 
+0. ⚠️ **Fork öncesi** — cihazda doğrulama turu. Kopyalama bundan sonra.
 1. ⏳ **2026-09-20 turu** — türün iki kısmı birbirini takip etti (kod tamam, `tsc` temiz;
    **cihazda doğrulanacak**).
    - **1. kısım:** ikon degradesi B'ye geçti ve kaynak-çıktı ayrışması kapandı,
@@ -55,9 +124,9 @@ Her yeni modül bunlara uyar — istisna yok:
    Tutma → ölçüm yönlendirmesi, çene gevşetme hatırlatıcısı, torasik ekstansiyon
    egzersizi, lugat tekrar sayacı, favicon. Ayrıntı ilgili bölümlerde. Yol
    üstünde ikon kaynağıyla teslim edilen ikonun ayrıştığı bulundu (Bölüm 8).
-3. **Alanı kataloğa taşıma** (Bölüm 00 → aşama 2) — Savunma + Yazılım &
-   teknoloji. Kariyer genişlemelerinden **önce**, yoksa yeni özelliklere de
-   savunma varsayımı girer.
+3. ~~**Alanı kataloğa taşıma** (Bölüm 00 → aşama 2)~~ → **İrtifa'ya devredildi**
+   (yukarıdaki fork kararı). Terakki tek kullanıcılı; sektör soyutlaması
+   gerekmiyor. Kariyer genişlemelerinin önündeki engel kalktı.
 4. **Kariyer, Diksiyon, Dil & İfade genişlemeleri** (Bölüm 3, 6, 7).
 5. **Tek "Nefes" çatısı** ve nefes kalanları (Bölüm 1) — CO₂ tabloları, nefes kontrolü egzersizleri.
 6. **Vecizelerim + Gmail** (Bölüm 9) ve vecize doğrulaması.
@@ -76,7 +145,8 @@ Her yeni modül bunlara uyar — istisna yok:
 **İlke:** *sistemi uygulama versin, alanı katalog versin.* Alan koddan çıkar ama
 kullanıcıya değil hazır kataloğa gider — kullanıcı yazmaz, seçer (KARARLAR).
 
-**Aşama 1b · Yapay zekâyı herkesin açabilmesi** — ⏳ **BYOK uygulandı**
+**Aşama 1b · Yapay zekâyı herkesin açabilmesi** — ⏳ **BYOK** (*Bring Your Own
+Key*: kullanıcı kendi anahtarını girer) **uygulandı**
 (2026-09-20, kod tamam, `tsc` temiz; **cihazda doğrulanacak**). Kullanıcı kendi
 Google Gemini anahtarını giriyor, çağrılar doğrudan Google'a gidiyor, sunucu
 gerekmiyor. Anahtar cihazın kasasında (`expo-secure-store`). Yeni
@@ -108,7 +178,15 @@ doğrulandı (DEVAM.md "Ortam tuzakları" 2).
       Gemini'nin desteklenen türler listesinde yok). Sesli mülakat analizi
       cihazda sınanmalı.
 
-**Aşama 2 · Alanı kataloğa taşı** — ⏳ yapılmadı.
+**Aşama 2 · Alanı kataloğa taşı** — 🔀 **İrtifa'ya devredildi** (2026-10-04,
+fork kararı). Terakki tek kullanıcılı olduğu için sektör soyutlamasının
+karşılığı yok; iş genele açılan mülakat uygulamasının işi → İrtifa Bölüm 00.
+
+Aşağıdaki anlatım ve **özellikle "Bugünkü hâl" tablosu İrtifa için hâlâ
+geçerli** — sektörün koda gömülü olduğu bütün yerleri gösteriyor, dönüşümde
+yol haritası olarak kullanılacak. Terakki'de yapılacak iş yok; sahibi başka bir
+sektöre de hazırlanmak isterse yalnızca `companies.ts` ve `questions.ts`
+havuzlarına kayıt eklenir, mimari değişmez.
 
 *Sade anlatımla:* Kariyer & Mülakat bölümü bugün yalnızca savunma sanayiine
 hazırlanan birine göre kurulu. Şirket listesi beş savunma firmasından ibaret

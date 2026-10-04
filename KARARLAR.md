@@ -891,6 +891,10 @@ karar verilir, yoksa doğru/yanlış damgası vurulmadan yalnızca deftere yazı
 
 ## Verildi · Yapay zekâ kullanıcının kendi anahtarıyla çalışır (BYOK)
 
+> **BYOK = "Bring Your Own Key"** — "kendi anahtarını getir". Yapay zekâ
+> özelliği uygulamayla gelir ama API anahtarı kullanıcınındır: kota ve fatura
+> ona ait, geliştiricinin ayakta tuttuğu bir sunucu yok.
+
 **Karar (2026-09-20):** Yapay zekâ değerlendirmesi, uygulamayı kuran kişinin
 **kendi Google Gemini anahtarıyla** çalışır. Anahtar Ayarlar → Yapay Zekâ
 Değerlendirmesi ekranından giriliyor, cihazın kasasında saklanıyor ve çağrılar
@@ -951,3 +955,92 @@ servis hesabı ve GCP projesi istiyor, son kullanıcı OAuth'u değil). Bu yüzd
 **Açık kalan:** Ortak sunucu yolu (Aşama 1b) tamamen kapanmadı; kod duruyor ve
 ileride ücretsiz kota/sunucusuz barındırma sınırları ölçülürse ikinci bir
 seçenek olarak açılabilir — YAPILACAKLAR Bölüm 00.
+
+---
+
+## Verildi · Üç uygulamaya ayrılma ve kapsam paylaşımı (2026-10-04)
+
+**Karar:** Kod tabanı üç uygulamaya ayrılıyor. Kardeşler Terakki'nin kopyasından
+dönüştürülerek üretiliyor; her birinin dönüşüm planı kendi dosyasında.
+
+| Uygulama | Kime | Kapsam |
+| --- | --- | --- |
+| **Terakki** | Yalnızca sahibine (tek kullanıcı) | **Her şey.** Yedi sütun olduğu gibi kalır, hiçbir modül çıkmaz. Üst küme. |
+| **İrtifa** | Genele | **Mülakat ve iş.** Simülasyon, sektör/kurum kataloğu, günlük alan testi, iş hayatı & kariyer yönetimi. |
+| **Fesahat** | Genele | **Dil, konuşma, anlayış, kavrayış, iletişim.** |
+
+**Neden üç:** Terakki yedi sütunu tek çatıda topluyor ve sahibine göre kurulu;
+genele açılacak bir uygulamada bu genişlik dağınıklık oluyor. İki kardeş birer
+odak alıyor, Terakki hepsini kendinde tutmaya devam ediyor.
+
+**Türeyen üç sonuç:**
+
+1. **Bölüm 00 aşama 2 (alanı kataloğa taşı) İrtifa'ya devredildi.** O iş
+   "yazılım şirketine hazırlanan biri uygulamayı açtığında kendine uygun hiçbir
+   şey bulamaz" diye açılmıştı. Terakki tek kullanıcılı olduğuna göre o kullanıcı
+   yok; sektör soyutlaması Terakki'de karşılığı olmayan bir genelleştirme.
+   Katalog, genele açılan mülakat uygulamasının işi. Terakki'de kariyer & mülakat
+   **kalır**; sahibi başka sektöre de hazırlanırsa `companies.ts` /
+   `questions.ts` havuzlarına kayıt eklenir, mimari değişmez.
+2. **Kimlik sabitleri Terakki'de değişmez.** `STORE_DIR = 'savunma-store'`,
+   `DB_NAME = 'terakki.db'`, `AUDIO_DIR = 'terakki-audio'` ve `terakki.*`
+   bildirim ön ekleri olduğu gibi kalıyor: cihazda veri var ve `savunma-store/`
+   SQLite göçünün kaynağı, yeniden adlandırmak göç yolunu koparır. Yeniden
+   adlandırma yalnızca kardeşlerde yapılır — orada temiz kurulum olduğu için
+   bedava, yayından sonra ise veri göçü kodu gerektirir.
+3. **İrtifa savunma sanayiine kilitlenmez.** Savunma içeriği (beş kurum, soru
+   bankası, haberler) kataloğun **ilk girdisi** olarak kalır; ad, kimlik ve tema
+   hiçbir sektöre bağlanmaz. "Taktiksel" tema çerçevesi ve askerî metaforlar
+   arayüzden çıkar.
+
+**Fork öncesi tek engel:** cihazda doğrulama turu. Dört native modül
+(`expo-sqlite`, `expo-secure-store`, `expo-clipboard`, `expo-system-ui`)
+telefonda hiç görülmedi; doğrulanmadan kopyalanırsa bulunan her hata üç kod
+tabanında düzeltilir. Doğrulanana kadar Terakki'ye yeni özellik yazılmaması
+kararlaştırıldı — yazılan her satır doğrulanmamış yüzeyi büyütüp üç yere gidiyor.
+
+---
+
+## Verildi · Yapay zekâ her üç uygulamada bulunabilir (2026-10-04)
+
+**Karar:** Yapay zekâ katmanı **Terakki, İrtifa ve Fesahat'ın üçünde de**
+bulunur. Temel her yerde aynı: **BYOK** — kullanıcı kendi Google Gemini
+anahtarını girer, anahtar cihazın kasasında durur, çağrılar doğrudan Google'a
+gider (yukarıdaki "Yapay zekâ kullanıcının kendi anahtarıyla çalışır" kararı).
+
+**Bu karar Fesahat'ın "sıfır ağ" tasarımını geri alıyor.**
+`YAPILACAKLAR_FESAHAT.md` 2026-09-11'de "mülakat motoru ve yapay zekâ
+bağımlılıkları tamamen sökülerek uygulama %100 çevrimdışı kılınacak" diyordu.
+Mülakat sökülüyor; **yapay zekâ sökülmüyor.**
+
+**Neden değişti:**
+
+1. **Sökmenin gerekçesi BYOK ile buharlaştı.** "Çevrimdışı olsun" kararı
+   yapay zekânın ayakta duran bir sunucu, kota ve fatura getirdiği dönemde
+   verilmişti. BYOK'tan sonra geliştiricinin işletme maliyeti **sıfır**:
+   sunucu yok, kota kullanıcının. Katmanı tutmanın bedeli kalmadı.
+2. **Fesahat'ta yapay zekânın gerçek bir işi var.** Çevrimdışı tasarım,
+   *tek doğru cevabı olmayan* alıştırmaları öz-değerlendirmeye ya da çoktan
+   seçmeliye mahkûm ediyordu: özetleme, iletişim senaryoları, belagat "üret"
+   aşaması. Anahtar varken serbest yazılı cevap değerlendirilebiliyor — bu,
+   alıştırmaların tasarımını kısıtlamaktan çıkarıyor.
+3. **Altyapı zaten kopyalanıyor.** `aiAvailability`, `aiCredentials`,
+   `geminiClient`, `AiSetupScreen`, `AiInsightCard` Terakki'den hazır geliyor
+   ve çalışıyor. Sökmek iş, tutmak bedava.
+
+**Değişmeyen kural — çevrimdışı çalışma garanti olarak kalıyor.** "Hiç ağ
+çağrısı olmasın" hedefi düştü, yerine **"ağ olmadan da her şey çalışsın"**
+geldi. Üç uygulamada da: anahtar yokken uygulamanın hiçbir parçası bozulmaz,
+her ekran açılır, her alıştırma yapılır ve **teknik hata mesajı gösterilmez**;
+yalnızca değerlendirme/üretim katmanı kapalı kalır. Her çağrı
+`aiAvailability` kontrolünden geçer (`CLAUDE.md` kuralı).
+
+**Kasıtlı sınır:** yapay zekâ **değerlendirir ve üretir, kapıda durmaz.** Hiçbir
+uygulamada bir içeriğe erişmek, bir alıştırmaya başlamak ya da ilerlemeyi
+görmek için anahtar gerekmez. Anahtarsız kullanıcı eksik bir uygulama değil,
+değerlendirme katmanı kapalı bir uygulama kullanır.
+
+**Açık kalan:** Fesahat'ta içerik üretimi (okuduğunu anlama soruları, sözel
+analoji setleri) yapay zekâya devredilecek mi? İrtifa'nın aynı sorusu
+(`YAPILACAKLAR_İRTİFA.md` Bölüm 3 — determinizm, kota, kalite denetimi) önce
+ölçülecek; iki uygulama için iki kez çözülmeyecek.
