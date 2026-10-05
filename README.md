@@ -4,7 +4,7 @@ Fesahat, **dil, konuşma, anlayış, kavrayış ve iletişim becerilerini geliş
 
 Uygulama **yapay zekâ katmanı** (BYOK — kullanıcı kendi Gemini anahtarını girer) içerir ama isteğe bağlıdır: anahtar yokken uygulamanın hiçbir parçası bozulmaz, her ekran açılır, ağ olmadan da %100 çalışır.
 
-Yol haritası için [YAPILACAKLAR.md](YAPILACAKLAR.md), verilmiş mimari kararlar için [KARARLAR.md](KARARLAR.md).
+Geliştirme süreci ve kurallar için [CLAUDE.md](CLAUDE.md).
 
 ---
 
@@ -121,7 +121,7 @@ npx expo prebuild --platform ios --clean
 npm run ios
 ```
 
-*⚠️ Prebuild'den önce [DEVAM.md](DEVAM.md) → "Ortam tuzakları" oku.*
+*⚠️ Prebuild'den önce [CLAUDE.md](CLAUDE.md) → "Ortam tuzakları" oku.*
 
 ### Yayın Derlemesi (EAS)
 ```bash
@@ -206,12 +206,13 @@ tools/icon-forge/      # Logo ve ikon üretimi (Python)
 
 ## 📚 Belgeler
 
-- **[YAPILACAKLAR.md](YAPILACAKLAR.md)** — yol haritası, durum, sıra listesi
-- **[KARARLAR.md](KARARLAR.md)** — verilen mimari ve ürün kararları
-- **[DEVAM.md](DEVAM.md)** — geçici brifing; build tuzakları
-- **[CLAUDE.md](CLAUDE.md)** — geliştirme süreci ve ajan tanımları
+- **[CLAUDE.md](CLAUDE.md)** — geliştirme süreci, kurallar, build tuzakları, ajan tanımları
 - **[assets/brand/README.md](assets/brand/README.md)** — marka, renkler, ikon dosyaları
 - **[tools/icon-forge/README.md](tools/icon-forge/README.md)** — ikon türetme aracı
+
+> `YAPILACAKLAR.md` (yol haritası), `KARARLAR.md` (verilen kararlar ve
+> gerekçeleri) ve Terakki'den devralınan arşiv belgeleri **yerel çalışma
+> belgeleridir**; depoya dahil edilmez.
 
 ---
 

@@ -35,3 +35,9 @@ yarn-error.*
 # Isletim sistemi
 .DS_Store
 Thumbs.db
+
+# Kisisel calisma belgeleri (diskte durur, depoya girmez)
+KARARLAR.md
+YAPILACAKLAR.md
+YAPILACAKLAR_TERAKKI.md
+YAPILACAKLAR_ARSIV.md
