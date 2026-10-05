@@ -20,7 +20,8 @@ yalnızca değerlendirme/üretim katmanı kapalı kalır.
 1. ⏳ **Cihazda doğrulama turu** — aşağıdaki liste. Kopyalanan kodun bir kısmı
    Terakki'de de doğrulanmamıştı; bulunan hata muhtemelen orada da duruyor.
 2. **İçerik doğrulaması** — "Doğrulanacak içerik" bölümü (söz lafızları, TDK
-   tanımları, kamu malı metin künyeleri).
+   tanımları, kamu malı metin künyeleri). Yayından önce **zorunlu**; kullanıcı
+   kararıyla şimdilik ertelendi.
 3. **Lugat & Türkçe genişlemesi** — ana eksen, hâlâ en çok iş burada.
 4. **Yapay zekâ bağlama** — diksiyon ses analizi ve belagat "üret" değerlendirmesi.
 5. **Production** — gerçek keystore, store metni, izin temizliği.
@@ -147,6 +148,33 @@ uygulanmalı.
 Yapay zekâ ile üretilen içerikte **kaynak doğruluğu kullanıcı tarafından
 sınanmalı.** Hiçbir söz asıl eserden birebir doğrulanmadı (`Soz.verified`
 hepsinde `false`).
+
+> ⚠️ **Açık çelişki — bilinçli olarak ertelendi (2026-10-05).** KARARLAR →
+> "Kişiye özel içerik diğer uygulamalara taşınmaz" kuralı Fesahat için şunu
+> söylüyor: *"künyesi doğrulanmamış söz havuza girmez, 'internette böyle
+> dolaşıyor' kaynak sayılmaz."* Bugünkü `sozler.ts` bu kuralı **karşılamıyor**:
+> 70 sözün tamamı `verified: false`. Kullanıcı kararı: **şimdilik böyle kalsın**,
+> doğrulama ileride yapılacak iş. Yayından (store) önce kapatılmalı — genele
+> açık bir uygulamada yanlış atıf düzeltilmesi zor bir zarar.
+
+### Doğrulama aracı — tasarım notu (yapılacak)
+
+Elle 70 söz doğrulamak pahalı; yarı otomatik bir araç mümkün. ⚠️ **Web araması
+bu iş için geçerli bir kaynak DEĞİL** — kuralın yasakladığı şeyin ta kendisi
+("internette böyle dolaşıyor"). Doğru yol **asıl eserin tam metninde arama**:
+
+- [ ] Kamu malı / erişilebilir külliyatların tam metinlerini yerel bir klasöre
+      topla (Yunus Emre dîvânı, Kutadgu Bilig, Mesnevî çevirisi, Risale-i Nur
+      külliyatı, Gutenberg'den Montaigne/Seneca/Marcus Aurelius).
+- [ ] `tools/` altına bir betik: her `Soz.text` için kaynak metinde **normalize
+      edilmiş bulanık arama** (Türkçe harf indirgeme + noktalama temizliği;
+      `src/utils/text.ts` → `normalizeAnswer` aynı mantığı taşıyor).
+- [ ] Çıktı üç kovaya ayrılır: **bulundu** (eşleşen pasaj + künye önerisi),
+      **yakın eşleşme** (serbest aktarım olabilir — insan bakar), **bulunamadı**.
+- [ ] Betik `verified: true` yazmaz; **insan onayından sonra** işaretlenir.
+      Otomatik damga, uydurma alıntıyı "doğrulanmış" yapma riski taşır.
+- [ ] Çeviri eserlerde (Seneca, Montaigne) birebir lafız aranamaz — orada
+      yalnızca **kaynağın varlığı** (mektup/bölüm numarası) doğrulanabilir.
 
 - [ ] **Günün sözü lafızları** — özellikle Mevlânâ'ya atfedilenler ("Gel, gel,
       ne olursan ol", "Cömertlikte akarsu gibi ol"), Hz. Ali, İmam Şâfiî,
