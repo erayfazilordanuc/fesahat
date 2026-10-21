@@ -16,7 +16,7 @@ import { Settings as SettingsIcon, X } from 'lucide-react-native';
 
 import { useAppTheme } from '../../utils/ThemeContext';
 import { useThemeTokens } from '../themeTokens';
-import { AppHeader, RoundButton, SCREEN_TOP_GAP } from '../AppUI';
+import { AppHeader, RoundButton, SCREEN_TOP_GAP, type Tone } from '../AppUI';
 
 // Günlük pratik ekranlarının paylaştığı görsel parçalar.
 // Uygulamanın mevcut düzeni gibi tema ayrımı NativeWind sınıflarıyla isLight üzerinden yapılıyor.
@@ -389,12 +389,15 @@ export function Chip({
   );
 }
 
-export function ProgressBar({ value, tone = 'blue' }: { value: number; tone?: 'blue' | 'violet' | 'emerald' }) {
+export function ProgressBar({ value, tone = 'blue' }: { value: number; tone?: Tone }) {
   const { isLight } = useAppTheme();
   const fill = {
     blue: isLight ? 'bg-blue-600' : 'bg-blue-500',
     violet: isLight ? 'bg-violet-600' : 'bg-violet-500',
     emerald: isLight ? 'bg-emerald-600' : 'bg-emerald-500',
+    amber: isLight ? 'bg-amber-600' : 'bg-amber-500',
+    rose: isLight ? 'bg-rose-600' : 'bg-rose-500',
+    slate: isLight ? 'bg-slate-600' : 'bg-slate-500',
   }[tone];
   const clamped = Math.max(0, Math.min(1, value));
 

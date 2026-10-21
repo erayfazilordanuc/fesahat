@@ -42,16 +42,6 @@ import { findMeasureTest, TEST_BREATH_HOLD } from '../data/measureTests';
 const CIRCLE_SIZE = Math.min(Dimensions.get('window').width * 0.58, 260);
 const MIN_SCALE = 0.55;
 
-/** ProgressBar yalnızca üç ton biliyor; kategori vurgusunu en yakınına eşliyoruz. */
-const PROGRESS_TONE: Record<Tone, 'blue' | 'violet' | 'emerald'> = {
-  blue: 'blue',
-  violet: 'violet',
-  emerald: 'emerald',
-  amber: 'blue',
-  rose: 'violet',
-  slate: 'blue',
-};
-
 // "Rahat Tutma" egzersizleri bitince nefes tutma ölçümüne isteğe bağlı
 // yönlendirme gösterilir (YAPILACAKLAR Bölüm 1 → "Nefesi daha uzun tutma" →
 // açık kalanlar). Sadece bu iki egzersizde: diğerlerinin bitişi değişmiyor.
@@ -444,7 +434,7 @@ function Engine({ exercise, navigation }: { exercise: Exercise; navigation: any 
             </View>
             <ProgressBar
               value={stepCount === 0 ? 0 : index / stepCount}
-              tone={PROGRESS_TONE[accent]}
+              tone={accent}
             />
           </View>
 

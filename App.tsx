@@ -46,6 +46,7 @@ import ProgressScreen from './src/screens/ProgressScreen';
 import BrainExercisesScreen from './src/screens/BrainExercisesScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import AboutScreen from './src/screens/AboutScreen';
 import AiSetupScreen from './src/screens/AiSetupScreen';
 import ExerciseEngineScreen from './src/screens/ExerciseEngineScreen';
 import ExerciseHistoryScreen from './src/screens/ExerciseHistoryScreen';
@@ -273,6 +274,7 @@ function AppContent() {
               options={{ gestureEnabled: false, animation: 'fade' }}
             />
             <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen name="About" component={AboutScreen} options={{ presentation: 'modal' }} />
             <Stack.Screen name="AiSetup" component={AiSetupScreen} options={{ presentation: 'modal' }} />
             <Stack.Screen name="Reminders" component={RemindersScreen} />
             <Stack.Screen name="Measurements" component={MeasurementsScreen} />

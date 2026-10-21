@@ -148,7 +148,13 @@ export default function OnboardingScreen({ navigation }: any) {
   };
 
   if (step === 0) {
-    return <WelcomeStep onStart={() => setStep(1)} onSkip={finish} />;
+    return (
+      <WelcomeStep
+        onStart={() => setStep(1)}
+        onSkip={finish}
+        onLearnMore={() => navigation.navigate('About')}
+      />
+    );
   }
 
   const progress = step / (TOTAL_STEPS - 1);
@@ -222,7 +228,15 @@ export default function OnboardingScreen({ navigation }: any) {
 /* Adım 0 — Hoş geldin                                                 */
 /* ------------------------------------------------------------------ */
 
-function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
+function WelcomeStep({
+  onStart,
+  onSkip,
+  onLearnMore,
+}: {
+  onStart: () => void;
+  onSkip: () => void;
+  onLearnMore: () => void;
+}) {
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1 }}>
@@ -268,8 +282,38 @@ function WelcomeStep({ onStart, onSkip }: { onStart: () => void; onSkip: () => v
             textAlign: 'center',
           }}
         >
-          Her gün birkaç dakikalık pratikle kelime, konuşma, nefes ve odak.
+          Dil, konuşma, anlayış, kavrayış ve iletişim için günlük pratik.
         </Text>
+        <Text
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: 12,
+            lineHeight: 18,
+            textAlign: 'center',
+            marginTop: 10,
+          }}
+        >
+          Yapay zekâ değerlendirmesi isteğe bağlı: kendi anahtarınla açılır, anahtarsız da her
+          pratik çalışır.
+        </Text>
+        <Pressable
+          onPress={onLearnMore}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Fesahat hakkında daha fazla bilgi"
+          style={{ marginTop: 14 }}
+        >
+          <Text
+            style={{
+              color: 'rgba(255,255,255,0.9)',
+              fontSize: 12,
+              fontWeight: '700',
+              textDecorationLine: 'underline',
+            }}
+          >
+            Fesahat nasıl çalışır?
+          </Text>
+        </Pressable>
       </View>
       <View style={{ paddingHorizontal: 24, paddingBottom: Math.max(insets.bottom, 20) + 8 }}>
         <Pressable

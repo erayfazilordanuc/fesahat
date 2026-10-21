@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Compass,
   Clock,
+  Info,
 } from 'lucide-react-native';
 
 import {
@@ -270,6 +271,27 @@ export default function SettingsScreen({ navigation }: any) {
             <Text className={`text-[13px] font-bold ${t.title}`}>Oryantasyonu yeniden göster</Text>
             <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
               Hedef, süre ve hatırlatma seçimlerini baştan yap.
+            </Text>
+          </View>
+          <ChevronRight size={18} color={t.iconColor} />
+        </Pressable>
+
+        {/* Fesahat nedir */}
+        <Pressable
+          onPress={() => navigation.navigate('About')}
+          accessibilityRole="button"
+          accessibilityLabel="Fesahat Nedir?"
+          className={`flex-row items-center py-3 mt-3 border-t ${t.dividerColor}`}
+        >
+          <View
+            className={`w-9 h-9 rounded-xl items-center justify-center mr-3 ${toneSoft('blue', t.isLight)}`}
+          >
+            <Info size={17} color={toneColor('blue', t.isLight)} />
+          </View>
+          <View className="flex-1 pr-3">
+            <Text className={`text-[13px] font-bold ${t.title}`}>Fesahat Nedir?</Text>
+            <Text className={`text-[11px] mt-0.5 ${t.muted}`}>
+              Uygulamanın amacı, beş ayağı ve yapay zekâ modeli.
             </Text>
           </View>
           <ChevronRight size={18} color={t.iconColor} />

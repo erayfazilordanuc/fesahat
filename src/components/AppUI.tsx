@@ -250,12 +250,14 @@ export function AppScreen({
 /** "GELİŞTİRİCİ SEÇENEKLERİ" gibi küçük, büyük harfli bölüm başlığı. */
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   const t = useThemeTokens();
+  // CSS uppercase sınıfı Türkçe 'i'yi 'I' yapar; büyütmeyi trUpper ile elde ediyoruz.
+  const display = typeof children === 'string' ? trUpper(children) : children;
   return (
     <Text
-      className={`text-[10px] font-semibold uppercase mt-7 mb-2.5 ${t.muted}`}
+      className={`text-[10px] font-semibold mt-7 mb-2.5 ${t.muted}`}
       style={{ letterSpacing: 1.4 }}
     >
-      {children}
+      {display}
     </Text>
   );
 }
@@ -655,6 +657,7 @@ export function ActionButton({
   disabled,
   variant = 'solid',
   labelSize = 14,
+  accessibilityLabel,
 }: {
   label: string;
   onPress: () => void;
@@ -664,6 +667,8 @@ export function ActionButton({
   variant?: 'solid' | 'soft' | 'outline';
   /** Uzun etiketler (ör. "Bağlantıyı Test Et") için küçültülebilir. */
   labelSize?: number;
+  /** Varsayılan: label metni. */
+  accessibilityLabel?: string;
 }) {
   const t = useThemeTokens();
 
@@ -694,6 +699,7 @@ export function ActionButton({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       className={`${classes} ${disabled ? 'opacity-40' : ''}`}
     >
       {icon ? <View className="mr-2">{icon}</View> : null}
